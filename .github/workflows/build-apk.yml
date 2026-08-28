@@ -30,6 +30,14 @@ jobs:
           python3 tools/patch_v051.py
           grep -n "ACTIVITY_RECOGNITION" WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
           grep -n "versionName\|versionCode" WakeGuard/app/build.gradle.kts
+      - name: Upload patched source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: WakeGuard-patched-source
+          path: |
+            WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
+            WakeGuard/app/src/main/AndroidManifest.xml
+            WakeGuard/app/build.gradle.kts
       - name: Build debug APK
         working-directory: WakeGuard
         run: gradle assembleDebug --stacktrace
