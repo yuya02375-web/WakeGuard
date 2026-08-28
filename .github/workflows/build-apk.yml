@@ -25,15 +25,16 @@ jobs:
           cat .wakeguard-parts/*.b64 | base64 --decode > WakeGuard-v0.5.0-source-fixed.zip
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
-      - name: Apply WakeGuard v0.5.1 crash fix
+      - name: Apply WakeGuard v0.5.2 fixes
         run: |
-          python3 tools/patch_v051.py
+          python3 tools/patch_v052.py
           grep -n "ACTIVITY_RECOGNITION" WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
+          grep -n "persistUiState\|wakeguard_alarm_audio" WakeGuard/app/src/main/java/jp/wakeguard/alarm/MainActivity.java
           grep -n "versionName\|versionCode" WakeGuard/app/build.gradle.kts
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-patched-source
+          name: WakeGuard-v0.5.2-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -43,5 +44,5 @@ jobs:
         run: gradle assembleDebug --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v0.5.1-debug-apk
+          name: WakeGuard-v0.5.2-debug-apk
           path: WakeGuard/app/build/outputs/apk/debug/app-debug.apk
