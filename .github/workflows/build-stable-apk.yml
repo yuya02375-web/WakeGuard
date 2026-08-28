@@ -31,18 +31,18 @@ jobs:
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
 
-      - name: Apply WakeGuard v0.5.5 fixes
+      - name: Apply WakeGuard v0.5.6 fixes
         run: |
-          python3 tools/patch_v055.py
-          grep -n "TextWatcher\|Math.max(1, Math.min(9999" WakeGuard/app/src/main/java/jp/wakeguard/alarm/MainActivity.java
-          grep -n "prepareAlarmVolume\|startFallbackTone\|setContentIntent" WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
-          grep -n "WakeGuardApp\|MODIFY_AUDIO_SETTINGS" WakeGuard/app/src/main/AndroidManifest.xml
+          python3 tools/patch_v056.py
+          grep -n "soundStatusView\|OpenableColumns\|保存済み" WakeGuard/app/src/main/java/jp/wakeguard/alarm/MainActivity.java
+          grep -n "Repeated tests\|cleanupOutputs\|AudioPlay" WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
+          grep -n "Do not start Activities repeatedly" WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmActivity.java
           grep -n "versionName\|versionCode" WakeGuard/app/build.gradle.kts
 
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v0.5.5-patched-source
+          name: WakeGuard-v0.5.6-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -91,11 +91,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v0.5.5-stable.apk \
+            --out WakeGuard-v0.5.6-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v0.5.5-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v0.5.6-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v0.5.5-stable-apk
-          path: WakeGuard-v0.5.5-stable.apk
+          name: WakeGuard-v0.5.6-stable-apk
+          path: WakeGuard-v0.5.6-stable.apk
