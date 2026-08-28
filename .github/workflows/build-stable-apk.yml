@@ -51,7 +51,12 @@ jobs:
         env:
           WAKEGUARD_KEYSTORE_B64: ${{ secrets.WAKEGUARD_KEYSTORE_B64 }}
         run: |
-          printf '%s' "$WAKEGUARD_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/wakeguard-release.p12"
+          CLEANED="$(printf '%s' "$WAKEGUARD_KEYSTORE_B64" | tr -d '\r\n\t ')"
+          CLEANED="${CLEANED#WAKEGUARD_KEYSTORE_B64=}"
+          CLEANED="${CLEANED#\"}"
+          CLEANED="${CLEANED%\"}"
+          printf '%s' "$CLEANED" | base64 --decode > "$RUNNER_TEMP/wakeguard-release.p12"
+          test -s "$RUNNER_TEMP/wakeguard-release.p12"
           chmod 600 "$RUNNER_TEMP/wakeguard-release.p12"
 
       - name: Build APK
