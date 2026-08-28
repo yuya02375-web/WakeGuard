@@ -25,6 +25,18 @@ jobs:
           cat .wakeguard-parts/*.b64 | base64 --decode > WakeGuard-v0.5.0-source-fixed.zip
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
+      - name: Dump alarm sources for crash diagnosis
+        run: |
+          echo '=== FILES ==='
+          find WakeGuard/app/src/main -type f | sort
+          echo '=== AlarmActivity.java ==='
+          cat WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmActivity.java
+          echo '=== AlarmService.java ==='
+          cat WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
+          echo '=== MainActivity.java ==='
+          cat WakeGuard/app/src/main/java/jp/wakeguard/alarm/MainActivity.java
+          echo '=== AndroidManifest.xml ==='
+          cat WakeGuard/app/src/main/AndroidManifest.xml
       - name: Build debug APK
         working-directory: WakeGuard
         run: gradle assembleDebug --stacktrace
