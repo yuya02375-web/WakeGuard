@@ -20,8 +20,11 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.5.0'
-      - name: Extract source
-        run: unzip -q WakeGuard-v0.5.0-source.zip
+      - name: Reconstruct source archive
+        run: |
+          cat .wakeguard-parts/*.b64 | base64 --decode > WakeGuard-v0.5.0-source-fixed.zip
+          unzip -t WakeGuard-v0.5.0-source-fixed.zip
+          unzip -q WakeGuard-v0.5.0-source-fixed.zip
       - name: Build debug APK
         working-directory: WakeGuard
         run: gradle assembleDebug --stacktrace
