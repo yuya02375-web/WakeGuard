@@ -61,9 +61,9 @@ new = '''    private void startStepSensor() {
                         this, use, SensorManager.SENSOR_DELAY_NORMAL);
             }
             Prefs.stepSensorAvailable(this, use != null && registered);
-        } catch (SecurityException | RuntimeException e) {
-            // Defensive recovery for OEM/Android permission or sensor failures.
-            // The alarm must continue ringing instead of killing the process.
+        } catch (RuntimeException e) {
+            // Includes SecurityException. OEM/permission/sensor failures must never
+            // kill the alarm process; sound and vibration continue running.
             try {
                 if (sensorManager != null) sensorManager.unregisterListener(this);
             } catch (Throwable ignored) {}
