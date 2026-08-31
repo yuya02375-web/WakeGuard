@@ -31,18 +31,19 @@ jobs:
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
 
-      - name: Apply WakeGuard v0.6.5 fixes
+      - name: Apply WakeGuard v0.7.0 clock suite
         run: |
-          python3 tools/patch_v065.py
-          ! grep -R "getInsetsController" WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmActivity.java
-          grep -n "scheduledActivityPi\|setAlarmClock(info, fireActivity)\|ACTION_SCHEDULED_FIRE" WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmScheduler.java WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmActivity.java
-          grep -n "lastConfirmedShakeElapsed\|TYPE_LINEAR_ACCELERATION\|physicallyPlausible\|3.2" WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
+          python3 tools/patch_v070.py
+          grep -n "ClockActivity\|TimerReceiver" WakeGuard/app/src/main/AndroidManifest.xml
+          grep -n "世界時計・ストップウォッチ・タイマー" WakeGuard/app/src/main/java/jp/wakeguard/alarm/MainActivity.java
+          grep -n "class ClockActivity\|HH:mm:ss\|ストップウォッチ\|タイマー" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
+          grep -n "class TimerReceiver\|wakeguard_timer_v1" WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerReceiver.java
           grep -n "versionName\|versionCode" WakeGuard/app/build.gradle.kts
 
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v0.6.5-patched-source
+          name: WakeGuard-v0.7.0-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -91,11 +92,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v0.6.5-stable.apk \
+            --out WakeGuard-v0.7.0-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v0.6.5-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v0.7.0-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v0.6.5-stable-apk
-          path: WakeGuard-v0.6.5-stable.apk
+          name: WakeGuard-v0.7.0-stable-apk
+          path: WakeGuard-v0.7.0-stable.apk
