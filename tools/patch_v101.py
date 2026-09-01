@@ -38,7 +38,6 @@ s = p.read_text(encoding="utf-8")
 s = s.replace('        setContentView(outer);\n', '        setContentView(outer);\n        Ui.applySystemBarInsets(this, outer);\n')
 s = s.replace('        alarmTab.setOnClickListener(v -> startActivity(new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)));',
                     '        alarmTab.setOnClickListener(v -> Ui.finishNoAnimation(this));')
-# Hardware/system back should behave the same way as tapping the Alarm tab.
 marker = '    @Override protected void onPause() {\n        super.onPause();\n        handler.removeCallbacks(ticker);\n    }\n'
 if marker in s:
     s = s.replace(marker, marker + '\n    @Override public void onBackPressed() { Ui.finishNoAnimation(this); }\n')
@@ -63,7 +62,6 @@ s = s.replace('startActivity(new Intent(this,MainActivity.class).addFlags(Intent
 p.write_text(s, encoding="utf-8")
 
 # 5) Give every app window a dark preview/background before Activity.onCreate executes.
-#    This removes the white flash even on devices that show a launch/transition preview.
 res = root / "app/src/main/res/values"
 res.mkdir(parents=True, exist_ok=True)
 (res / "wakeguard_v101.xml").write_text('''<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <style name="WakeGuardThemeNoFlash" parent="@style/AppTheme">\n        <item name="android:windowBackground">#101113</item>\n        <item name="android:windowDisablePreview">true</item>\n        <item name="android:windowContentTransitions">false</item>\n    </style>\n</resources>\n''', encoding="utf-8")
@@ -76,7 +74,7 @@ p.write_text(s, encoding="utf-8")
 # Version bump.
 p = root / "app/build.gradle.kts"
 s = p.read_text(encoding="utf-8")
-s = re.sub(r'versionCode = \\d+', 'versionCode = 28', s)
+s = re.sub(r'versionCode = \d+', 'versionCode = 28', s)
 s = re.sub(r'versionName = "[^"]+"', 'versionName = "1.0.1"', s)
 p.write_text(s, encoding="utf-8")
 
