@@ -31,17 +31,17 @@ jobs:
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
 
-      - name: Apply WakeGuard v1.1.2 detailed quick timer UI
+      - name: Apply WakeGuard v1.1.3 native-style UI cleanup
         run: |
-          python3 tools/patch_v112.py
-          grep -n "quickHours\|adjustQuickDuration\|startQuickEditor\|timerTextAction" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
-          grep -n "addTemporary\|addSaved\|makeSaved\|saved" WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerStore.java
+          python3 tools/patch_v113.py
+          grep -n "showTimerMenu\|quickSave\|addWorldCard\|buildStopwatch" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
+          grep -n "ghostButton\|bottomTab" WakeGuard/app/src/main/java/jp/wakeguard/alarm/Ui.java
           grep -n "versionName\|versionCode" WakeGuard/app/build.gradle.kts
 
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.1.2-patched-source
+          name: WakeGuard-v1.1.3-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -91,11 +91,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v1.1.2-stable.apk \
+            --out WakeGuard-v1.1.3-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.1.2-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.1.3-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.1.2-stable-apk
-          path: WakeGuard-v1.1.2-stable.apk
+          name: WakeGuard-v1.1.3-stable-apk
+          path: WakeGuard-v1.1.3-stable.apk
