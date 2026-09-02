@@ -31,18 +31,16 @@ jobs:
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
 
-      - name: Apply WakeGuard v1.1.4 wake records restore
+      - name: Apply WakeGuard v1.1.5 current timezone clock
         run: |
-          python3 tools/patch_v114.py
-          grep -n "起床記録\|refreshStats\|StatsActivity" WakeGuard/app/src/main/java/jp/wakeguard/alarm/MainActivity.java
-          grep -n "現在のストリーク\|カレンダー\|Prefs.wasSuccessful" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StatsActivity.java
-          grep -n "StatsActivity" WakeGuard/app/src/main/AndroidManifest.xml
+          python3 tools/patch_v115.py
+          grep -n "現在のタイムゾーン\|localClock.setTextSize\|登録した都市" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
           grep -n "versionName\|versionCode" WakeGuard/app/build.gradle.kts
 
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.1.4-patched-source
+          name: WakeGuard-v1.1.5-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -92,11 +90,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v1.1.4-stable.apk \
+            --out WakeGuard-v1.1.5-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.1.4-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.1.5-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.1.4-stable-apk
-          path: WakeGuard-v1.1.4-stable.apk
+          name: WakeGuard-v1.1.5-stable-apk
+          path: WakeGuard-v1.1.5-stable.apk
