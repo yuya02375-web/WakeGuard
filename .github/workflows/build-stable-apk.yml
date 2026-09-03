@@ -31,23 +31,25 @@ jobs:
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
 
-      - name: Apply WakeGuard v1.1.9 clock and timer notification upgrade
+      - name: Apply WakeGuard v1.2.0 clock UI and localization upgrade
         run: |
-          python3 tools/patch_v119_fix3.py
-          grep -n "setCustomContentView\|timer_notification_chronometer" WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerReceiver.java WakeGuard/app/src/main/res/layout/notification_timer_running.xml
+          python3 tools/patch_v120_final.py
+          grep -n "ClockSettingsActivity\|localeConfig" WakeGuard/app/src/main/AndroidManifest.xml
+          grep -n "analog_numbers\|digitalBtn\|analogBtn\|drawText" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockFaceActivity.java
+          grep -n "アプリの言語\|clock_face_analog" WakeGuard/app/src/main/java/jp/wakeguard/alarm/SystemSettingsActivity.java WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockSettingsActivity.java
           grep -n "layout_height=\"48dp\"\|textSize=\"28sp\"" WakeGuard/app/src/main/res/layout/notification_timer_running.xml
-          grep -n "ClockFaceActivity\|openClockFace\|ストップウォッチ" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockFaceActivity.java WakeGuard/app/src/main/AndroidManifest.xml
-          grep -n "private float dp\|0.48f\|versionName\|versionCode" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockFaceActivity.java WakeGuard/app/build.gradle.kts
+          grep -n "versionName\|versionCode" WakeGuard/app/build.gradle.kts
 
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.1.9-patched-source
+          name: WakeGuard-v1.2.0-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
             WakeGuard/app/src/main/res/layout/*.xml
             WakeGuard/app/src/main/res/values/wakeguard_v101.xml
+            WakeGuard/app/src/main/res/xml/*.xml
             WakeGuard/app/build.gradle.kts
 
       - name: Validate stable signing secrets
@@ -93,11 +95,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v1.1.9-stable.apk \
+            --out WakeGuard-v1.2.0-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.1.9-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.2.0-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.1.9-stable-apk
-          path: WakeGuard-v1.1.9-stable.apk
+          name: WakeGuard-v1.2.0-stable-apk
+          path: WakeGuard-v1.2.0-stable.apk
