@@ -2,7 +2,7 @@ from pathlib import Path
 import runpy, base64, gzip, subprocess, tempfile
 
 runpy.run_path("tools/patch_v129.py", run_name="__main__")
-encoded=Path("tools/v130_patch.b64").read_text(encoding="utf-8").strip()
+encoded="".join(Path(f"tools/v130_patch.part{i}").read_text(encoding="utf-8").strip() for i in range(1,7))
 patch_bytes=gzip.decompress(base64.b64decode(encoded))
 with tempfile.NamedTemporaryFile("wb",delete=False) as f:
     f.write(patch_bytes); patch_path=f.name
