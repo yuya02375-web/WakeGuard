@@ -23,6 +23,14 @@ s=s.replace('stopwatchStartPause.setText(running?"一時停止":"スタート");
 s=s.replace('stopwatchLapReset.setText(running?"ラップ":"リセット");','stopwatchLapReset.setText(I18n.tr(this,running?"ラップ":"リセット"));')
 clock.write_text(s,encoding="utf-8")
 
+# The ring-duration editor uses a custom Dialog window. Keep these references
+# fully-qualified so the generated source does not depend on extra imports.
+editor=Path("WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java")
+s=editor.read_text(encoding="utf-8")
+s=s.replace("Window w=d.getWindow()","android.view.Window w=d.getWindow()")
+s=s.replace("WindowManager.LayoutParams.FLAG_DIM_BEHIND","android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND")
+editor.write_text(s,encoding="utf-8")
+
 # Guard against newly introduced hard-coded Japanese in direct UI setters.
 java=Path("WakeGuard/app/src/main/java/jp/wakeguard/alarm")
 unsafe=re.compile(r'(?:setText|setHint)\([^\n]*"[^"\\]*[ぁ-んァ-ヶ一-龯]|Toast\.makeText\([^\n]*"[^"\\]*[ぁ-んァ-ヶ一-龯]|set(?:Title|Message|PositiveButton|NegativeButton)\("[^"\\]*[ぁ-んァ-ヶ一-龯]')
