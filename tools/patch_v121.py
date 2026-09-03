@@ -1,8 +1,9 @@
 from pathlib import Path
 import runpy, base64, gzip, subprocess, tempfile, re
 
-# Rebuild the verified v1.2.0 source first.
-runpy.run_path("tools/patch_v120.py", run_name="__main__")
+# Rebuild the exact verified v1.2.0 source first, including the final
+# Android-12-compatible compact timer-notification layout.
+runpy.run_path("tools/patch_v120_final.py", run_name="__main__")
 
 # Apply the v1.2.0 -> v1.2.1 app-module diff.
 parts=[]
