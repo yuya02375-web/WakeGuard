@@ -12,7 +12,17 @@ with tempfile.NamedTemporaryFile("wb", delete=False) as f:
     patch_path=f.name
 subprocess.run(["patch","-p1","-i",patch_path], cwd="WakeGuard/app", check=True)
 
-clock=Path("WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java").read_text(encoding="utf-8")
+# ClockActivity imports both android.content.* and android.text.*; fully qualify
+# ClipboardManager so javac does not see the deprecated android.text class too.
+clock_path=Path("WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java")
+s=clock_path.read_text(encoding="utf-8")
+s=s.replace(
+    "ClipboardManager cm=(ClipboardManager)getSystemService(CLIPBOARD_SERVICE)",
+    "android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE)"
+)
+clock_path.write_text(s,encoding="utf-8")
+
+clock=clock_path.read_text(encoding="utf-8")
 ui=Path("WakeGuard/app/src/main/java/jp/wakeguard/alarm/Ui.java").read_text(encoding="utf-8")
 i18n=Path("WakeGuard/app/src/main/java/jp/wakeguard/alarm/I18n.java").read_text(encoding="utf-8")
 gradle=Path("WakeGuard/app/build.gradle.kts").read_text(encoding="utf-8")
@@ -26,6 +36,8 @@ checks=[
 for text,needle in checks:
     if needle not in text:
         raise SystemExit(f"Missing v1.2.5 marker: {needle}")
+if "android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE)" not in clock:
+    raise SystemExit("ClipboardManager ambiguity fix missing")
 if 'versionCode = 44' not in gradle or 'versionName = "1.2.5"' not in gradle:
     raise SystemExit("WakeGuard v1.2.5 version bump missing")
 if 'stickyDividerLp=new LinearLayout.LayoutParams(-1,Ui.dp(this,1))' not in clock:
@@ -36,3 +48,4 @@ print("Fuzzy country suggestions: PASS")
 print("Region/diverse fallback candidates: PASS")
 print("Google browser fallback + clipboard return: PASS")
 print("Bottom-nav auto-size: PASS")
+print("ClipboardManager compile fix: PASS")
