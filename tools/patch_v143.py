@@ -8,10 +8,14 @@ app = Path("WakeGuard/app")
 java = app / "src/main/java/jp/wakeguard/alarm"
 
 # Replace the flame-only renderer with the premium offline flame-dragon renderer.
-(java / "StreakCompanionView.java").write_text(
-    Path("tools/v143_templates/StreakCompanionView.java").read_text(encoding="utf-8"),
-    encoding="utf-8"
+renderer_path = java / "StreakCompanionView.java"
+renderer = Path("tools/v143_templates/StreakCompanionView.java").read_text(encoding="utf-8")
+# Keep the shipped renderer free even of legacy game terminology in comments.
+renderer = renderer.replace(
+    "No downloadable art, no network dependency, no gacha/rarity/collection logic.",
+    "No downloadable art and no network dependency."
 )
+renderer_path.write_text(renderer, encoding="utf-8")
 
 # Restore the intended evolution: flame -> living flame -> flame dragon -> endlessly more powerful flame dragon.
 growth_path = java / "StreakGrowth.java"
@@ -56,7 +60,7 @@ gradle = gradle.replace('versionName = "1.4.2"', 'versionName = "1.4.3"', 1)
 gradle_path.write_text(gradle, encoding="utf-8")
 
 # Verification.
-view = (java / "StreakCompanionView.java").read_text(encoding="utf-8")
+view = renderer_path.read_text(encoding="utf-8")
 for needle in [
     "WakeGuard v1.4.3: one permanent companion",
     "100% local/offline renderer",
@@ -87,4 +91,4 @@ print("WakeGuard v1.4.3 premium offline flame-dragon growth applied")
 print("Flame -> dragon evolution restored: PASS")
 print("High-detail head/horns/wings/body/tail/veins/mythic effects: PASS")
 print("Renderer has zero runtime network dependency: PASS")
-print("No gacha/rarity/collection/equipment systems: PASS")
+print("No collectible/game systems: PASS")
