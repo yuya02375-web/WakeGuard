@@ -25,15 +25,16 @@ jobs:
           cat .wakeguard-parts/*.b64 | base64 --decode > WakeGuard-v0.5.0-source-fixed.zip
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
-      - name: Apply WakeGuard v1.2.4
+      - name: Apply WakeGuard v1.2.5
         run: |
-          python3 tools/patch_v124.py
-          grep -n "CANONICAL_LOCATION\|getExemplarLocationName\|countryAliases\|国名で検索" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
+          python3 tools/patch_v125.py
+          grep -n "guessCountryCodes\|regionCountryCodes\|fuzzyCityMatches\|Googleで国名を確認" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
+          grep -n "setAutoSizeTextTypeUniformWithConfiguration" WakeGuard/app/src/main/java/jp/wakeguard/alarm/Ui.java
           grep -n "versionName\|versionCode" WakeGuard/app/build.gradle.kts
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.2.4-patched-source-debug
+          name: WakeGuard-v1.2.5-patched-source-debug
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -46,5 +47,5 @@ jobs:
         run: gradle assembleDebug --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.2.4-debug-apk
+          name: WakeGuard-v1.2.5-debug-apk
           path: WakeGuard/app/build/outputs/apk/debug/app-debug.apk
