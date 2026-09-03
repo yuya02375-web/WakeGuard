@@ -31,18 +31,18 @@ jobs:
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
 
-      - name: Apply WakeGuard v1.1.6 timer + streak upgrade
+      - name: Apply WakeGuard v1.1.7 timer notification fix
         run: |
-          python3 tools/patch_v116.py
-          grep -n "REQ_TIMER_SOUND\|pickTimerSound\|音: 標準" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
-          grep -n "setOngoing(true)\|setChronometerCountDown" WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerReceiver.java
+          python3 tools/patch_v117.py
+          grep -n "REQ_TIMER_NOTIFICATION\|requestTimerNotificationPermissionIfNeeded\|refreshRunningTimerNotifications" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
+          grep -n "wakeguard_timer_running_v2\|IMPORTANCE_DEFAULT\|setOngoing(true)" WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerReceiver.java
           grep -n "LEGEND FLAME\|StreakFlameView" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StatsActivity.java WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakFlameView.java
           grep -n "versionName\|versionCode" WakeGuard/app/build.gradle.kts
 
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.1.6-patched-source
+          name: WakeGuard-v1.1.7-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -92,11 +92,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v1.1.6-stable.apk \
+            --out WakeGuard-v1.1.7-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.1.6-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.1.7-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.1.6-stable-apk
-          path: WakeGuard-v1.1.6-stable.apk
+          name: WakeGuard-v1.1.7-stable-apk
+          path: WakeGuard-v1.1.7-stable.apk
