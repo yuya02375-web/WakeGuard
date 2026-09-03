@@ -2,7 +2,7 @@ from pathlib import Path
 import runpy
 
 # Rebuild verified v1.3.0 first.
-runpy.run_path("tools/patch_v130.py", run_name="__main__")
+runpy.run_path("tools/patch_v130_base.py", run_name="__main__")
 
 app=Path("WakeGuard/app")
 java=app/"src/main/java/jp/wakeguard/alarm"
