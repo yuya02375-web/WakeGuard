@@ -31,10 +31,10 @@ jobs:
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
 
-      - name: Apply WakeGuard v1.2.1 alarm duration, clock UX and localization upgrade
+      - name: Apply WakeGuard v1.2.2 dual auto-stop, clock UX and localization upgrade
         run: |
-          python3 tools/patch_v121.py
-          grep -n "ringDurationSec\|鳴動時間" WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmStore.java WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
+          python3 tools/patch_v122.py
+          grep -n "ringDurationSec\|fullStopDurationSec\|自動停止" WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmStore.java WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
           grep -n "stickyWorld\|toggleWorldClockMode\|clock_face_analog" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
           grep -n "setAnalog(!analog)" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockFaceActivity.java
           grep -n "localeConfig" WakeGuard/app/src/main/AndroidManifest.xml
@@ -44,7 +44,7 @@ jobs:
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.2.1-patched-source
+          name: WakeGuard-v1.2.2-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -96,11 +96,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v1.2.1-stable.apk \
+            --out WakeGuard-v1.2.2-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.2.1-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.2.2-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.2.1-stable-apk
-          path: WakeGuard-v1.2.1-stable.apk
+          name: WakeGuard-v1.2.2-stable-apk
+          path: WakeGuard-v1.2.2-stable.apk
