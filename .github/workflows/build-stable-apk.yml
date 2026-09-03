@@ -31,17 +31,18 @@ jobs:
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
 
-      - name: Apply WakeGuard v1.2.3 world-clock layout hotfix
+      - name: Apply WakeGuard v1.2.4 country-aware world clock upgrade
         run: |
-          python3 tools/patch_v123.py
-          grep -n "stickyDividerLp\|stickyWorld\|toggleWorldClockMode" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
+          python3 tools/patch_v124.py
+          grep -n "CANONICAL_LOCATION\|getExemplarLocationName\|countryAliases\|国名で検索" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
+          grep -n "stickyDividerLp\|toggleWorldClockMode" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
           grep -n "ringDurationSec\|fullStopDurationSec\|自動停止" WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmStore.java WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
           grep -n "versionName\|versionCode" WakeGuard/app/build.gradle.kts
 
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.2.3-patched-source
+          name: WakeGuard-v1.2.4-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -93,11 +94,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v1.2.3-stable.apk \
+            --out WakeGuard-v1.2.4-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.2.3-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.2.4-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.2.3-stable-apk
-          path: WakeGuard-v1.2.3-stable.apk
+          name: WakeGuard-v1.2.4-stable-apk
+          path: WakeGuard-v1.2.4-stable.apk
