@@ -58,7 +58,8 @@ gradle_path.write_text(gradle, encoding="utf-8")
 # Verification.
 view = (java / "StreakCompanionView.java").read_text(encoding="utf-8")
 for needle in [
-    "premium offline flame dragon renderer",
+    "WakeGuard v1.4.3: one permanent companion",
+    "100% local/offline renderer",
     "drawLivingFireBase",
     "drawDragon(",
     "drawNeckAndHead",
