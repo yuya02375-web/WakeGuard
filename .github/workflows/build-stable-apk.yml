@@ -33,8 +33,9 @@ jobs:
 
       - name: Apply WakeGuard v1.1.9 clock and timer notification upgrade
         run: |
-          python3 tools/patch_v119_fix2.py
+          python3 tools/patch_v119_fix3.py
           grep -n "setCustomContentView\|timer_notification_chronometer" WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerReceiver.java WakeGuard/app/src/main/res/layout/notification_timer_running.xml
+          grep -n "layout_height=\"48dp\"\|textSize=\"28sp\"" WakeGuard/app/src/main/res/layout/notification_timer_running.xml
           grep -n "ClockFaceActivity\|openClockFace\|ストップウォッチ" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockFaceActivity.java WakeGuard/app/src/main/AndroidManifest.xml
           grep -n "private float dp\|0.48f\|versionName\|versionCode" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockFaceActivity.java WakeGuard/app/build.gradle.kts
 
