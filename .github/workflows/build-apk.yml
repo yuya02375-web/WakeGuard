@@ -25,16 +25,17 @@ jobs:
           cat .wakeguard-parts/*.b64 | base64 --decode > WakeGuard-v0.5.0-source-fixed.zip
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
-      - name: Apply WakeGuard v1.2.7
+      - name: Apply WakeGuard v1.2.8
         run: |
-          python3 tools/patch_v127.py
+          python3 tools/patch_v128.py
+          grep -n "fastSelectableZones\|countryTermsCache\|zonesByCountry\|45L\|convertView instanceof LinearLayout" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
           grep -n "CustomTabsIntent\|setInitialActivityHeightPx\|ACTION_PROCESS_TEXT\|use_clipboard" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
           grep -n "android.intent.action.PROCESS_TEXT\|android.intent.action.SEND" WakeGuard/app/src/main/AndroidManifest.xml
           grep -n "androidx.browser\|versionName\|versionCode" WakeGuard/app/build.gradle.kts
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.2.7-patched-source-debug
+          name: WakeGuard-v1.2.8-patched-source-debug
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -47,5 +48,5 @@ jobs:
         run: gradle assembleDebug --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.2.7-debug-apk
+          name: WakeGuard-v1.2.8-debug-apk
           path: WakeGuard/app/build/outputs/apk/debug/app-debug.apk
