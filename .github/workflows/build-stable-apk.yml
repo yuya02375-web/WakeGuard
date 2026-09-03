@@ -31,21 +31,20 @@ jobs:
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
 
-      - name: Apply WakeGuard v1.3.0 streak game and timer ringing
+      - name: Apply WakeGuard v1.4.0 infinite growth companion
         run: |
-          python3 tools/patch_v130.py
-          grep -n "EMBERKIN\|AURELION DRAGON\|gachaTen\|trainEquipped" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakGame.java
-          grep -n "キャラガチャ\|装飾コレクション\|育てる" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StatsActivity.java
+          python3 tools/patch_v140.py
+          grep -n "StreakGrowth.onWakeSuccess\|setGrowth" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakTracker.java WakeGuard/app/src/main/java/jp/wakeguard/alarm/StatsActivity.java
+          grep -n "drawDragon\|drawHorns\|drawRunes\|uncapped procedural growth" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakCompanionView.java
+          grep -n "Long.MAX_VALUE\|visualPower" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakGrowth.java
+          ! grep -q "showGacha\|showCharacters\|showDecorations\|キャラガチャ\|ガチャチケット\|エッセンス" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StatsActivity.java
           grep -n "USAGE_ALARM\|setLooping(true)\|ACTION_STOP" WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerRingService.java
-          grep -n "TimerRingService.start" WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerReceiver.java
-          grep -n "StreakGame.onWakeSuccess" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakTracker.java
-          grep -n "TimerRingService\|foregroundServiceType=\"mediaPlayback\"" WakeGuard/app/src/main/AndroidManifest.xml
           grep -n "versionName\|versionCode" WakeGuard/app/build.gradle.kts
 
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.3.0-patched-source
+          name: WakeGuard-v1.4.0-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -97,11 +96,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v1.3.0-stable.apk \
+            --out WakeGuard-v1.4.0-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.3.0-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.4.0-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.3.0-stable-apk
-          path: WakeGuard-v1.3.0-stable.apk
+          name: WakeGuard-v1.4.0-stable-apk
+          path: WakeGuard-v1.4.0-stable.apk
