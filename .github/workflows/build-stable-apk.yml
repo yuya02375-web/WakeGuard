@@ -31,9 +31,10 @@ jobs:
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
 
-      - name: Apply WakeGuard v1.4.3 premium offline flame dragon
+      - name: Apply WakeGuard v1.4.4 timer UX fix
         run: |
-          python3 tools/patch_v143.py
+          python3 tools/patch_v144.py
+          grep -n "＋1秒\|normalizeQuickDurationFields\|installQuickDurationNormalization\|new PopupWindow\|addTimerMenuItem" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
           grep -n "StreakGrowth.onWakeSuccess\|setGrowth" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakTracker.java WakeGuard/app/src/main/java/jp/wakeguard/alarm/StatsActivity.java
           grep -n "drawDragon\|drawNeckAndHead\|drawWings\|drawWingVeins\|drawTail\|drawMythicDetails" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakCompanionView.java
           grep -n "Long.MAX_VALUE\|visualPower\|無限炎竜" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakGrowth.java
@@ -45,7 +46,7 @@ jobs:
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.4.3-patched-source
+          name: WakeGuard-v1.4.4-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -97,11 +98,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v1.4.3-stable.apk \
+            --out WakeGuard-v1.4.4-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.4.3-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.4.4-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.4.3-stable-apk
-          path: WakeGuard-v1.4.3-stable.apk
+          name: WakeGuard-v1.4.4-stable-apk
+          path: WakeGuard-v1.4.4-stable.apk
