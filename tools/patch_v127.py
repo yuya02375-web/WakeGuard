@@ -12,11 +12,24 @@ with tempfile.NamedTemporaryFile("wb", delete=False) as f:
     patch_path = f.name
 subprocess.run(["patch", "-p1", "-i", patch_path], cwd="WakeGuard/app", check=True)
 
+# v1.2.7 uses AndroidX Browser for Partial Custom Tabs.
+# The original project explicitly disabled AndroidX, so enable it for this build.
+props_path = Path("WakeGuard/gradle.properties")
+props = props_path.read_text(encoding="utf-8") if props_path.exists() else ""
+if "android.useAndroidX=false" in props:
+    props = props.replace("android.useAndroidX=false", "android.useAndroidX=true")
+elif "android.useAndroidX=true" not in props:
+    if props and not props.endswith("\n"):
+        props += "\n"
+    props += "android.useAndroidX=true\n"
+props_path.write_text(props, encoding="utf-8")
+
 app = Path("WakeGuard/app")
 clock = (app/"src/main/java/jp/wakeguard/alarm/ClockActivity.java").read_text(encoding="utf-8")
 i18n = (app/"src/main/java/jp/wakeguard/alarm/I18n.java").read_text(encoding="utf-8")
 manifest = (app/"src/main/AndroidManifest.xml").read_text(encoding="utf-8")
 gradle = (app/"build.gradle.kts").read_text(encoding="utf-8")
+props = props_path.read_text(encoding="utf-8")
 
 checks = [
     (clock, "CustomTabsIntent"),
@@ -31,6 +44,7 @@ checks = [
     (manifest, "android.intent.action.SEND"),
     (i18n, "GoogleはWakeGuardの上に開きます"),
     (gradle, 'implementation("androidx.browser:browser:1.10.0")'),
+    (props, "android.useAndroidX=true"),
 ]
 for text, needle in checks:
     if needle not in text:
@@ -46,3 +60,4 @@ print("Copy -> one-tap return: PASS")
 print("PROCESS_TEXT + share import: PASS")
 print("Hiragana/Katakana fuzzy normalization: PASS")
 print("Async index build + 90ms debounce: PASS")
+print("AndroidX Browser build flag: PASS")
