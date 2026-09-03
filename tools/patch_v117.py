@@ -81,7 +81,7 @@ p.write_text(s,encoding="utf-8")
 
 p=root/"app/build.gradle.kts"
 s=p.read_text(encoding="utf-8")
-s=re.sub(r'versionCode = \\d+','versionCode = 36',s)
+s=re.sub(r'versionCode = \d+','versionCode = 36',s)
 s=re.sub(r'versionName = "[^"]+"','versionName = "1.1.7"',s)
 p.write_text(s,encoding="utf-8")
 
