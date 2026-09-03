@@ -31,13 +31,14 @@ jobs:
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
 
-      - name: Apply WakeGuard v1.2.8 fast world-clock search
+      - name: Apply WakeGuard v1.2.9 hybrid offline-first world-clock search
         run: |
-          python3 tools/patch_v128.py
+          python3 tools/patch_v129.py
+          grep -n "hasValidatedInternet\|resolveOnlineCountryHints\|onlineHintCache\|pendingOnlineSearch\|350L" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
           grep -n "fastSelectableZones\|countryTermsCache\|zonesByCountry\|45L\|convertView instanceof LinearLayout" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
           grep -n "CustomTabsIntent\|setInitialActivityHeightPx\|ACTION_PROCESS_TEXT\|use_clipboard" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
-          grep -n "GoogleはWakeGuardの上に開きます\|コピーした文字を使う" WakeGuard/app/src/main/java/jp/wakeguard/alarm/I18n.java
-          grep -n "android.intent.action.PROCESS_TEXT\|android.intent.action.SEND" WakeGuard/app/src/main/AndroidManifest.xml
+          grep -n "オフライン検索を常に使い\|GoogleはWakeGuardの上に開きます" WakeGuard/app/src/main/java/jp/wakeguard/alarm/I18n.java
+          grep -n "ACCESS_NETWORK_STATE\|android.intent.action.PROCESS_TEXT\|android.intent.action.SEND" WakeGuard/app/src/main/AndroidManifest.xml
           grep -n "androidx.browser\|versionName\|versionCode" WakeGuard/app/build.gradle.kts
           grep -n "stickyDividerLp\|toggleWorldClockMode" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
           grep -n "ringDurationSec\|fullStopDurationSec\|自動停止" WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmStore.java WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
@@ -45,7 +46,7 @@ jobs:
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.2.8-patched-source
+          name: WakeGuard-v1.2.9-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -97,11 +98,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v1.2.8-stable.apk \
+            --out WakeGuard-v1.2.9-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.2.8-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.2.9-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.2.8-stable-apk
-          path: WakeGuard-v1.2.8-stable.apk
+          name: WakeGuard-v1.2.9-stable-apk
+          path: WakeGuard-v1.2.9-stable.apk
