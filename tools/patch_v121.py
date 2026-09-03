@@ -15,6 +15,14 @@ with tempfile.NamedTemporaryFile("wb", delete=False) as f:
     patch_path=f.name
 subprocess.run(["patch","-p1","-i",patch_path], cwd="WakeGuard/app", check=True)
 
+# Final localization cleanup for stopwatch strings that are updated dynamically.
+clock=Path("WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java")
+s=clock.read_text(encoding="utf-8")
+s=s.replace('lapList.setText(b.length()==0 ? "ラップはまだありません" : b.toString());','lapList.setText(b.length()==0 ? I18n.tr(this,"ラップはまだありません") : b.toString());')
+s=s.replace('stopwatchStartPause.setText(running?"一時停止":"スタート");','stopwatchStartPause.setText(I18n.tr(this,running?"一時停止":"スタート"));')
+s=s.replace('stopwatchLapReset.setText(running?"ラップ":"リセット");','stopwatchLapReset.setText(I18n.tr(this,running?"ラップ":"リセット"));')
+clock.write_text(s,encoding="utf-8")
+
 # Guard against newly introduced hard-coded Japanese in direct UI setters.
 java=Path("WakeGuard/app/src/main/java/jp/wakeguard/alarm")
 unsafe=re.compile(r'(?:setText|setHint)\([^\n]*"[^"\\]*[ぁ-んァ-ヶ一-龯]|Toast\.makeText\([^\n]*"[^"\\]*[ぁ-んァ-ヶ一-龯]|set(?:Title|Message|PositiveButton|NegativeButton)\("[^"\\]*[ぁ-んァ-ヶ一-龯]')
