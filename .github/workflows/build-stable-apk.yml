@@ -31,12 +31,12 @@ jobs:
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
 
-      - name: Apply WakeGuard v1.4.1 living flame growth
+      - name: Apply WakeGuard v1.4.2 premium living flame
         run: |
-          python3 tools/patch_v141.py
+          python3 tools/patch_v142.py
           grep -n "StreakGrowth.onWakeSuccess\|setGrowth" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakTracker.java WakeGuard/app/src/main/java/jp/wakeguard/alarm/StatsActivity.java
-          grep -n "drawLivingFlame\|drawFlameLayer\|drawPeripheralTongues\|drawSideStreams\|drawFlameCrown\|drawCorePulse" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakCompanionView.java
-          ! grep -q "drawDragon\|drawHead\|drawHorns\|drawWings" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakCompanionView.java
+          grep -n "drawLivingFire\|buildPremiumBody\|drawSideCurrents\|drawCrown\|drawInternalFlow\|drawEdgeLicks" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakCompanionView.java
+          ! grep -q "drawDragon\|drawHead\|drawHorns\|drawWings\|gacha\|rarity" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakCompanionView.java
           grep -n "Long.MAX_VALUE\|visualPower\|無限炎" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakGrowth.java
           ! grep -q "showGacha\|showCharacters\|showDecorations\|キャラガチャ\|ガチャチケット\|エッセンス" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StatsActivity.java
           grep -n "USAGE_ALARM\|setLooping(true)\|ACTION_STOP" WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerRingService.java
@@ -45,7 +45,7 @@ jobs:
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.4.1-patched-source
+          name: WakeGuard-v1.4.2-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -97,11 +97,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v1.4.1-stable.apk \
+            --out WakeGuard-v1.4.2-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.4.1-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.4.2-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.4.1-stable-apk
-          path: WakeGuard-v1.4.1-stable.apk
+          name: WakeGuard-v1.4.2-stable-apk
+          path: WakeGuard-v1.4.2-stable.apk
