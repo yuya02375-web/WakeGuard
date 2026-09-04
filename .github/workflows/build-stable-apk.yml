@@ -31,22 +31,22 @@ jobs:
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
 
-      - name: Apply WakeGuard v1.4.5 realistic flame shader
+      - name: Apply WakeGuard v1.4.6 realistic growth and streak protection
         run: |
-          python3 tools/patch_v145.py
-          grep -n "＋1秒\|normalizeQuickDurationFields\|installQuickDurationNormalization\|new PopupWindow\|addTimerMenuItem" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
-          grep -n "extends GLSurfaceView\|setEGLContextClientVersion(2)\|float fbm(vec2 p)\|float plume=0.0\|sparkLayer\|GLUtils.texImage2D" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakCompanionView.java
-          grep -n "companion.onResume()\|companion.onPause()\|端末内のシェーダー" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StatsActivity.java
-          grep -n "Long.MAX_VALUE\|visualPower\|無限炎竜" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakGrowth.java
+          python3 tools/patch_v146.py
+          grep -n "＋1秒\|normalizeQuickDurationFields\|new PopupWindow" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
+          grep -n "float n3=fbm\|float gust=\|float smoke=\|color=bg+(color-bg)*pulse\|infinite = Math.max(0f, infinite)" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakCompanionView.java
+          grep -n "MONTHLY_DAYS=2\|MAX_DAYS=3\|protectDaysIfPossible\|bonus_milestone" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakProtection.java
+          grep -n "coverGap\|StreakProtection.protectDaysIfPossible\|StreakProtection.onSuccessfulWake" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakTracker.java
+          grep -n "ストリーク保護\|protectionAuto\|PROTECTED_COLOR\|◇" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StatsActivity.java
           ! grep -q "HttpURLConnection\|URLConnection\|java.net\|https://\|http://" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakCompanionView.java
           ! grep -q "showGacha\|showCharacters\|showDecorations\|キャラガチャ\|ガチャチケット\|エッセンス" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StatsActivity.java
-          grep -n "USAGE_ALARM\|setLooping(true)\|ACTION_STOP" WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerRingService.java
           grep -n "versionName\|versionCode" WakeGuard/app/build.gradle.kts
 
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.4.5-patched-source
+          name: WakeGuard-v1.4.6-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -98,11 +98,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v1.4.5-stable.apk \
+            --out WakeGuard-v1.4.6-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.4.5-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.4.6-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.4.5-stable-apk
-          path: WakeGuard-v1.4.5-stable.apk
+          name: WakeGuard-v1.4.6-stable-apk
+          path: WakeGuard-v1.4.6-stable.apk
