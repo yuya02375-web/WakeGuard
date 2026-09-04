@@ -33,12 +33,12 @@ jobs:
 
       - name: Apply WakeGuard v1.4.8 timer video playback
         run: |
-          python3 tools/patch_v148.py
+          python3 tools/patch_v148_fix.py
           grep -n "−1秒\|＋1秒\|−10秒\|＋10秒\|−30秒\|＋30秒\|−5分\|＋5分\|−1時間\|＋1時間" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
           grep -n "REQ_TIMER_VIDEO\|pickTimerMedia\|動画:" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
           grep -n "ACTION_SILENCE\|ACTION_RESUME\|setFullScreenIntent" WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerRingService.java
           grep -n "VideoView\|setVideoURI\|USAGE_ALARM\|setLooping" WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerVideoActivity.java
-          grep -n "TimerVideoActivity\|openCompleted\|setFullScreenIntent" WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerReceiver.java
+          grep -n "TimerVideoActivity\|openCompleted\|setFullScreenIntent\|endsWith(\".mp4\")" WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerReceiver.java
           grep -n "TimerVideoActivity" WakeGuard/app/src/main/AndroidManifest.xml
           grep -n "タイマーの音・動画\|動画を選択\|動画を再生できません" WakeGuard/app/src/main/java/jp/wakeguard/alarm/I18n.java
           grep -n "float n3=fbm\|float gust=\|float smoke=\|color=bg+(color-bg)*pulse\|infinite = Math.max(0f, infinite)" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakCompanionView.java
