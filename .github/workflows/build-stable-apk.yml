@@ -38,7 +38,7 @@ jobs:
           test -s /tmp/cities15000.txt
           grep -F $'\tSeattle\t' /tmp/cities15000.txt | head -1
 
-      - name: Apply WakeGuard v1.6.2 readable analog clock
+      - name: Apply WakeGuard v1.6.3 lock-screen video fix
         run: |
           python3 tools/patch_v156_runner.py
           python3 tools/patch_v157.py
@@ -47,8 +47,9 @@ jobs:
           python3 tools/patch_v160.py
           python3 tools/patch_v161.py
           python3 tools/patch_v162.py
-          grep -n 'versionName = "1.6.2"' WakeGuard/app/build.gradle.kts
-          grep -n 'versionCode = 73' WakeGuard/app/build.gradle.kts
+          python3 tools/patch_v163.py
+          grep -n 'versionName = "1.6.3"' WakeGuard/app/build.gradle.kts
+          grep -n 'versionCode = 74' WakeGuard/app/build.gradle.kts
           test "$(grep -R 'hide_from_picker' WakeGuard/app/src/main/res/xml/*_widget_info.xml | wc -l)" -eq 39
           grep -n 'WidgetPinResultReceiver' WakeGuard/app/src/main/AndroidManifest.xml
           grep -n 'showSizePicker' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockSettingsActivity.java
@@ -60,11 +61,16 @@ jobs:
           test "$(find WakeGuard/app/src/main/res/xml -name '*_widget_info.xml' | wc -l)" -eq 52
           test -s WakeGuard/app/src/main/assets/world_cities_gz.dat
           test -s WakeGuard/app/src/main/assets/GEONAMES_ATTRIBUTION.txt
+          test -s WakeGuard/app/src/main/res/layout/view_alarm_video_texture.xml
+          grep -q 'surface_type="texture_view"' WakeGuard/app/src/main/res/layout/view_alarm_video_texture.xml
+          grep -q 'activityStarted=true' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmActivity.java
+          grep -q 'onStop()' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmActivity.java
+          grep -q 'promptFullScreenVideoPermissionIfNeeded' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java
 
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.6.2-patched-source
+          name: WakeGuard-v1.6.3-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -118,11 +124,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v1.6.2-stable.apk \
+            --out WakeGuard-v1.6.3-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.6.2-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.6.3-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.6.2-stable-apk
-          path: WakeGuard-v1.6.2-stable.apk
+          name: WakeGuard-v1.6.3-stable-apk
+          path: WakeGuard-v1.6.3-stable.apk
