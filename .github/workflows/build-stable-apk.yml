@@ -31,22 +31,29 @@ jobs:
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
 
-      - name: Apply WakeGuard v1.5.6 expanded widget suite
+      - name: Download GeoNames world city catalog
+        run: |
+          curl -fsSL --retry 4 --retry-delay 2 https://download.geonames.org/export/dump/cities15000.zip -o /tmp/cities15000.zip
+          unzip -p /tmp/cities15000.zip cities15000.txt > /tmp/cities15000.txt
+          test -s /tmp/cities15000.txt
+          grep -F $'\tSeattle\t' /tmp/cities15000.txt | head -1
+
+      - name: Apply WakeGuard v1.5.7 world city aliases
         run: |
           python3 tools/patch_v156_runner.py
-          grep -n 'versionName = "1.5.6"' WakeGuard/app/build.gradle.kts
-          grep -n 'versionCode = 67' WakeGuard/app/build.gradle.kts
-          grep -n 'class WidgetSuite' WakeGuard/app/src/main/java/jp/wakeguard/alarm/WidgetSuite.java
-          grep -n 'class LocalClockWidgetProvider' WakeGuard/app/src/main/java/jp/wakeguard/alarm/LocalClockWidgetProvider.java
-          grep -n 'class TimerWidgetProvider' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerWidgetProvider.java
-          grep -n 'class StopwatchWidgetProvider' WakeGuard/app/src/main/java/jp/wakeguard/alarm/StopwatchWidgetProvider.java
-          grep -n 'minResizeWidth="40dp"' WakeGuard/app/src/main/res/xml/world_clock_widget_info.xml
-          grep -n 'widget_analog_hour' WakeGuard/app/src/main/res/layout/widget_world_clock_analog_square.xml
+          python3 tools/patch_v157.py
+          grep -n 'versionName = "1.5.7"' WakeGuard/app/build.gradle.kts
+          grep -n 'versionCode = 68' WakeGuard/app/build.gradle.kts
+          grep -n 'class WorldCityCatalog' WakeGuard/app/src/main/java/jp/wakeguard/alarm/WorldCityCatalog.java
+          grep -n 'WorldCityCatalog.search(this,q,52)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
+          grep -n 'KEY_LABEL' WakeGuard/app/src/main/java/jp/wakeguard/alarm/WorldClockWidgetProvider.java
+          test -s WakeGuard/app/src/main/assets/world_cities_gz.dat
+          test -s WakeGuard/app/src/main/assets/GEONAMES_ATTRIBUTION.txt
 
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.5.6-patched-source
+          name: WakeGuard-v1.5.7-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -54,6 +61,7 @@ jobs:
             WakeGuard/app/src/main/res/drawable/*.xml
             WakeGuard/app/src/main/res/values/*.xml
             WakeGuard/app/src/main/res/xml/*.xml
+            WakeGuard/app/src/main/assets/*
             WakeGuard/app/build.gradle.kts
 
       - name: Validate stable signing secrets
@@ -99,11 +107,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v1.5.6-stable.apk \
+            --out WakeGuard-v1.5.7-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.5.6-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.5.7-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.5.6-stable-apk
-          path: WakeGuard-v1.5.6-stable.apk
+          name: WakeGuard-v1.5.7-stable-apk
+          path: WakeGuard-v1.5.7-stable.apk
