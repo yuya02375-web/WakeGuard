@@ -38,22 +38,23 @@ jobs:
           test -s /tmp/cities15000.txt
           grep -F $'\tSeattle\t' /tmp/cities15000.txt | head -1
 
-      - name: Apply WakeGuard v1.5.7 world city aliases
+      - name: Apply WakeGuard v1.5.8 widget city picker fix
         run: |
           python3 tools/patch_v156_runner.py
           python3 tools/patch_v157.py
-          grep -n 'versionName = "1.5.7"' WakeGuard/app/build.gradle.kts
-          grep -n 'versionCode = 68' WakeGuard/app/build.gradle.kts
-          grep -n 'class WorldCityCatalog' WakeGuard/app/src/main/java/jp/wakeguard/alarm/WorldCityCatalog.java
-          grep -n 'WorldCityCatalog.search(this,q,52)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
-          grep -n 'KEY_LABEL' WakeGuard/app/src/main/java/jp/wakeguard/alarm/WorldClockWidgetProvider.java
+          python3 tools/patch_v158.py
+          grep -n 'versionName = "1.5.8"' WakeGuard/app/build.gradle.kts
+          grep -n 'versionCode = 69' WakeGuard/app/build.gradle.kts
+          grep -n 'おすすめのみ表示中' WakeGuard/app/src/main/java/jp/wakeguard/alarm/WorldClockWidgetConfigActivity.java
+          grep -n 'シアトル' WakeGuard/app/src/main/java/jp/wakeguard/alarm/WorldClockWidgetConfigActivity.java
+          grep -n 'list.setSelection(0)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/WorldClockWidgetConfigActivity.java
           test -s WakeGuard/app/src/main/assets/world_cities_gz.dat
           test -s WakeGuard/app/src/main/assets/GEONAMES_ATTRIBUTION.txt
 
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.5.7-patched-source
+          name: WakeGuard-v1.5.8-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -107,11 +108,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v1.5.7-stable.apk \
+            --out WakeGuard-v1.5.8-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.5.7-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.5.8-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.5.7-stable-apk
-          path: WakeGuard-v1.5.7-stable.apk
+          name: WakeGuard-v1.5.8-stable-apk
+          path: WakeGuard-v1.5.8-stable.apk
