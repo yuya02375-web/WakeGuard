@@ -33,7 +33,7 @@ jobs:
 
       - name: Apply WakeGuard v1.5.6 expanded widget suite
         run: |
-          python3 tools/patch_v156.py
+          python3 tools/patch_v156_runner.py
           grep -n 'versionName = "1.5.6"' WakeGuard/app/build.gradle.kts
           grep -n 'versionCode = 67' WakeGuard/app/build.gradle.kts
           grep -n 'class WidgetSuite' WakeGuard/app/src/main/java/jp/wakeguard/alarm/WidgetSuite.java
