@@ -31,22 +31,22 @@ jobs:
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
 
-      - name: Apply WakeGuard v1.5.4 home and lock-screen widgets
+      - name: Apply WakeGuard v1.5.5 responsive analog/digital widgets
         run: |
-          python3 tools/patch_v154.py
-          grep -n 'class WorldClockWidgetProvider' WakeGuard/app/src/main/java/jp/wakeguard/alarm/WorldClockWidgetProvider.java
-          grep -n 'class WorldClockWidgetConfigActivity' WakeGuard/app/src/main/java/jp/wakeguard/alarm/WorldClockWidgetConfigActivity.java
-          grep -n 'class NextAlarmWidgetProvider' WakeGuard/app/src/main/java/jp/wakeguard/alarm/NextAlarmWidgetProvider.java
-          grep -n 'home_screen|keyguard' WakeGuard/app/src/main/res/xml/world_clock_widget_info.xml
-          grep -n 'setTimeZone' WakeGuard/app/src/main/java/jp/wakeguard/alarm/WorldClockWidgetProvider.java
-          grep -n 'requestPinAppWidget' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockSettingsActivity.java
-          grep -n 'versionName = "1.5.4"' WakeGuard/app/build.gradle.kts
-          grep -n 'versionCode = 65' WakeGuard/app/build.gradle.kts
+          python3 tools/patch_v155.py
+          grep -n 'widget_world_clock_analog_square' WakeGuard/app/src/main/java/jp/wakeguard/alarm/WorldClockWidgetProvider.java
+          grep -n 'OPTION_APPWIDGET_MIN_WIDTH' WakeGuard/app/src/main/java/jp/wakeguard/alarm/WorldClockWidgetProvider.java
+          grep -n 'selectedStyle="analog"' WakeGuard/app/src/main/java/jp/wakeguard/alarm/WorldClockWidgetConfigActivity.java
+          grep -n '<AnalogClock' WakeGuard/app/src/main/res/layout/widget_world_clock_analog_square.xml
+          grep -n 'minResizeWidth="60dp"' WakeGuard/app/src/main/res/xml/world_clock_widget_info.xml
+          grep -n 'widget_next_alarm_tall' WakeGuard/app/src/main/java/jp/wakeguard/alarm/NextAlarmWidgetProvider.java
+          grep -n 'versionName = "1.5.5"' WakeGuard/app/build.gradle.kts
+          grep -n 'versionCode = 66' WakeGuard/app/build.gradle.kts
 
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.5.4-patched-source
+          name: WakeGuard-v1.5.5-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -99,11 +99,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v1.5.4-stable.apk \
+            --out WakeGuard-v1.5.5-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.5.4-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.5.5-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.5.4-stable-apk
-          path: WakeGuard-v1.5.4-stable.apk
+          name: WakeGuard-v1.5.5-stable-apk
+          path: WakeGuard-v1.5.5-stable.apk
