@@ -31,30 +31,20 @@ jobs:
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
 
-      - name: Apply WakeGuard v1.4.9 alarm and timer video playback
+      - name: Apply WakeGuard v1.5.0 dismiss methods and vibration off
         run: |
-          python3 tools/patch_v149.py
-          grep -n "−1秒\|＋1秒\|−10秒\|＋10秒\|−30秒\|＋30秒\|−5分\|＋5分\|−1時間\|＋1時間" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
-          grep -n "REQ_TIMER_VIDEO\|pickTimerMedia\|動画:" WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
-          grep -n "ACTION_SILENCE\|ACTION_RESUME\|setFullScreenIntent" WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerRingService.java
-          grep -n "VideoView\|setVideoURI\|USAGE_ALARM\|setLooping" WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerVideoActivity.java
-          grep -n "TimerVideoActivity\|openCompleted\|setFullScreenIntent\|endsWith(\".mp4\")" WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerReceiver.java
-          grep -n "REQ_VIDEO\|pickMedia\|useVideo\|アラームの音・動画" WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java
-          grep -n "ACTION_VIDEO_READY\|ACTION_VIDEO_FALLBACK\|isActiveVideo\|startVideoFallbackAudio" WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
-          grep -n "VideoView\|startAlarmVideo\|syncVideoState\|USAGE_ALARM" WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmActivity.java
-          grep -n "アラームの音・動画\|タイマーの音・動画\|動画を選択\|この動画は読み込めません" WakeGuard/app/src/main/java/jp/wakeguard/alarm/I18n.java
-          grep -n "float n3=fbm\|float gust=\|float smoke=\|color=bg+(color-bg)*pulse\|infinite = Math.max(0f, infinite)" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakCompanionView.java
-          grep -n "MONTHLY_DAYS=2\|MAX_DAYS=3\|protectDaysIfPossible\|bonus_milestone" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakProtection.java
-          grep -n "coverGap\|StreakProtection.protectDaysIfPossible\|StreakProtection.onSuccessfulWake" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakTracker.java
-          grep -n "ストリーク保護\|protectionAuto\|PROTECTED_COLOR\|◇" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StatsActivity.java
-          ! grep -q "HttpURLConnection\|URLConnection\|java.net\|https://\|http://" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakCompanionView.java
-          ! grep -q "showGacha\|showCharacters\|showDecorations\|キャラガチャ\|ガチャチケット\|エッセンス" WakeGuard/app/src/main/java/jp/wakeguard/alarm/StatsActivity.java
-          grep -n "versionName\|versionCode" WakeGuard/app/build.gradle.kts
+          python3 tools/patch_v150.py
+          grep -n 'MISSION_KEYS={"NONE","STEPS","MATH","TAP","CODE","SHAKE","MEMORY","TYPE","HOLD","SWIPE","ORDER","REVERSE","RANDOM"}' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java
+          grep -n 'String\[\]modes={I18n.tr(this,"オフ"),I18n.tr(this,"不規則"),I18n.tr(this,"強い連続パルス")}' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java
+          grep -n 'case "NONE"\|case "SWIPE"\|case "ORDER"\|case "REVERSE"' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmProfiles.java
+          grep -n 'newReverse\|buildOrderRound\|swipeStartX' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmActivity.java
+          grep -n '"OFF".equals(mode)\|そのまま停止できます\|スワイプ .*回で解除\|順番タップ .*回で解除\|逆順入力 .*問で解除' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
+          grep -n 'versionName\|versionCode' WakeGuard/app/build.gradle.kts
 
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.4.9-patched-source
+          name: WakeGuard-v1.5.0-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -106,11 +96,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v1.4.9-stable.apk \
+            --out WakeGuard-v1.5.0-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.4.9-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.5.0-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.4.9-stable-apk
-          path: WakeGuard-v1.4.9-stable.apk
+          name: WakeGuard-v1.5.0-stable-apk
+          path: WakeGuard-v1.5.0-stable.apk
