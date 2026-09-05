@@ -31,20 +31,21 @@ jobs:
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
 
-      - name: Apply WakeGuard v1.5.0 dismiss methods and vibration off
+      - name: Apply WakeGuard v1.5.1 video and direct-stop fixes
         run: |
-          python3 tools/patch_v150.py
-          grep -n 'MISSION_KEYS={"NONE","STEPS","MATH","TAP","CODE","SHAKE","MEMORY","TYPE","HOLD","SWIPE","ORDER","REVERSE","RANDOM"}' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java
-          grep -n 'String\[\]modes={I18n.tr(this,"オフ"),I18n.tr(this,"不規則"),I18n.tr(this,"強い連続パルス")}' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java
-          grep -n 'case "NONE"\|case "SWIPE"\|case "ORDER"\|case "REVERSE"' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmProfiles.java
-          grep -n 'newReverse\|buildOrderRound\|swipeStartX' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmActivity.java
-          grep -n '"OFF".equals(mode)\|そのまま停止できます\|スワイプ .*回で解除\|順番タップ .*回で解除\|逆順入力 .*問で解除' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
-          grep -n 'versionName\|versionCode' WakeGuard/app/build.gradle.kts
+          python3 tools/patch_v151.py
+          grep -n 'media3-exoplayer:1.11.0' WakeGuard/app/build.gradle.kts
+          grep -n 'media3-ui:1.11.0' WakeGuard/app/build.gradle.kts
+          grep -n 'alarmVideoView=new androidx.media3.ui.PlayerView' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmActivity.java
+          grep -n 'RESIZE_MODE_ZOOM' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmActivity.java
+          grep -n '"NONE".equals(type).*stop.setVisibility(View.VISIBLE).*stop.setEnabled(true)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmActivity.java
+          grep -n 'versionName = "1.5.1"' WakeGuard/app/build.gradle.kts
+          grep -n 'versionCode = 62' WakeGuard/app/build.gradle.kts
 
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.5.0-patched-source
+          name: WakeGuard-v1.5.1-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -96,11 +97,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v1.5.0-stable.apk \
+            --out WakeGuard-v1.5.1-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.5.0-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.5.1-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.5.0-stable-apk
-          path: WakeGuard-v1.5.0-stable.apk
+          name: WakeGuard-v1.5.1-stable-apk
+          path: WakeGuard-v1.5.1-stable.apk
