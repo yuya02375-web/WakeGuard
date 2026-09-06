@@ -38,7 +38,7 @@ jobs:
           test -s /tmp/cities15000.txt
           grep -F $'\tSeattle\t' /tmp/cities15000.txt | head -1
 
-      - name: Apply WakeGuard v1.6.8 visible timer video fix
+      - name: Apply WakeGuard v1.6.9 timer subtitle fix
         run: |
           python3 tools/patch_v156_runner.py
           python3 tools/patch_v157.py
@@ -53,52 +53,23 @@ jobs:
           python3 tools/patch_v166.py
           python3 tools/patch_v167.py
           python3 tools/patch_v168.py
-          grep -n 'versionName = "1.6.8"' WakeGuard/app/build.gradle.kts
-          grep -n 'versionCode = 79' WakeGuard/app/build.gradle.kts
-          test "$(grep -R 'hide_from_picker' WakeGuard/app/src/main/res/xml/*_widget_info.xml | wc -l)" -eq 39
-          grep -n 'WidgetPinResultReceiver' WakeGuard/app/src/main/AndroidManifest.xml
-          grep -n 'showSizePicker' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockSettingsActivity.java
-          grep -n 'pinConfiguredWorld' WakeGuard/app/src/main/java/jp/wakeguard/alarm/WorldClockWidgetConfigActivity.java
-          grep -q 'M130.70,43.37' WakeGuard/app/src/main/res/drawable/widget_analog_dial.xml
-          grep -q 'M104.27,33.61' WakeGuard/app/src/main/res/drawable/widget_analog_dial.xml
-          ! grep -q 'android:text="12"' WakeGuard/app/src/main/res/layout/widget_world_clock_analog_square.xml
-          test -s WakeGuard/app/src/main/java/jp/wakeguard/alarm/WidgetPinResultReceiver.java
-          test "$(find WakeGuard/app/src/main/res/xml -name '*_widget_info.xml' | wc -l)" -eq 52
-          test -s WakeGuard/app/src/main/assets/world_cities_gz.dat
-          test -s WakeGuard/app/src/main/assets/GEONAMES_ATTRIBUTION.txt
+          python3 tools/patch_v169.py
+          grep -n 'versionName = "1.6.9"' WakeGuard/app/build.gradle.kts
+          grep -n 'versionCode = 80' WakeGuard/app/build.gradle.kts
+          grep -q 'inflate(R.layout.view_alarm_video_texture' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerVideoActivity.java
+          grep -q 'getSubtitleView()' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerVideoActivity.java
+          grep -q 'setApplyEmbeddedStyles(true)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerVideoActivity.java
+          grep -q 'TRACK_TYPE_TEXT,false' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerVideoActivity.java
+          grep -q 'Gravity.TOP|Gravity.END' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerVideoActivity.java
+          grep -q 'showTimerVideoIfVisible' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
+          grep -q 'wakeguard_timer_ring_v3' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerRingService.java
           test -s WakeGuard/app/src/main/res/layout/view_alarm_video_texture.xml
           grep -q 'surface_type="texture_view"' WakeGuard/app/src/main/res/layout/view_alarm_video_texture.xml
-          grep -q 'activityStarted=true' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmActivity.java
-          grep -q 'onStop()' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmActivity.java
-          grep -q 'promptFullScreenVideoPermissionIfNeeded' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java
-          grep -q 'alarm_videos' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java
-          grep -q 'scheduleVideoFallback' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
-          grep -q 'AlarmProfiles.soundName' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmActivity.java
-          grep -q 'timer_videos' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
-          grep -q 'timer_face_analog' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
-          grep -q 'timer_analog_' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
-          grep -q 'promptTimerVideoFullScreenPermissionIfNeeded' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
-          grep -q 'showTimerVideoIfVisible' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
-          grep -q 'ClockActivity.showTimerVideoIfVisible(ring)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerReceiver.java
-          ! grep -q 'c instanceof Activity' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerReceiver.java
-          grep -q 'timer".equals(mode)?"timer_face_analog"' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockFaceActivity.java
-          grep -q 'androidx.media3.exoplayer.ExoPlayer' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerVideoActivity.java
-          grep -q 'wakeguard_timer_ring_v3' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerRingService.java
-          grep -q 'startAudioNow(currentUri)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerRingService.java
-          grep -q '1800L' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerRingService.java
-          ! grep -q 'setSilent(true)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/StopwatchNotification.java
-          ! grep -q 'setSilent(true)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmReminderReceiver.java
-          test -s WakeGuard/app/src/main/java/jp/wakeguard/alarm/StopwatchNotification.java
-          test -s WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmReminderReceiver.java
-          grep -q 'stopwatch_face_analog' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
-          grep -q 'setUsesChronometer(true)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/StopwatchNotification.java
-          grep -q 'preNotifyMin' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java
-          grep -q 'ACTION_REMIND' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmReminderReceiver.java
 
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.6.8-patched-source
+          name: WakeGuard-v1.6.9-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -152,11 +123,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v1.6.8-stable.apk \
+            --out WakeGuard-v1.6.9-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.6.8-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.6.9-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.6.8-stable-apk
-          path: WakeGuard-v1.6.8-stable.apk
+          name: WakeGuard-v1.6.9-stable-apk
+          path: WakeGuard-v1.6.9-stable.apk
