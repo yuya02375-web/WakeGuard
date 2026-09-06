@@ -38,7 +38,7 @@ jobs:
           test -s /tmp/cities15000.txt
           grep -F $'\tSeattle\t' /tmp/cities15000.txt | head -1
 
-      - name: Apply WakeGuard v1.6.9 timer subtitle fix
+      - name: Apply WakeGuard v1.7.0 fixes
         run: |
           python3 tools/patch_v156_runner.py
           python3 tools/patch_v157.py
@@ -54,22 +54,23 @@ jobs:
           python3 tools/patch_v167.py
           python3 tools/patch_v168.py
           python3 tools/patch_v169.py
-          grep -n 'versionName = "1.6.9"' WakeGuard/app/build.gradle.kts
-          grep -n 'versionCode = 80' WakeGuard/app/build.gradle.kts
+          python3 tools/patch_v170.py
+          grep -n 'versionName = "1.7.0"' WakeGuard/app/build.gradle.kts
+          grep -n 'versionCode = 81' WakeGuard/app/build.gradle.kts
+          grep -q 'PendingAlarmQueue.enqueue' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
+          grep -q 'PendingAlarmQueue.poll' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
+          grep -q 'creditInterval = Math.min(interval, 2500L)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
+          grep -q 'strongLinearBurstCount >= 5' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
+          grep -q 'now - lastConfirmedShakeElapsed <= 2400L' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
+          test -s WakeGuard/app/src/main/java/jp/wakeguard/alarm/PendingAlarmQueue.java
           grep -q 'inflate(R.layout.view_alarm_video_texture' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerVideoActivity.java
-          grep -q 'getSubtitleView()' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerVideoActivity.java
-          grep -q 'setApplyEmbeddedStyles(true)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerVideoActivity.java
           grep -q 'TRACK_TYPE_TEXT,false' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerVideoActivity.java
-          grep -q 'Gravity.TOP|Gravity.END' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerVideoActivity.java
-          grep -q 'showTimerVideoIfVisible' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
-          grep -q 'wakeguard_timer_ring_v3' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerRingService.java
           test -s WakeGuard/app/src/main/res/layout/view_alarm_video_texture.xml
-          grep -q 'surface_type="texture_view"' WakeGuard/app/src/main/res/layout/view_alarm_video_texture.xml
 
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.6.9-patched-source
+          name: WakeGuard-v1.7.0-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -123,11 +124,11 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v1.6.9-stable.apk \
+            --out WakeGuard-v1.7.0-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.6.9-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.7.0-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.6.9-stable-apk
-          path: WakeGuard-v1.6.9-stable.apk
+          name: WakeGuard-v1.7.0-stable-apk
+          path: WakeGuard-v1.7.0-stable.apk
