@@ -1,0 +1,505 @@
+diff -ruN a/build.gradle.kts b/build.gradle.kts
+--- a/build.gradle.kts	2026-09-05 21:04:26.000000000 +0000
++++ b/build.gradle.kts	2026-09-06 11:45:20.443127388 +0000
+@@ -10,8 +10,8 @@
+         applicationId = "jp.wakeguard.alarm"
+         minSdk = 29
+         targetSdk = 36
+-        versionCode = 74
+-        versionName = "1.6.3"
++        versionCode = 75
++        versionName = "1.6.4"
+     }
+ 
+     buildFeatures {
+diff -ruN a/src/main/AndroidManifest.xml b/src/main/AndroidManifest.xml
+--- a/src/main/AndroidManifest.xml	2026-09-05 21:04:26.000000000 +0000
++++ b/src/main/AndroidManifest.xml	2026-09-06 11:45:20.442229447 +0000
+@@ -142,6 +142,7 @@
+         <receiver android:name=".WidgetActionReceiver" android:exported="false" />
+ 
+         <receiver android:name=".AlarmReceiver" android:exported="false" />
++        <receiver android:name=".AlarmReminderReceiver" android:exported="false" />
+         <receiver android:name=".TimerReceiver" android:exported="false" />
+ 
+         <receiver
+diff -ruN a/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java b/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java
+--- a/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java	2026-09-05 21:04:26.000000000 +0000
++++ b/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java	2026-09-06 11:48:52.419582134 +0000
+@@ -20,7 +20,7 @@
+     private static final String[] MISSION_KEYS={"NONE","STEPS","MATH","TAP","CODE","SHAKE","MEMORY","TYPE","HOLD","SWIPE","ORDER","REVERSE","RANDOM"};
+     private static final String[] MISSION_LABELS={"なし","歩数","計算","連打","コード入力","シェイク","記憶","文章入力","長押し","スワイプ","順番タップ","逆順入力","ランダム"};
+     private long alarmId; private AlarmStore.Entry draft;
+-    private EditText label,steps,missionCount; private Button time,sound,missionPicker,ringDuration,fullStopDuration; private CheckBox[] days=new CheckBox[7];
++    private EditText label,steps,missionCount; private Button time,sound,missionPicker,ringDuration,fullStopDuration,preNotify; private CheckBox[] days=new CheckBox[7];
+     private Switch enabled,ringAutoStop,fullAutoStop; private SeekBar volume; private TextView volumeText,soundStatus,stepsLabel,countLabel,missionNote;
+     private Spinner vibration; private String selectedMission="STEPS";
+ 
+@@ -44,6 +44,8 @@
+         body.addView(Ui.text(this,"名前",13,Ui.MUTED));label=input("学校、休日など",InputType.TYPE_CLASS_TEXT);body.addView(label,Ui.gapTop(this,6));
+         TextView repeat=Ui.text(this,"繰り返し",13,Ui.MUTED);body.addView(repeat,Ui.gapTop(this,18));
+         LinearLayout dayRow=new LinearLayout(this);String[]dn={"月","火","水","木","金","土","日"};for(int i=0;i<7;i++){days[i]=new CheckBox(this);days[i].setText(I18n.tr(this,dn[i]));days[i].setTextColor(Ui.TEXT);days[i].setButtonTintList(android.content.res.ColorStateList.valueOf(Ui.ACCENT));days[i].setGravity(Gravity.CENTER);dayRow.addView(days[i],new LinearLayout.LayoutParams(0,-2,1));}body.addView(dayRow,Ui.gapTop(this,4));body.addView(Ui.text(this,"曜日を選ばなければ1回だけ鳴ります",12,Ui.MUTED),Ui.gapTop(this,4));
++        LinearLayout preRow=Ui.row(this);preRow.setPadding(0,Ui.dp(this,16),0,0);TextView preLabel=Ui.text(this,"事前通知",15,Ui.TEXT);preRow.addView(preLabel,new LinearLayout.LayoutParams(0,-2,1));preNotify=Ui.ghostButton(this,"30分前  ›");preNotify.setTextColor(Ui.ACCENT);preNotify.setOnClickListener(v->showPreNotifyDialog());preRow.addView(preNotify);body.addView(preRow);
++        body.addView(Ui.text(this,"アラームの前に音・振動なしの通知で知らせます",12,Ui.MUTED),Ui.gapTop(this,2));
+ 
+         body.addView(Ui.divider(this),Ui.dividerTop(this,22));
+         body.addView(Ui.sectionHeader(this,"ミッション"),Ui.gapTop(this,18));
+@@ -98,6 +100,19 @@
+ 
+ 
+ 
++    private void renderPreNotify(){if(preNotify==null)return;preNotify.setText((draft.preNotifyMin<=0?I18n.tr(this,"オフ"):draft.preNotifyMin+I18n.tr(this,"分前"))+"  ›");}
++    private void showPreNotifyDialog(){
++        final int[] values={0,5,10,15,30,60,120,-1};
++        final String[] labels={I18n.tr(this,"オフ"),"5"+I18n.tr(this,"分前"),"10"+I18n.tr(this,"分前"),"15"+I18n.tr(this,"分前"),"30"+I18n.tr(this,"分前"),"60"+I18n.tr(this,"分前"),"120"+I18n.tr(this,"分前"),I18n.tr(this,"カスタム")+"…"};
++        int checked=-1;for(int i=0;i<values.length-1;i++)if(values[i]==draft.preNotifyMin)checked=i;
++        final AlertDialog d=new AlertDialog.Builder(this).setTitle(I18n.tr(this,"事前通知")).setSingleChoiceItems(labels,checked,null).setNegativeButton(I18n.tr(this,"キャンセル"),null).create();
++        d.setOnShowListener(x->{ListView list=d.getListView();list.setOnItemClickListener((a,v,pos,id)->{if(values[pos]>=0){draft.preNotifyMin=values[pos];renderPreNotify();d.dismiss();}else{d.dismiss();showCustomPreNotifyDialog();}});});d.show();
++    }
++    private void showCustomPreNotifyDialog(){
++        final EditText input=input(String.valueOf(Math.max(1,draft.preNotifyMin)),InputType.TYPE_CLASS_NUMBER);input.setSelectAllOnFocus(true);input.setHint("1–1440 "+I18n.tr(this,"分前").trim());int pad=Ui.dp(this,20);FrameLayout wrap=new FrameLayout(this);wrap.setPadding(pad,0,pad,0);wrap.addView(input,new FrameLayout.LayoutParams(-1,-2));
++        new AlertDialog.Builder(this).setTitle(I18n.tr(this,"事前通知")).setView(wrap).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"保存"),(d,w)->{try{int v=Integer.parseInt(input.getText().toString().trim());draft.preNotifyMin=Math.max(1,Math.min(1440,v));renderPreNotify();}catch(Throwable t){Toast.makeText(this,I18n.tr(this,"設定値を確認してください"),Toast.LENGTH_SHORT).show();}}).show();
++    }
++
+     private void renderAutoStop(){
+         if(ringAutoStop!=null){ringAutoStop.setOnCheckedChangeListener(null);ringAutoStop.setChecked(draft.ringDurationSec>0);ringAutoStop.setOnCheckedChangeListener((v,on)->{if(!on){draft.ringDurationSec=0;renderAutoStop();}else if(draft.ringDurationSec<=0){showDurationDialog(false,true);}});}
+         if(fullAutoStop!=null){fullAutoStop.setOnCheckedChangeListener(null);fullAutoStop.setChecked(draft.fullStopDurationSec>0);fullAutoStop.setOnCheckedChangeListener((v,on)->{if(!on){draft.fullStopDurationSec=0;renderAutoStop();}else if(draft.fullStopDurationSec<=0){showDurationDialog(true,true);}});}
+@@ -138,7 +153,7 @@
+         d.setContentView(box);d.show();android.view.Window w=d.getWindow();if(w!=null){w.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));w.setDimAmount(.65f);w.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND);w.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.92f),-2);}
+     }
+ 
+-    private void render(){enabled.setChecked(draft.enabled);label.setText(draft.label);time.setText(String.format(Locale.JAPAN,"%02d:%02d",draft.hour,draft.minute));for(int i=0;i<7;i++)days[i].setChecked((draft.dayMask&(1<<i))!=0);steps.setText(String.valueOf(draft.steps));missionCount.setText(String.valueOf(draft.missionCount));selectedMission=AlarmStore.normalizeMission(draft.missionType);missionPicker.setText(I18n.tr(this,AlarmProfiles.missionName(selectedMission))+"  ›");volume.setProgress(draft.volume);vibration.setSelection("OFF".equals(draft.vibration)?0:("STRONG".equals(draft.vibration)?2:1));renderSound();renderAutoStop();refreshMissionFields();}
++    private void render(){enabled.setChecked(draft.enabled);label.setText(draft.label);time.setText(String.format(Locale.JAPAN,"%02d:%02d",draft.hour,draft.minute));for(int i=0;i<7;i++)days[i].setChecked((draft.dayMask&(1<<i))!=0);steps.setText(String.valueOf(draft.steps));missionCount.setText(String.valueOf(draft.missionCount));selectedMission=AlarmStore.normalizeMission(draft.missionType);missionPicker.setText(I18n.tr(this,AlarmProfiles.missionName(selectedMission))+"  ›");volume.setProgress(draft.volume);vibration.setSelection("OFF".equals(draft.vibration)?0:("STRONG".equals(draft.vibration)?2:1));renderSound();renderPreNotify();renderAutoStop();refreshMissionFields();}
+     private void renderSound(){
+         if(draft.soundName==null||draft.soundName.isEmpty()){soundStatus.setText(I18n.tr(this,"標準アラーム音"));return;}
+         String size=draft.soundBytes>0?String.format(Locale.JAPAN,"%.1f MB",draft.soundBytes/1048576.0):I18n.tr(this,"サイズ不明");
+diff -ruN a/src/main/java/jp/wakeguard/alarm/AlarmProfiles.java b/src/main/java/jp/wakeguard/alarm/AlarmProfiles.java
+--- a/src/main/java/jp/wakeguard/alarm/AlarmProfiles.java	2026-09-05 21:04:24.000000000 +0000
++++ b/src/main/java/jp/wakeguard/alarm/AlarmProfiles.java	2026-09-06 11:45:20.440251387 +0000
+@@ -12,13 +12,13 @@
+                 AlarmScheduler.PRIMARY_ALARM_ID,
+                 Prefs.hour(c), Prefs.minute(c), Prefs.dayMask(c), Prefs.enabled(c),
+                 Prefs.primaryLabel(c), Prefs.steps(c), Prefs.primaryMissionType(c), Prefs.primaryMissionCount(c),
+-                Prefs.volume(c), Prefs.vibration(c), Prefs.soundUri(c), Prefs.soundName(c), Prefs.soundBytes(c), Prefs.soundDurationMs(c), Prefs.ringDurationSec(c), Prefs.fullStopDurationSec(c));
++                Prefs.volume(c), Prefs.vibration(c), Prefs.soundUri(c), Prefs.soundName(c), Prefs.soundBytes(c), Prefs.soundDurationMs(c), Prefs.ringDurationSec(c), Prefs.fullStopDurationSec(c), Prefs.preNotifyMin(c));
+     }
+ 
+     public static AlarmStore.Entry defaults(Context c) {
+         AlarmStore.Entry p = primary(c);
+         return new AlarmStore.Entry(-1L, 7, 0, 0, true, "アラーム",
+-                p.steps, p.missionType, p.missionCount, p.volume, p.vibration, p.soundUri, p.soundName, p.soundBytes, p.soundDurationMs, 0, 0);
++                p.steps, p.missionType, p.missionCount, p.volume, p.vibration, p.soundUri, p.soundName, p.soundBytes, p.soundDurationMs, 0, 0, 30);
+     }
+ 
+     public static List<AlarmStore.Entry> all(Context c) {
+@@ -37,7 +37,7 @@
+             Prefs.enabled(c,e.enabled); Prefs.time(c,e.hour,e.minute); Prefs.dayMask(c,e.dayMask);
+             Prefs.primaryLabel(c,e.label); Prefs.steps(c,e.steps); Prefs.primaryMissionType(c,e.missionType); Prefs.primaryMissionCount(c,e.missionCount);
+             Prefs.volume(c,e.volume); Prefs.vibration(c,e.vibration); Prefs.soundUri(c,e.soundUri); Prefs.soundName(c,e.soundName);
+-            Prefs.soundBytes(c,e.soundBytes); Prefs.soundDurationMs(c,e.soundDurationMs); Prefs.ringDurationSec(c,e.ringDurationSec); Prefs.fullStopDurationSec(c,e.fullStopDurationSec);
++            Prefs.soundBytes(c,e.soundBytes); Prefs.soundDurationMs(c,e.soundDurationMs); Prefs.ringDurationSec(c,e.ringDurationSec); Prefs.fullStopDurationSec(c,e.fullStopDurationSec); Prefs.preNotifyMin(c,e.preNotifyMin);
+             return primary(c);
+         }
+         if (e.id < 1000) return AlarmStore.add(c,e);
+@@ -57,6 +57,7 @@
+     public static String label(Context c,long id) { String s=get(c,id).label; if(s==null||s.trim().isEmpty())return I18n.tr(c,"アラーム");s=s.trim();return ("アラーム".equals(s)||"メインアラーム".equals(s))?I18n.tr(c,s):s; }
+     public static int ringDurationSec(Context c,long id){ return Math.max(0,Math.min(86400,get(c,id).ringDurationSec)); }
+     public static int fullStopDurationSec(Context c,long id){ return Math.max(0,Math.min(86400,get(c,id).fullStopDurationSec)); }
++    public static int preNotifyMin(Context c,long id){ return Math.max(0,Math.min(1440,get(c,id).preNotifyMin)); }
+ 
+     public static String resolveSessionMission(Context c,long id){
+         String t=missionType(c,id);
+diff -ruN a/src/main/java/jp/wakeguard/alarm/AlarmReminderReceiver.java b/src/main/java/jp/wakeguard/alarm/AlarmReminderReceiver.java
+--- a/src/main/java/jp/wakeguard/alarm/AlarmReminderReceiver.java	1970-01-01 00:00:00.000000000 +0000
++++ b/src/main/java/jp/wakeguard/alarm/AlarmReminderReceiver.java	2026-09-06 11:47:45.454208709 +0000
+@@ -0,0 +1,32 @@
++package jp.wakeguard.alarm;
++
++import android.app.*;
++import android.content.*;
++import android.content.pm.PackageManager;
++import android.os.Build;
++import java.time.*;
++import java.time.format.DateTimeFormatter;
++import java.util.Locale;
++
++public class AlarmReminderReceiver extends BroadcastReceiver {
++    public static final String ACTION_REMIND="jp.wakeguard.alarm.REMIND";
++    private static final String CHANNEL="alarm_pre_reminders";
++    @Override public void onReceive(Context c,Intent i){
++        if(i==null||!ACTION_REMIND.equals(i.getAction()))return;
++        long alarmId=i.getLongExtra("alarmId",AlarmScheduler.PRIMARY_ALARM_ID),alarmAt=i.getLongExtra("alarmAt",-1L);
++        if(alarmAt<=System.currentTimeMillis())return;
++        if(alarmId!=AlarmScheduler.PRIMARY_ALARM_ID&&AlarmStore.find(c,alarmId)==null)return;
++        AlarmStore.Entry e=AlarmProfiles.get(c,alarmId);if(e==null||!e.enabled||e.preNotifyMin<=0)return;
++        if(Build.VERSION.SDK_INT>=33&&c.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)return;
++        ensureChannel(c);
++        long remaining=Math.max(1L,(alarmAt-System.currentTimeMillis()+59999L)/60000L);
++        String time;try{boolean h24=android.text.format.DateFormat.is24HourFormat(c);time=Instant.ofEpochMilli(alarmAt).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern(h24?"HH:mm":"h:mm",I18n.locale(c)));}catch(Throwable t){time="";}
++        String title=remaining+I18n.tr(c,"分後にアラーム")+(time.isEmpty()?"":"  "+time);
++        String label=AlarmProfiles.label(c,alarmId);
++        Intent open=new Intent(c,AlarmEditorActivity.class).putExtra("alarmId",alarmId).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP);
++        PendingIntent pi=PendingIntent.getActivity(c,notificationId(alarmId,alarmAt),open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
++        Notification.Builder b=Build.VERSION.SDK_INT>=26?new Notification.Builder(c,CHANNEL):new Notification.Builder(c);
++        b.setSmallIcon(R.drawable.ic_alarm).setContentTitle(title).setContentText(label).setContentIntent(pi).setAutoCancel(true).setOnlyAlertOnce(true).setCategory(Notification.CATEGORY_REMINDER).setVisibility(Notification.VISIBILITY_PUBLIC);
++        if(Build.VERSION.SDK_INT>=26)b.setSilent(true);
++        NotificationManager nm=c.getSystemService(NotificationManager.class);if(nm!=null)nm.notify(notificationId(alarmId,alarmAt),b.build());
++    }
++    private static int notificationId(long id,long at){return 53000+(int)Math.floorMod(id*37L+(at/60000L),100000000L);}
++    private static void ensureChannel(Context c){if(Build.VERSION.SDK_INT<26)return;NotificationManager nm=c.getSystemService(NotificationManager.class);if(nm==null)return;NotificationChannel ch=new NotificationChannel(CHANNEL,I18n.tr(c,"アラーム事前通知"),NotificationManager.IMPORTANCE_LOW);ch.setDescription(I18n.tr(c,"アラームの前にサイレント通知で知らせます"));ch.setSound(null,null);ch.enableVibration(false);nm.createNotificationChannel(ch);}
++}
+diff -ruN a/src/main/java/jp/wakeguard/alarm/AlarmScheduler.java b/src/main/java/jp/wakeguard/alarm/AlarmScheduler.java
+--- a/src/main/java/jp/wakeguard/alarm/AlarmScheduler.java	2026-09-05 21:04:24.000000000 +0000
++++ b/src/main/java/jp/wakeguard/alarm/AlarmScheduler.java	2026-09-06 11:45:20.441822975 +0000
+@@ -52,6 +52,11 @@
+         return PendingIntent.getBroadcast(c, code(alarmId,date,3), i, flags | PendingIntent.FLAG_IMMUTABLE);
+     }
+ 
++    private static PendingIntent reminderPi(Context c,long alarmId,LocalDate date,long alarmAt,int flags){
++        Intent i=new Intent(c,AlarmReminderReceiver.class).setAction(AlarmReminderReceiver.ACTION_REMIND).setData(data(alarmId,date,"remind")).putExtra("alarmId",alarmId).putExtra("alarmAt",alarmAt);
++        return PendingIntent.getBroadcast(c,code(alarmId,date,5),i,flags|PendingIntent.FLAG_IMMUTABLE);
++    }
++
+     private static boolean selected(LocalDate date, int mask) {
+         int idx=date.getDayOfWeek().getValue()-1;
+         return (mask & (1<<idx))!=0;
+@@ -66,6 +71,7 @@
+         PendingIntent fire=scheduledActivityPi(c,id,d,PendingIntent.FLAG_NO_CREATE); if(fire!=null)am.cancel(fire);
+         PendingIntent show=showAlarmUiPi(c,id,d,PendingIntent.FLAG_NO_CREATE); if(show!=null)am.cancel(show);
+         PendingIntent backup=backupFirePi(c,id,d,PendingIntent.FLAG_NO_CREATE); if(backup!=null)am.cancel(backup);
++        PendingIntent reminder=reminderPi(c,id,d,0L,PendingIntent.FLAG_NO_CREATE); if(reminder!=null)am.cancel(reminder);
+     }
+ 
+     /** Cancel the v0.6/v0.7 primary PendingIntents that did not carry alarm ids. */
+@@ -101,7 +107,7 @@
+         } catch(Throwable ignored) {}
+     }
+ 
+-    private static int scheduleSpec(Context c, AlarmManager am, long id, int hour, int minute, int mask, boolean enabled, boolean primary, ZoneId zone, LocalDate today, Instant now) {
++    private static int scheduleSpec(Context c, AlarmManager am, long id, int hour, int minute, int mask, boolean enabled, boolean primary, int preNotifyMin, ZoneId zone, LocalDate today, Instant now) {
+         if(!enabled)return 0;
+         int count=0;
+         for(int i=0;i<=120 && count<14;i++) {
+@@ -124,6 +130,7 @@
+             PendingIntent backup=backupFirePi(c,id,d,PendingIntent.FLAG_UPDATE_CURRENT);
+             long backupAt=when.toInstant().toEpochMilli()+1500L;
+             if(Build.VERSION.SDK_INT>=23)am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,backupAt,backup); else am.setExact(AlarmManager.RTC_WAKEUP,backupAt,backup);
++            if(preNotifyMin>0){long alarmAt=when.toInstant().toEpochMilli();long remindAt=Math.max(System.currentTimeMillis()+1500L,alarmAt-preNotifyMin*60000L);if(remindAt<alarmAt){PendingIntent reminder=reminderPi(c,id,d,alarmAt,PendingIntent.FLAG_UPDATE_CURRENT);if(Build.VERSION.SDK_INT>=23)am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,remindAt,reminder);else am.setExact(AlarmManager.RTC_WAKEUP,remindAt,reminder);}}
+             count++;
+             if(mask==0)break; // additional alarm with no selected weekday = one-shot
+         }
+@@ -139,9 +146,9 @@
+             for(int i=-2;i<=120;i++) cancelPair(c,am,PRIMARY_ALARM_ID,today.plusDays(i));
+             for(long id:AlarmStore.knownIds(c)) for(int i=-2;i<=120;i++) cancelPair(c,am,id,today.plusDays(i));
+ 
+-            scheduleSpec(c,am,PRIMARY_ALARM_ID,Prefs.hour(c),Prefs.minute(c),Prefs.dayMask(c),Prefs.enabled(c),true,zone,today,now);
++            scheduleSpec(c,am,PRIMARY_ALARM_ID,Prefs.hour(c),Prefs.minute(c),Prefs.dayMask(c),Prefs.enabled(c),true,Prefs.preNotifyMin(c),zone,today,now);
+             for(AlarmStore.Entry e:AlarmStore.all(c))
+-                scheduleSpec(c,am,e.id,e.hour,e.minute,e.dayMask,e.enabled,false,zone,today,now);
++                scheduleSpec(c,am,e.id,e.hour,e.minute,e.dayMask,e.enabled,false,e.preNotifyMin,zone,today,now);
+         } catch(Throwable t) {
+             try{Prefs.lastAlarmError(c,"AlarmScheduler: "+t.getClass().getSimpleName()+(t.getMessage()==null?"":": "+t.getMessage()));}catch(Throwable ignored){}
+         }
+diff -ruN a/src/main/java/jp/wakeguard/alarm/AlarmStore.java b/src/main/java/jp/wakeguard/alarm/AlarmStore.java
+--- a/src/main/java/jp/wakeguard/alarm/AlarmStore.java	2026-09-05 21:04:24.000000000 +0000
++++ b/src/main/java/jp/wakeguard/alarm/AlarmStore.java	2026-09-06 11:45:20.440042886 +0000
+@@ -14,18 +14,18 @@
+     private AlarmStore() {}
+ 
+     public static final class Entry {
+-        public long id; public int hour,minute,dayMask,steps,missionCount,volume,ringDurationSec,fullStopDurationSec; public boolean enabled;
++        public long id; public int hour,minute,dayMask,steps,missionCount,volume,ringDurationSec,fullStopDurationSec,preNotifyMin; public boolean enabled;
+         public String label,missionType,vibration,soundUri,soundName; public long soundBytes,soundDurationMs;
+         public Entry(long id,int hour,int minute,int dayMask,boolean enabled,String label,
+                      int steps,String missionType,int missionCount,int volume,String vibration,
+-                     String soundUri,String soundName,long soundBytes,long soundDurationMs,int ringDurationSec,int fullStopDurationSec) {
++                     String soundUri,String soundName,long soundBytes,long soundDurationMs,int ringDurationSec,int fullStopDurationSec,int preNotifyMin) {
+             this.id=id;this.hour=hour;this.minute=minute;this.dayMask=dayMask;this.enabled=enabled;this.label=label==null?"":label;
+             this.steps=Math.max(1,Math.min(9999,steps));
+             this.missionType=normalizeMission(missionType);
+             this.missionCount=Math.max(1,Math.min(500,missionCount));
+             this.volume=Math.max(0,Math.min(100,volume));
+             this.vibration=vibration==null?"IRREGULAR":vibration;this.soundUri=soundUri==null?"":soundUri;this.soundName=soundName==null?"":soundName;
+-            this.soundBytes=soundBytes;this.soundDurationMs=soundDurationMs;this.ringDurationSec=Math.max(0,Math.min(86400,ringDurationSec));this.fullStopDurationSec=Math.max(0,Math.min(86400,fullStopDurationSec));
++             this.soundBytes=soundBytes;this.soundDurationMs=soundDurationMs;this.ringDurationSec=Math.max(0,Math.min(86400,ringDurationSec));this.fullStopDurationSec=Math.max(0,Math.min(86400,fullStopDurationSec));this.preNotifyMin=Math.max(0,Math.min(1440,preNotifyMin));
+         }
+         public boolean oneShot(){return dayMask==0;}
+     }
+@@ -45,7 +45,7 @@
+                 o.has("volume")?o.optInt("volume",15):Prefs.volume(c),
+                 o.has("vibration")?o.optString("vibration","IRREGULAR"):Prefs.vibration(c),
+                 o.has("soundUri")?o.optString("soundUri",""):Prefs.soundUri(c),o.has("soundName")?o.optString("soundName",""):Prefs.soundName(c),
+-                o.has("soundBytes")?o.optLong("soundBytes",-1):Prefs.soundBytes(c),o.has("soundDurationMs")?o.optLong("soundDurationMs",-1):Prefs.soundDurationMs(c),o.optInt("ringDurationSec",0),o.optInt("fullStopDurationSec",0));
++                o.has("soundBytes")?o.optLong("soundBytes",-1):Prefs.soundBytes(c),o.has("soundDurationMs")?o.optLong("soundDurationMs",-1):Prefs.soundDurationMs(c),o.optInt("ringDurationSec",0),o.optInt("fullStopDurationSec",0),o.has("preNotifyMin")?o.optInt("preNotifyMin",30):30);
+     }
+     public static synchronized List<Entry> all(Context c){
+         ArrayList<Entry> out=new ArrayList<>(); String raw=p(c).getString(KEY_ALARMS,"[]");
+@@ -55,7 +55,7 @@
+     private static JSONObject json(Entry e)throws Exception{
+         JSONObject o=new JSONObject();o.put("id",e.id);o.put("hour",e.hour);o.put("minute",e.minute);o.put("days",e.dayMask&0x7F);o.put("enabled",e.enabled);o.put("label",e.label);
+         o.put("steps",e.steps);o.put("missionType",normalizeMission(e.missionType));o.put("missionCount",e.missionCount);
+-        o.put("volume",e.volume);o.put("vibration",e.vibration);o.put("soundUri",e.soundUri);o.put("soundName",e.soundName);o.put("soundBytes",e.soundBytes);o.put("soundDurationMs",e.soundDurationMs);o.put("ringDurationSec",e.ringDurationSec);o.put("fullStopDurationSec",e.fullStopDurationSec);return o;
++        o.put("volume",e.volume);o.put("vibration",e.vibration);o.put("soundUri",e.soundUri);o.put("soundName",e.soundName);o.put("soundBytes",e.soundBytes);o.put("soundDurationMs",e.soundDurationMs);o.put("ringDurationSec",e.ringDurationSec);o.put("fullStopDurationSec",e.fullStopDurationSec);o.put("preNotifyMin",e.preNotifyMin);return o;
+     }
+     private static synchronized void save(Context c,List<Entry> list){
+         JSONArray a=new JSONArray();Set<String> known=new HashSet<>(p(c).getStringSet(KEY_KNOWN_IDS,new HashSet<>()));
+@@ -64,7 +64,7 @@
+     }
+     public static synchronized Entry add(Context c,Entry draft){
+         SharedPreferences sp=p(c);long id=Math.max(1000L,sp.getLong(KEY_NEXT_ID,1000L));sp.edit().putLong(KEY_NEXT_ID,id+1).commit();
+-        Entry e=new Entry(id,draft.hour,draft.minute,draft.dayMask,draft.enabled,draft.label,draft.steps,draft.missionType,draft.missionCount,draft.volume,draft.vibration,draft.soundUri,draft.soundName,draft.soundBytes,draft.soundDurationMs,draft.ringDurationSec,draft.fullStopDurationSec);
++        Entry e=new Entry(id,draft.hour,draft.minute,draft.dayMask,draft.enabled,draft.label,draft.steps,draft.missionType,draft.missionCount,draft.volume,draft.vibration,draft.soundUri,draft.soundName,draft.soundBytes,draft.soundDurationMs,draft.ringDurationSec,draft.fullStopDurationSec,draft.preNotifyMin);
+         List<Entry> list=all(c);list.add(e);save(c,list);return e;
+     }
+     public static synchronized void update(Context c,Entry changed){List<Entry> list=all(c);boolean found=false;for(int i=0;i<list.size();i++)if(list.get(i).id==changed.id){list.set(i,changed);found=true;break;}if(!found&&changed.id>=1000)list.add(changed);save(c,list);}
+diff -ruN a/src/main/java/jp/wakeguard/alarm/ClockActivity.java b/src/main/java/jp/wakeguard/alarm/ClockActivity.java
+--- a/src/main/java/jp/wakeguard/alarm/ClockActivity.java	2026-09-05 21:04:24.000000000 +0000
++++ b/src/main/java/jp/wakeguard/alarm/ClockActivity.java	2026-09-06 11:45:20.439474289 +0000
+@@ -46,6 +46,8 @@
+ 
+     private TextView stopwatchDisplay, lapList;
+     private Button stopwatchStartPause, stopwatchLapReset;
++    private FrameLayout stopwatchStage;
++    private ClockFaceActivity.AnalogFace stopwatchAnalog;
+ 
+     private long pendingTimerSoundId = -1L;
+     private static final int REQ_TIMER_SOUND = 7116;
+@@ -126,6 +128,7 @@
+         super.onResume();
+         requestTimerNotificationPermissionIfNeeded();
+         refreshRunningTimerNotifications();
++        syncStopwatchNotification();
+         applyGoogleClipboardSearchIfNeeded();
+         if("world".equals(mode))applyWorldDisplayMode();
+         handler.removeCallbacks(ticker);
+@@ -761,12 +764,31 @@
+         dialog.show();Window w=dialog.getWindow();if(w!=null){w.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));w.setDimAmount(.72f);w.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);w.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.94f),(int)(getResources().getDisplayMetrics().heightPixels*.91f));}
+         final int initialGeneration=searchGeneration.incrementAndGet();searchExecutor.execute(()->{if(!indexReady.get())return;handler.post(()->{if(initialGeneration==searchGeneration.get()&&zonePickerDialog==dialog)requestSearch.accept(queuedQuery[0]);});});
+     }
+ 
++    private boolean stopwatchAnalog(){ return p().getBoolean("stopwatch_face_analog",false); }
++    private void toggleStopwatchFace(){ p().edit().putBoolean("stopwatch_face_analog",!stopwatchAnalog()).apply(); applyStopwatchFaceMode(); updateStopwatch(); }
++    private void applyStopwatchFaceMode(){
++        if(stopwatchStage==null||stopwatchDisplay==null||stopwatchAnalog==null)return;
++        boolean analog=stopwatchAnalog();
++        stopwatchDisplay.setVisibility(analog?View.GONE:View.VISIBLE);
++        stopwatchAnalog.setVisibility(analog?View.VISIBLE:View.GONE);
++        android.view.ViewGroup.LayoutParams raw=stopwatchStage.getLayoutParams();
++        if(raw!=null){raw.height=Ui.dp(this,analog?220:118);stopwatchStage.setLayoutParams(raw);}
++    }
++
+     private void buildStopwatch() {
++        stopwatchStage=new FrameLayout(this);
+         stopwatchDisplay=text("00:00:00.00",46,Ui.TEXT);
+-        stopwatchDisplay.setTypeface(Typeface.MONOSPACE,Typeface.NORMAL); stopwatchDisplay.setGravity(Gravity.CENTER); stopwatchDisplay.setPadding(0,Ui.dp(this,28),0,Ui.dp(this,22)); body.addView(stopwatchDisplay);
+-        stopwatchDisplay.setOnClickListener(v->openClockFace("stopwatch",null,-1L));
++        stopwatchDisplay.setTypeface(Typeface.MONOSPACE,Typeface.NORMAL); stopwatchDisplay.setGravity(Gravity.CENTER); stopwatchDisplay.setPadding(0,Ui.dp(this,18),0,Ui.dp(this,14));
++        stopwatchAnalog=new ClockFaceActivity.AnalogFace(this);
++        stopwatchAnalog.configure(p().getBoolean("analog_numbers",true),p().getBoolean("analog_ticks",true),p().getBoolean("analog_seconds",true),p().getInt("analog_number_scale",1));
++        stopwatchStage.addView(stopwatchDisplay,new FrameLayout.LayoutParams(-1,-1));
++        stopwatchStage.addView(stopwatchAnalog,new FrameLayout.LayoutParams(-1,-1));
++        stopwatchStage.setClickable(true);stopwatchStage.setLongClickable(true);
++        stopwatchStage.setOnClickListener(v->toggleStopwatchFace());
++        stopwatchStage.setOnLongClickListener(v->{openClockFace("stopwatch",null,-1L);return true;});
++        body.addView(stopwatchStage,new LinearLayout.LayoutParams(-1,Ui.dp(this,118)));
++        TextView faceHint=Ui.text(this,"タップでデジタル / アナログ切替  ·  長押しで大きく表示",11,Ui.MUTED_2);faceHint.setGravity(Gravity.CENTER);body.addView(faceHint);
+         LinearLayout row=new LinearLayout(this); row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(0,Ui.dp(this,18),0,0);
+         stopwatchLapReset=Ui.ghostButton(this,"リセット"); row.addView(stopwatchLapReset,new LinearLayout.LayoutParams(0,Ui.dp(this,50),1));
+         stopwatchStartPause=Ui.button(this,"スタート",true); row.addView(stopwatchStartPause,new LinearLayout.LayoutParams(0,Ui.dp(this,50),1)); body.addView(row);
+         stopwatchStartPause.setOnClickListener(v->toggleStopwatch()); stopwatchLapReset.setOnClickListener(v->lapOrReset());
+         lapList=text("",15,Ui.MUTED); lapList.setTypeface(Typeface.MONOSPACE); lapList.setPadding(0,Ui.dp(this,24),0,Ui.dp(this,8)); body.addView(lapList); renderLaps();
++        applyStopwatchFaceMode();
+     }
+ 
+     private long stopwatchElapsed() {
+@@ -796,6 +818,7 @@
+         } else {
+             sp.edit().putBoolean(KEY_SW_RUNNING,true).putLong(KEY_SW_BASE,SystemClock.elapsedRealtime()).apply();
+         }
++        updateStopwatch(); syncStopwatchNotification(); try{WidgetSuite.refreshAll(this);}catch(Throwable ignored){}
+     }
+ 
+     private void lapOrReset() {
+@@ -806,6 +829,7 @@
+         } else {
+             sp.edit().putLong(KEY_SW_ELAPSED,0L).putLong(KEY_SW_BASE,0L).remove(KEY_SW_LAPS).apply(); renderLaps();
+         }
++        updateStopwatch(); syncStopwatchNotification(); try{WidgetSuite.refreshAll(this);}catch(Throwable ignored){}
+     }
+ 
+     private ArrayList<Long> loadLaps() {
+@@ -830,11 +854,20 @@
+     }
+     private void updateStopwatch() {
+         if (!"stopwatch".equals(mode) || stopwatchDisplay==null) return;
+-        stopwatchDisplay.setText(formatStopwatch(stopwatchElapsed()));
+         boolean running=p().getBoolean(KEY_SW_RUNNING,false);
++        long elapsed=stopwatchElapsed();
++        stopwatchDisplay.setText(formatStopwatch(elapsed));
++        if(stopwatchAnalog!=null){
++            stopwatchAnalog.configure(p().getBoolean("analog_numbers",true),p().getBoolean("analog_ticks",true),p().getBoolean("analog_seconds",true),p().getInt("analog_number_scale",1));
++            double sec=(elapsed/1000d)%60d,min=(elapsed/60000d)%60d,hr=(elapsed/3600000d)%12d;stopwatchAnalog.setHands(hr,min,sec);
++        }
+         stopwatchStartPause.setText(I18n.tr(this,running?"一時停止":"スタート"));
+         stopwatchLapReset.setText(I18n.tr(this,running?"ラップ":"リセット"));
+     }
+ 
++    private void syncStopwatchNotification(){
++        try{if(p().getBoolean(KEY_SW_RUNNING,false))StopwatchNotification.show(this,stopwatchElapsed());else StopwatchNotification.cancel(this);}catch(Throwable ignored){}
++    }
++
+     private void buildTimer() {
+         TextView quickTitle=text("すぐ使う",16,Ui.TEXT); quickTitle.setTypeface(null,Typeface.BOLD); body.addView(quickTitle);
+ 
+@@ -1090,7 +1123,7 @@
+         try{return checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)==android.content.pm.PackageManager.PERMISSION_GRANTED;}catch(Throwable ignored){return false;}
+     }
+ 
+-    private void requestTimerNotificationPermissionIfNeeded(){
++    private void requestTimerNotificationPermissionIfNeeded(){
+         if(Build.VERSION.SDK_INT<33||timerNotificationsAllowed())return;
+         try{requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS},REQ_TIMER_NOTIFICATION);}catch(Throwable ignored){}
+     }
+@@ -1103,8 +1136,8 @@
+     private void showTimerNotificationSettingsDialog(){
+         try{
+             new AlertDialog.Builder(this)
+-                    .setTitle(I18n.tr(this,"タイマー通知を表示できません"))
+-                    .setMessage(I18n.tr(this,"タイマー実行中の残り時間を通知に常時表示するには、WakeGuardの通知を許可してください。"))
++                    .setTitle(I18n.tr(this,"時計ツールの通知を表示できません"))
++                    .setMessage(I18n.tr(this,"タイマーとストップウォッチの実行中表示を通知に出すには、WakeGuardの通知を許可してください。"))
+                     .setNegativeButton(I18n.tr(this,"閉じる"),null)
+                     .setPositiveButton(I18n.tr(this,"通知設定を開く"),(d,w)->{
+                         try{
+@@ -1122,7 +1155,7 @@
+     @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults){
+         super.onRequestPermissionsResult(requestCode,permissions,grantResults);
+         if(requestCode!=REQ_TIMER_NOTIFICATION)return;
+-        if(timerNotificationsAllowed())refreshRunningTimerNotifications(); else showTimerNotificationSettingsDialog();
++        if(timerNotificationsAllowed()){refreshRunningTimerNotifications();syncStopwatchNotification();} else showTimerNotificationSettingsDialog();
+     }
+ 
+     private void updateTimers() {
+diff -ruN a/src/main/java/jp/wakeguard/alarm/ClockFaceActivity.java b/src/main/java/jp/wakeguard/alarm/ClockFaceActivity.java
+--- a/src/main/java/jp/wakeguard/alarm/ClockFaceActivity.java	2026-09-05 21:04:24.000000000 +0000
++++ b/src/main/java/jp/wakeguard/alarm/ClockFaceActivity.java	2026-09-06 11:45:20.439744718 +0000
+@@ -39,7 +39,8 @@
+         setContentView(root);Ui.applySystemBarInsets(this,root);applyMode();applyPrefs();
+     }
+     private String title(){return "stopwatch".equals(mode)?"ストップウォッチ":"timer".equals(mode)?"タイマー":"時計";}
+-    private void setAnalog(boolean value){analog=value;prefs().edit().putBoolean("clock_face_analog",analog).apply();applyMode();}
++    private String facePrefKey(){return "stopwatch".equals(mode)?"stopwatch_face_analog":"clock_face_analog";}
++    private void setAnalog(boolean value){analog=value;prefs().edit().putBoolean(facePrefKey(),analog).apply();applyMode();}
+     private void applyMode(){
+         digital.setVisibility(analog?View.GONE:View.VISIBLE);face.setVisibility(analog?View.VISIBLE:View.GONE);
+     }
+@@ -49,7 +50,7 @@
+         boolean keep=prefs().getBoolean("clock_keep_on",false);if(keep)getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);else getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+         if(detail!=null)detail.setVisibility(prefs().getBoolean("clock_show_detail",true)?View.VISIBLE:View.GONE);
+         if(face!=null)face.configure(prefs().getBoolean("analog_numbers",true),prefs().getBoolean("analog_ticks",true),prefs().getBoolean("analog_seconds",true),prefs().getInt("analog_number_scale",1));
+-        boolean stored=prefs().getBoolean("clock_face_analog",analog);if(stored!=analog){analog=stored;applyMode();}
++        boolean stored=prefs().getBoolean(facePrefKey(),analog);if(stored!=analog){analog=stored;applyMode();}
+     }
+     private android.content.SharedPreferences prefs(){return getSharedPreferences("clock_tools",MODE_PRIVATE);}
+     private long stopwatchElapsed(){android.content.SharedPreferences p=prefs();long saved=p.getLong("sw_elapsed",0L);if(!p.getBoolean("sw_running",false))return saved;long base=p.getLong("sw_base",SystemClock.elapsedRealtime());return saved+Math.max(0L,SystemClock.elapsedRealtime()-base);}
+diff -ruN a/src/main/java/jp/wakeguard/alarm/I18n.java b/src/main/java/jp/wakeguard/alarm/I18n.java
+--- a/src/main/java/jp/wakeguard/alarm/I18n.java	2026-09-05 21:04:24.000000000 +0000
++++ b/src/main/java/jp/wakeguard/alarm/I18n.java	2026-09-06 11:48:52.419877193 +0000
+@@ -31,6 +31,8 @@
+         put("都市 / タイムゾーンを追加","Add city / time zone","도시 / 시간대 추가"); put("例: Seoul / London / Asia/Tokyo","Example: Seoul / London / Asia/Tokyo","예: Seoul / London / Asia/Tokyo");
+         put("閉じる","Close","닫기"); put("削除","Delete","삭제"); put("保存","Save","저장"); put("キャンセル","Cancel","취소");
+         put("開始","Start","시작"); put("スタート","Start","시작"); put("一時停止","Pause","일시정지"); put("再開","Resume","재개");
++        put("計測中","Running","측정 중"); put("ストップウォッチの計測中時間を表示します","Shows elapsed stopwatch time while running","스톱워치 측정 시간을 실행 중 알림에 표시합니다");
++        put("タップでデジタル / アナログ切替  ·  長押しで大きく表示","Tap to switch digital / analog  ·  Long-press for full screen","탭하여 디지털/아날로그 전환  ·  길게 눌러 크게 보기");
+         put("リセット","Reset","초기화"); put("ラップ","Lap","랩"); put("ラップはまだありません","No laps yet","아직 랩이 없습니다");
+         put("経過時間","Elapsed time","경과 시간"); put("残り時間","Time remaining","남은 시간"); put("終了","Finished","종료");
+         put("一時停止中","Paused","일시정지 중"); put("もう一度","Again","다시"); put("今回だけ","One-time","이번만");
+@@ -44,6 +46,8 @@
+         put("選択した動画","Selected video","선택한 동영상"); put("動画ファイルを開けません","Unable to open the video file","동영상 파일을 열 수 없습니다"); put("この動画は読み込めません","Unable to load this video","이 동영상을 불러올 수 없습니다"); put("動画を再生できません","Unable to play this video","이 동영상을 재생할 수 없습니다"); put("タップして動画を再生","Tap to play the video","탭하여 동영상 재생");
+         put("タイマー通知を表示できません","Timer notifications are disabled","타이머 알림을 표시할 수 없습니다");
+         put("タイマー実行中の残り時間を通知に常時表示するには、WakeGuardの通知を許可してください。","Allow WakeGuard notifications to keep the running timer visible in notifications.","실행 중인 타이머의 남은 시간을 알림에 계속 표시하려면 WakeGuard 알림을 허용하세요.");
++        put("時計ツールの通知を表示できません","Clock-tool notifications are disabled","시계 도구 알림을 표시할 수 없습니다");
++        put("タイマーとストップウォッチの実行中表示を通知に出すには、WakeGuardの通知を許可してください。","Allow WakeGuard notifications to show running timers and the stopwatch.","타이머와 스톱워치 실행 상태를 알림에 표시하려면 WakeGuard 알림을 허용하세요.");
+         put("通知設定を開く","Open notification settings","알림 설정 열기");
+         put("実行中のタイマー","Running timers","실행 중인 타이머"); put("タイマーの残り時間を常に表示します","Keeps timer time remaining visible","타이머 남은 시간을 계속 표시합니다");
+         put("タイマー終了","Timer finished","타이머 종료"); put("WakeGuardのタイマー終了音","WakeGuard timer sound","WakeGuard 타이머 종료음");
+@@ -62,6 +66,8 @@
+         put("成長段階  1日 → 3日 → 7日 → 14日 → 30日","Growth: day 1 → 3 → 7 → 14 → 30","성장 단계  1일 → 3일 → 7일 → 14일 → 30일");
+         put("アラームを追加","Add alarm","알람 추가"); put("アラームを編集","Edit alarm","알람 편집"); put("アラームを有効にする","Enable alarm","알람 사용");
+         put("基本設定","Basic settings","기본 설정"); put("名前","Name","이름"); put("繰り返し","Repeat","반복"); put("曜日を選ばなければ1回だけ鳴ります","If no days are selected, it rings once","요일을 선택하지 않으면 한 번만 울립니다");
++        put("事前通知","Pre-alarm notification","사전 알림"); put("分前"," min before","분 전"); put("アラームの前に音・振動なしの通知で知らせます","Shows a silent notification before the alarm","알람 전에 소리·진동 없는 알림으로 알려줍니다");
++        put("分後にアラーム"," min until alarm","분 후 알람"); put("アラーム事前通知","Alarm reminders","알람 사전 알림"); put("アラームの前にサイレント通知で知らせます","Shows a silent reminder before the alarm","알람 전에 무음 알림으로 알려줍니다");
+         put("解除方法","Dismiss method","해제 방법"); put("ミッション","Mission","미션"); put("ミッションを選択","Choose mission","미션 선택");
+         put("なし","None","없음"); put("歩数","Steps","걸음 수"); put("計算","Math","계산"); put("記憶","Memory","기억"); put("コード入力","Code entry","코드 입력");
+         put("文章入力","Text entry","문장 입력"); put("連打","Rapid tap","연타"); put("長押し","Press and hold","길게 누르기"); put("シェイク","Shake","흔들기"); put("スワイプ","Swipe","스와이프"); put("順番タップ","Tap in order","순서 탭"); put("逆順入力","Reverse entry","역순 입력"); put("ランダム","Random","랜덤");
+diff -ruN a/src/main/java/jp/wakeguard/alarm/Prefs.java b/src/main/java/jp/wakeguard/alarm/Prefs.java
+--- a/src/main/java/jp/wakeguard/alarm/Prefs.java	2026-09-05 21:04:24.000000000 +0000
++++ b/src/main/java/jp/wakeguard/alarm/Prefs.java	2026-09-06 11:45:20.440161465 +0000
+@@ -39,6 +39,8 @@
+     public static void ringDurationSec(Context c, int v) { p(c).edit().putInt("ring_duration_sec",Math.max(0,Math.min(86400,v))).apply(); }
+     public static int fullStopDurationSec(Context c) { return Math.max(0,Math.min(86400,p(c).getInt("full_stop_duration_sec",0))); }
+     public static void fullStopDurationSec(Context c, int v) { p(c).edit().putInt("full_stop_duration_sec",Math.max(0,Math.min(86400,v))).apply(); }
++    public static int preNotifyMin(Context c) { return Math.max(0,Math.min(1440,p(c).getInt("pre_notify_min",30))); }
++    public static void preNotifyMin(Context c, int v) { p(c).edit().putInt("pre_notify_min",Math.max(0,Math.min(1440,v))).apply(); }
+     public static boolean active(Context c) { return p(c).getBoolean("alarm_active", false); }
+     public static void active(Context c, boolean v) { p(c).edit().putBoolean("alarm_active", v).apply(); }
+     public static float baseline(Context c) { return p(c).getFloat("step_baseline", -1f); }
+diff -ruN a/src/main/java/jp/wakeguard/alarm/StopwatchNotification.java b/src/main/java/jp/wakeguard/alarm/StopwatchNotification.java
+--- a/src/main/java/jp/wakeguard/alarm/StopwatchNotification.java	1970-01-01 00:00:00.000000000 +0000
++++ b/src/main/java/jp/wakeguard/alarm/StopwatchNotification.java	2026-09-06 11:45:20.439301643 +0000
+@@ -0,0 +1,35 @@
++package jp.wakeguard.alarm;
++
++import android.app.*;
++import android.content.*;
++import android.content.pm.PackageManager;
++import android.os.Build;
++
++public final class StopwatchNotification {
++    private static final String CHANNEL="stopwatch_running";
++    private static final int ID=42017;
++    private StopwatchNotification(){}
++
++    private static boolean allowed(Context c){
++        return Build.VERSION.SDK_INT<33 || c.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)==PackageManager.PERMISSION_GRANTED;
++    }
++    private static void ensureChannel(Context c){
++        if(Build.VERSION.SDK_INT<26)return;
++        NotificationManager nm=c.getSystemService(NotificationManager.class);if(nm==null)return;
++        NotificationChannel ch=new NotificationChannel(CHANNEL,I18n.tr(c,"ストップウォッチ"),NotificationManager.IMPORTANCE_LOW);
++        ch.setDescription(I18n.tr(c,"ストップウォッチの計測中時間を表示します"));
++        ch.setSound(null,null);ch.enableVibration(false);ch.setShowBadge(false);nm.createNotificationChannel(ch);
++    }
++    public static void show(Context c,long elapsedMs){
++        if(!allowed(c))return;ensureChannel(c);
++        Intent open=new Intent(c,ClockActivity.class).setAction("jp.wakeguard.alarm.OPEN_STOPWATCH").putExtra("mode","stopwatch").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);
++        PendingIntent pi=PendingIntent.getActivity(c,ID,open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
++        long startedAt=System.currentTimeMillis()-Math.max(0L,elapsedMs);
++        Notification.Builder b=Build.VERSION.SDK_INT>=26?new Notification.Builder(c,CHANNEL):new Notification.Builder(c);
++        b.setSmallIcon(R.drawable.ic_alarm).setContentTitle(I18n.tr(c,"ストップウォッチ")).setContentText(I18n.tr(c,"計測中")).setContentIntent(pi)
++                .setCategory(Notification.CATEGORY_STATUS).setOngoing(true).setOnlyAlertOnce(true).setShowWhen(true).setWhen(startedAt).setUsesChronometer(true).setVisibility(Notification.VISIBILITY_PUBLIC);
++        if(Build.VERSION.SDK_INT>=26)b.setSilent(true);
++        NotificationManager nm=c.getSystemService(NotificationManager.class);if(nm!=null)nm.notify(ID,b.build());
++    }
++    public static void cancel(Context c){NotificationManager nm=c.getSystemService(NotificationManager.class);if(nm!=null)nm.cancel(ID);}
++}
+diff -ruN a/src/main/java/jp/wakeguard/alarm/WidgetActionReceiver.java b/src/main/java/jp/wakeguard/alarm/WidgetActionReceiver.java
+--- a/src/main/java/jp/wakeguard/alarm/WidgetActionReceiver.java	2026-09-05 21:04:24.000000000 +0000
++++ b/src/main/java/jp/wakeguard/alarm/WidgetActionReceiver.java	2026-09-06 11:45:20.439915304 +0000
+@@ -15,7 +15,7 @@
+             if(TIMER_PRESET.equals(a)){long dur=Math.max(1000L,v);TimerStore.Entry e=TimerStore.addTemporary(c,"",dur);e.remainingMs=dur;e.endMs=System.currentTimeMillis()+dur;e.running=true;TimerStore.update(c,e);TimerReceiver.schedule(c,e.id,e.endMs);}
+             else if(TIMER_TOGGLE.equals(a)){TimerStore.Entry e=TimerStore.find(c,v);if(e!=null){if(e.running){e.remainingMs=e.remaining();e.running=false;e.endMs=0;TimerStore.update(c,e);TimerReceiver.cancel(c,e.id);}else{long rem=e.remainingMs>0?e.remainingMs:e.durationMs;e.remainingMs=rem;e.endMs=System.currentTimeMillis()+rem;e.running=true;TimerStore.update(c,e);TimerReceiver.schedule(c,e.id,e.endMs);}}}
+             else if(TIMER_PLUS.equals(a)){TimerStore.Entry e=TimerStore.find(c,v);if(e!=null){e.durationMs+=60000L;if(e.running){e.endMs+=60000L;e.remainingMs=e.remaining();TimerReceiver.schedule(c,e.id,e.endMs);}else e.remainingMs=Math.max(0,e.remainingMs)+60000L;TimerStore.update(c,e);}}
+-            else if(SW_TOGGLE.equals(a))toggleStopwatch(c);
++            else if(SW_TOGGLE.equals(a)){toggleStopwatch(c);syncStopwatchNotification(c);}
+             else if(SW_LAP_RESET.equals(a))lapOrReset(c);
+         }catch(Throwable ignored){}
+         WidgetSuite.refreshAll(c);
+@@ -23,5 +23,6 @@
+     private static android.content.SharedPreferences p(Context c){return c.getSharedPreferences("clock_tools",Context.MODE_PRIVATE);}
+     private static long elapsed(Context c){android.content.SharedPreferences s=p(c);long saved=s.getLong("sw_elapsed",0);if(!s.getBoolean("sw_running",false))return saved;long base=s.getLong("sw_base",SystemClock.elapsedRealtime()),now=SystemClock.elapsedRealtime();return saved+Math.max(0,now-base);}
+     private static void toggleStopwatch(Context c){android.content.SharedPreferences s=p(c);if(s.getBoolean("sw_running",false)){s.edit().putBoolean("sw_running",false).putLong("sw_elapsed",elapsed(c)).putLong("sw_base",0).apply();}else{s.edit().putBoolean("sw_running",true).putLong("sw_base",SystemClock.elapsedRealtime()).apply();}}
+-    private static void lapOrReset(Context c){android.content.SharedPreferences s=p(c);if(s.getBoolean("sw_running",false)){String raw=s.getString("sw_laps","");String x=String.valueOf(elapsed(c));s.edit().putString("sw_laps",raw==null||raw.isEmpty()?x:raw+","+x).apply();}else{s.edit().putLong("sw_elapsed",0).putLong("sw_base",0).remove("sw_laps").apply();}}
++    private static void lapOrReset(Context c){android.content.SharedPreferences s=p(c);if(s.getBoolean("sw_running",false)){String raw=s.getString("sw_laps","");String x=String.valueOf(elapsed(c));s.edit().putString("sw_laps",raw==null||raw.isEmpty()?x:raw+","+x).apply();}else{s.edit().putLong("sw_elapsed",0).putLong("sw_base",0).remove("sw_laps").apply();StopwatchNotification.cancel(c);}}
++    private static void syncStopwatchNotification(Context c){if(p(c).getBoolean("sw_running",false))StopwatchNotification.show(c,elapsed(c));else StopwatchNotification.cancel(c);}
+ }
