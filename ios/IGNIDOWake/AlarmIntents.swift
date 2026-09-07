@@ -38,9 +38,9 @@ private enum WakeIntentBridge {
 }
 
 public struct OpenAlarmIntent: LiveActivityIntent {
-    public static var title: LocalizedStringResource = "IGNIDO Wakeを開く"
-    public static var description = IntentDescription("アラームの解除画面を開きます")
-    public static var openAppWhenRun = true
+    public static let title: LocalizedStringResource = "IGNIDO Wakeを開く"
+    public static let description = IntentDescription("アラームの解除画面を開きます")
+    public static let openAppWhenRun = true
 
     @Parameter(title: "alarmID")
     public var alarmID: String
@@ -55,8 +55,8 @@ public struct OpenAlarmIntent: LiveActivityIntent {
 }
 
 public struct StopWakeIntent: LiveActivityIntent {
-    public static var title: LocalizedStringResource = "アラーム停止"
-    public static var description = IntentDescription("アラーム停止を起床記録へ反映します")
+    public static let title: LocalizedStringResource = "アラーム停止"
+    public static let description = IntentDescription("アラーム停止を起床記録へ反映します")
 
     @Parameter(title: "alarmID")
     public var alarmID: String
@@ -71,9 +71,9 @@ public struct StopWakeIntent: LiveActivityIntent {
 }
 
 public struct OpenTimerIntent: LiveActivityIntent {
-    public static var title: LocalizedStringResource = "IGNIDO Wakeを開く"
-    public static var description = IntentDescription("タイマー終了画面を開きます")
-    public static var openAppWhenRun = true
+    public static let title: LocalizedStringResource = "IGNIDO Wakeを開く"
+    public static let description = IntentDescription("タイマー終了画面を開きます")
+    public static let openAppWhenRun = true
 
     public init() {}
 
