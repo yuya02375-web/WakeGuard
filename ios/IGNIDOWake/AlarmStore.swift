@@ -194,7 +194,7 @@ final class AlarmStore: ObservableObject {
 
     private func nextDate(forUserWeekday userDay: Int, hour: Int, minute: Int) -> Date? {
         let calendarWeekday = userDay == 7 ? 1 : userDay + 1
-        return Calendar.current.nextDate(after: Date(), matching: DateComponents(weekday: calendarWeekday, hour: hour, minute: minute), matchingPolicy: .nextTime, direction: .forward)
+        return Calendar.current.nextDate(after: Date(), matching: DateComponents(hour: hour, minute: minute, weekday: calendarWeekday), matchingPolicy: .nextTime, direction: .forward)
     }
 
     private func localeWeekdays(_ days: Set<Int>) -> [Locale.Weekday] {
