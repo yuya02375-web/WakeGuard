@@ -8,32 +8,43 @@ struct MissionView: View {
 
     var body: some View {
         VStack(spacing: 24) {
-            Text(alarm.label).font(.title.bold())
+            Text(alarm.label.isEmpty ? "アラーム" : alarm.label).font(.title.bold())
             Text(alarm.timeText).font(.system(size: 58, weight: .light, design: .rounded)).monospacedDigit()
-            Text("解除方法: \(effectiveMission.title)").foregroundStyle(.secondary)
+            Text("解除方法: \(effectiveMission.title)").foregroundStyle(IgnidoTheme.secondaryText)
             Group {
                 switch effectiveMission {
-                case .none: Button("停止") { onComplete() }.buttonStyle(.borderedProminent)
-                case .steps: StepMissionView(target: max(1, alarm.missionTarget), onComplete: onComplete)
-                case .math: MathMissionView(target: max(1, alarm.missionTarget), onComplete: onComplete)
-                case .taps: TapMissionView(target: max(1, alarm.missionTarget), onComplete: onComplete)
-                case .code: CodeMissionView(code: alarm.unlockCode, onComplete: onComplete)
-                case .shake: ShakeMissionView(target: max(1, alarm.missionTarget), onComplete: onComplete)
-                case .memory: MemoryMissionView(onComplete: onComplete)
-                case .sentence: SentenceMissionView(sentence: alarm.unlockSentence, onComplete: onComplete)
-                case .hold: HoldMissionView(seconds: max(1, alarm.missionTarget), onComplete: onComplete)
-                case .swipe: SwipeMissionView(target: max(1, alarm.missionTarget), onComplete: onComplete)
-                case .order: OrderMissionView(onComplete: onComplete)
-                case .reverse: ReverseMissionView(onComplete: onComplete)
+                case .none: Button("停止") { finish() }.buttonStyle(.borderedProminent)
+                case .steps: StepMissionView(target: max(1, alarm.missionTarget), onComplete: finish)
+                case .math: MathMissionView(target: max(1, alarm.missionTarget), onComplete: finish)
+                case .taps: TapMissionView(target: max(1, alarm.missionTarget), onComplete: finish)
+                case .code: CodeMissionView(code: alarm.unlockCode, onComplete: finish)
+                case .shake: ShakeMissionView(target: max(1, alarm.missionTarget), onComplete: finish)
+                case .memory: MemoryMissionView(onComplete: finish)
+                case .sentence: SentenceMissionView(sentence: alarm.unlockSentence, onComplete: finish)
+                case .hold: HoldMissionView(seconds: max(1, alarm.missionTarget), onComplete: finish)
+                case .swipe: SwipeMissionView(target: max(1, alarm.missionTarget), onComplete: finish)
+                case .order: OrderMissionView(onComplete: finish)
+                case .reverse: ReverseMissionView(onComplete: finish)
                 case .random: EmptyView()
                 }
             }
             Spacer()
         }
         .padding(24)
+        .background(IgnidoTheme.background.ignoresSafeArea())
+        .foregroundStyle(IgnidoTheme.text)
+        .tint(IgnidoTheme.ember)
         .onAppear {
             effectiveMission = alarm.mission == .random ? (AlarmMission.randomCandidates.randomElement() ?? .math) : alarm.mission
+            AlarmRuntime.preparePlaybackSession()
+            AlarmHaptics.shared.start(alarm.vibration)
         }
+        .onDisappear { AlarmHaptics.shared.stop() }
+    }
+
+    private func finish() {
+        AlarmHaptics.shared.stop()
+        onComplete()
     }
 }
 
@@ -43,7 +54,7 @@ private struct ProgressLabel: View {
         VStack(spacing: 8) {
             Text(title).font(.headline)
             Text("\(value) / \(target)").font(.system(size: 34, weight: .semibold, design: .rounded)).monospacedDigit()
-            ProgressView(value: Double(value), total: Double(max(target, 1))).tint(.red)
+            ProgressView(value: Double(value), total: Double(max(target, 1))).tint(IgnidoTheme.ember)
         }
     }
 }
@@ -59,7 +70,7 @@ struct StepMissionView: View {
         VStack(spacing: 18) {
             ProgressLabel(value: steps, target: target, title: "スマホを持って歩く")
             Text("iPhoneのモーションプロセッサが認識した実歩数だけを使います。振っただけの加速度は直接歩数として加算しません。")
-                .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                .font(.caption).foregroundStyle(IgnidoTheme.secondaryText).multilineTextAlignment(.center)
             if let errorText { Text(errorText).font(.caption).foregroundStyle(.red) }
         }
         .onAppear { start() }
@@ -151,7 +162,7 @@ struct ShakeMissionView: View {
         VStack(spacing: 18) {
             ProgressLabel(value: count, target: target, title: "スマホをしっかり振る")
             Text("連続した微振動を多重カウントしないよう、1回ごとに間隔を置いて判定します。")
-                .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                .font(.caption).foregroundStyle(IgnidoTheme.secondaryText).multilineTextAlignment(.center)
         }.onAppear { start() }.onDisappear { manager.stopDeviceMotionUpdates() }
     }
     private func start() {
@@ -218,7 +229,7 @@ struct HoldMissionView: View {
     var body: some View {
         VStack(spacing: 16) {
             Text("\(seconds)秒間、離さず長押し").font(.headline)
-            RoundedRectangle(cornerRadius: 28).fill(pressing ? Color.red.opacity(0.8) : Color.secondary.opacity(0.25))
+            RoundedRectangle(cornerRadius: 28).fill(pressing ? IgnidoTheme.ember.opacity(0.8) : Color.secondary.opacity(0.25))
                 .frame(height: 150).overlay(Text(pressing ? "そのまま" : "長押し").font(.title.bold()))
                 .onLongPressGesture(minimumDuration: Double(seconds), maximumDistance: 40, pressing: { pressing = $0 }, perform: onComplete)
         }
