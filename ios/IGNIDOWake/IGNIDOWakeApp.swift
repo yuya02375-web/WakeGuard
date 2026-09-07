@@ -9,6 +9,7 @@ struct IGNIDOWakeApp: App {
     @StateObject private var worldClockStore = WorldClockStore()
     @StateObject private var streakStore = StreakStore()
     @StateObject private var streakParityStore = StreakParityStore()
+    @StateObject private var languageStore = AppLanguageStore()
 
     init() {
         InitialState.migrate()
@@ -25,6 +26,8 @@ struct IGNIDOWakeApp: App {
                 .environmentObject(worldClockStore)
                 .environmentObject(streakStore)
                 .environmentObject(streakParityStore)
+                .environmentObject(languageStore)
+                .environment(\.locale, languageStore.locale)
                 .tint(IgnidoTheme.ember)
                 .preferredColorScheme(.dark)
                 .task { await alarmStore.bootstrap() }
