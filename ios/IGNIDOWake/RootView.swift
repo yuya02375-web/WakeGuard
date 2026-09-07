@@ -1,195 +1,125 @@
 import SwiftUI
-import AlarmKit
 
 struct RootView: View {
     var body: some View {
         TabView {
             AlarmListView()
                 .tabItem { Label("アラーム", systemImage: "alarm.fill") }
+            TimerView()
+                .tabItem { Label("タイマー", systemImage: "timer") }
             StopwatchView()
                 .tabItem { Label("ストップウォッチ", systemImage: "stopwatch.fill") }
             WorldClockView()
                 .tabItem { Label("世界時計", systemImage: "globe") }
-            AboutView()
-                .tabItem { Label("IGNIDO", systemImage: "flame.fill") }
+            StreakView()
+                .tabItem { Label("ストリーク", systemImage: "flame.fill") }
         }
         .tint(Color(red: 0.95, green: 0.18, blue: 0.08))
     }
 }
 
-struct AlarmListView: View {
-    @EnvironmentObject private var store: AlarmStore
-    @State private var showingAdd = false
+struct StreakView: View {
+    @EnvironmentObject private var store: StreakStore
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 5), count: 7)
 
     var body: some View {
         NavigationStack {
-            List {
-                if store.authorizationState != .authorized {
-                    Section {
-                        Button("アラーム権限を許可") {
-                            Task { _ = await store.requestAuthorization() }
-                        }
-                    } footer: {
-                        Text("iOS 26のAlarmKitを使い、集中モードや消音中でも目立つアラームを表示します。")
+            ScrollView {
+                VStack(spacing: 24) {
+                    FlameCompanionView(stage: store.flameStage)
+                        .frame(height: 210)
+                    HStack(spacing: 40) {
+                        stat("現在", value: store.currentStreak)
+                        stat("最高", value: store.bestStreak)
                     }
-                }
-
-                Section {
-                    ForEach(store.alarms) { alarm in
-                        AlarmRow(alarm: alarm)
-                    }
-                    .onDelete(perform: store.delete)
-                }
-
-                if let error = store.lastError {
-                    Section("エラー") { Text(error).foregroundStyle(.red) }
-                }
+                    Text("続けるほど炎が成長します")
+                        .font(.headline)
+                    wakeCalendar
+                    Button("今日の起床を記録") { store.recordWake() }
+                        .buttonStyle(.borderedProminent)
+                    NavigationLink("アプリ情報・iOS版の仕様") { AboutView() }
+                        .buttonStyle(.bordered)
+                }.padding()
             }
-            .navigationTitle("IGNIDO Wake")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showingAdd = true } label: { Image(systemName: "plus") }
-                }
-            }
-            .sheet(isPresented: $showingAdd) { AddAlarmView() }
+            .navigationTitle("ストリーク")
         }
+    }
+
+    private func stat(_ title: String, value: Int) -> some View {
+        VStack(spacing: 5) {
+            Text("\(value)").font(.system(size: 42, weight: .bold, design: .rounded)).monospacedDigit()
+            Text(title).foregroundStyle(.secondary)
+        }
+    }
+
+    private var wakeCalendar: some View {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let days = (0..<35).reversed().compactMap { calendar.date(byAdding: .day, value: -$0, to: today) }
+        return VStack(alignment: .leading, spacing: 10) {
+            Text("起床カレンダー").font(.headline)
+            LazyVGrid(columns: columns, spacing: 6) {
+                ForEach(days, id: \.self) { date in
+                    let hit = store.wakeDates.contains { calendar.isDate($0, inSameDayAs: date) }
+                    VStack(spacing: 3) {
+                        Text("\(calendar.component(.day, from: date))").font(.caption2)
+                        Circle().fill(hit ? Color.red : Color.secondary.opacity(0.2)).frame(width: 22, height: 22)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18))
     }
 }
 
-struct AlarmRow: View {
-    @EnvironmentObject private var store: AlarmStore
-    let alarm: WakeAlarm
-
+struct FlameCompanionView: View {
+    let stage: Int
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(alarm.timeText).font(.system(size: 42, weight: .light, design: .rounded)).monospacedDigit()
-                Text(alarm.label).font(.headline)
-                Text(alarm.repeatText).font(.caption).foregroundStyle(.secondary)
-            }
-            Spacer()
-            Toggle("", isOn: Binding(
-                get: { alarm.enabled },
-                set: { value in Task { await store.setEnabled(alarm, enabled: value) } }
-            )).labelsHidden()
-        }
-        .padding(.vertical, 6)
-    }
-}
-
-struct AddAlarmView: View {
-    @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var store: AlarmStore
-    @State private var time = Date()
-    @State private var label = "起床"
-    @State private var weekdays: Set<Int> = []
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                DatePicker("時刻", selection: $time, displayedComponents: .hourAndMinute)
-                    .datePickerStyle(.wheel)
-                    .labelsHidden()
-                TextField("ラベル", text: $label)
-                Section("繰り返し") {
-                    HStack {
-                        ForEach(Array(zip(1...7, ["月","火","水","木","金","土","日"])), id: \.0) { day, name in
-                            Button(name) {
-                                if weekdays.contains(day) { weekdays.remove(day) } else { weekdays.insert(day) }
-                            }
-                            .buttonStyle(.bordered)
-                            .tint(weekdays.contains(day) ? .red : .gray)
-                        }
+        ZStack {
+            Circle().fill(Color.red.opacity(0.08)).frame(width: 190, height: 190)
+            Image(systemName: "flame.fill")
+                .resizable().scaledToFit()
+                .foregroundStyle(
+                    LinearGradient(colors: [Color(red: 0.55, green: 0.05, blue: 0.04), .red, Color(red: 0.82, green: 0.42, blue: 0.16)], startPoint: .bottomLeading, endPoint: .topTrailing)
+                )
+                .shadow(color: .red.opacity(stage >= 2 ? 0.4 : 0.15), radius: CGFloat(4 + stage * 4))
+                .frame(width: CGFloat(80 + stage * 18), height: CGFloat(105 + stage * 18))
+                .overlay(alignment: .bottom) {
+                    if stage >= 3 {
+                        HStack(spacing: 18) {
+                            Circle().fill(.black.opacity(0.75)).frame(width: 8, height: 8)
+                            Circle().fill(.black.opacity(0.75)).frame(width: 8, height: 8)
+                        }.padding(.bottom, 42)
                     }
                 }
-            }
-            .navigationTitle("アラームを追加")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("キャンセル") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") {
-                        let c = Calendar.current.dateComponents([.hour, .minute], from: time)
-                        Task {
-                            await store.add(hour: c.hour ?? 7, minute: c.minute ?? 0, label: label, weekdays: weekdays)
-                            dismiss()
-                        }
-                    }
-                }
+            if stage >= 4 {
+                Image(systemName: "sparkles").font(.system(size: 36)).foregroundStyle(.orange).offset(x: 60, y: -65)
             }
         }
-    }
-}
-
-struct StopwatchView: View {
-    @State private var running = false
-    @State private var accumulated: TimeInterval = 0
-    @State private var startedAt: Date?
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 36) {
-                TimelineView(.periodic(from: .now, by: 0.03)) { _ in
-                    Text(format(elapsed))
-                        .font(.system(size: 54, weight: .light, design: .rounded))
-                        .monospacedDigit()
-                }
-                HStack(spacing: 24) {
-                    Button(running ? "停止" : "開始") { toggle() }.buttonStyle(.borderedProminent)
-                    Button("リセット") { running = false; accumulated = 0; startedAt = nil }.buttonStyle(.bordered)
-                }
-                Spacer()
-            }
-            .padding(.top, 70)
-            .navigationTitle("ストップウォッチ")
-        }
-    }
-
-    private var elapsed: TimeInterval { accumulated + (running ? Date().timeIntervalSince(startedAt ?? Date()) : 0) }
-    private func toggle() {
-        if running {
-            accumulated += Date().timeIntervalSince(startedAt ?? Date())
-            startedAt = nil
-        } else { startedAt = Date() }
-        running.toggle()
-    }
-    private func format(_ t: TimeInterval) -> String {
-        let cs = Int(t * 100) % 100, sec = Int(t) % 60, min = Int(t) / 60
-        return String(format: "%02d:%02d.%02d", min, sec, cs)
-    }
-}
-
-struct WorldClockView: View {
-    private let zones = ["Asia/Tokyo", "America/Los_Angeles", "America/New_York", "Europe/London", "Asia/Seoul"]
-    var body: some View {
-        NavigationStack {
-            List(zones, id: \.self) { zone in
-                HStack {
-                    Text(city(zone))
-                    Spacer()
-                    TimelineView(.periodic(from: .now, by: 30)) { _ in
-                        Text(time(zone)).font(.title2).monospacedDigit()
-                    }
-                }
-            }.navigationTitle("世界時計")
-        }
-    }
-    private func city(_ zone: String) -> String { zone.split(separator: "/").last.map(String.init)?.replacingOccurrences(of: "_", with: " ") ?? zone }
-    private func time(_ zone: String) -> String {
-        let f = DateFormatter(); f.dateFormat = "HH:mm"; f.timeZone = TimeZone(identifier: zone); return f.string(from: Date())
+        .accessibilityLabel("炎キャラクター レベル\(stage + 1)")
     }
 }
 
 struct AboutView: View {
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 18) {
-                Image(systemName: "flame.circle.fill").font(.system(size: 90)).foregroundStyle(.red, .orange)
-                Text("IGNIDO Wake").font(.largeTitle.bold())
-                Text("iOS alpha 0.1.0").foregroundStyle(.secondary)
-                Text("Android版v1.7.2を基準にしたiPhone移植の最初の実機テスト版。AlarmKitのアラーム、ストップウォッチ、世界時計を先行実装しています。")
-                    .multilineTextAlignment(.center).foregroundStyle(.secondary).padding()
-                Spacer()
-            }.padding(.top, 60).navigationTitle("IGNIDO")
+        List {
+            Section {
+                HStack {
+                    Image(systemName: "flame.circle.fill").font(.system(size: 54)).foregroundStyle(.red, .orange)
+                    VStack(alignment: .leading) {
+                        Text("IGNIDO Wake").font(.title2.bold())
+                        Text("iOS 1.7.2 parity beta").foregroundStyle(.secondary)
+                    }
+                }
+            }
+            Section("実装済み") {
+                Text("アラーム / 13種解除ミッション / 繰り返し / 事前通知 / 音声・動画選択 / 動画字幕 / タイマー / ストップウォッチ / ラップ / 世界時計 / デジタル・アナログ切替 / 拡大表示 / ストリーク / 起床カレンダー")
+            }
+            Section("iOS固有") {
+                Text("システムアラームはAlarmKitを使用します。iOSはロック画面のシステム停止操作や、バックグラウンドから任意の動画画面を強制表示する動作をアプリ側で完全には置き換えられません。アプリ内の解除ミッションと動画再生はAndroid版と同じ操作体系に寄せています。")
+            }
         }
+        .navigationTitle("アプリ情報")
     }
 }
