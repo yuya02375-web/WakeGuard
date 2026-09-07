@@ -8,7 +8,6 @@ final class AlarmStore: ObservableObject {
     @Published var authorizationState: AlarmManager.AuthorizationState = AlarmManager.shared.authorizationState
     @Published var lastError: String?
 
-    private let manager = AlarmManager.shared
     private let storageKey = "ignido.ios.alarms.v1"
 
     init() {
@@ -16,10 +15,10 @@ final class AlarmStore: ObservableObject {
     }
 
     func bootstrap() async {
-        authorizationState = manager.authorizationState
+        authorizationState = AlarmManager.shared.authorizationState
         Task { [weak self] in
             guard let self else { return }
-            for await state in manager.authorizationUpdates {
+            for await state in AlarmManager.shared.authorizationUpdates {
                 await MainActor.run { self.authorizationState = state }
             }
         }
@@ -27,7 +26,7 @@ final class AlarmStore: ObservableObject {
 
     func requestAuthorization() async -> Bool {
         do {
-            let state = try await manager.requestAuthorization()
+            let state = try await AlarmManager.shared.requestAuthorization()
             authorizationState = state
             return state == .authorized
         } catch {
@@ -45,7 +44,7 @@ final class AlarmStore: ObservableObject {
 
     func delete(at offsets: IndexSet) {
         let targets = offsets.map { alarms[$0] }
-        for item in targets { try? manager.cancel(id: item.id) }
+        for item in targets { try? AlarmManager.shared.cancel(id: item.id) }
         alarms.remove(atOffsets: offsets)
         save()
     }
@@ -58,7 +57,7 @@ final class AlarmStore: ObservableObject {
         if enabled {
             await schedule(updated)
         } else {
-            try? manager.cancel(id: updated.id)
+            try? AlarmManager.shared.cancel(id: updated.id)
         }
     }
 
@@ -68,7 +67,7 @@ final class AlarmStore: ObservableObject {
             guard await requestAuthorization() else { return }
         }
         do {
-            try? manager.cancel(id: item.id)
+            try? AlarmManager.shared.cancel(id: item.id)
             let time = Alarm.Schedule.Relative.Time(hour: item.hour, minute: item.minute)
             let recurrence: Alarm.Schedule.Relative.Recurrence = item.weekdays.isEmpty ? .never : .weekly(localeWeekdays(item.weekdays))
             let schedule: Alarm.Schedule = .relative(.init(time: time, repeats: recurrence))
@@ -85,7 +84,7 @@ final class AlarmStore: ObservableObject {
                 attributes: attributes,
                 sound: .default
             )
-            _ = try await manager.schedule(id: item.id, configuration: configuration)
+            _ = try await AlarmManager.shared.schedule(id: item.id, configuration: configuration)
             lastError = nil
         } catch {
             lastError = error.localizedDescription
