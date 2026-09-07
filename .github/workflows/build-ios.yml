@@ -6,6 +6,8 @@ on:
       - 'ios/**'
       - 'tools/patch_ios_v178.py'
       - 'tools/patch_ios_v181_video_mission.py'
+      - 'tools/patch_ios_v182_fast_trilingual_search.py'
+      - 'tools/generate_ios_world_city_catalog.py'
       - '.github/workflows/build-ios.yml'
 permissions:
   contents: write
@@ -18,10 +20,18 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
       - name: Install XcodeGen
         run: brew install xcodegen
-      - name: Apply iOS parity and video-mission patches
+      - name: Apply iOS parity, video-mission and fast-search patches
         run: |
           python3 tools/patch_ios_v178.py
           python3 tools/patch_ios_v181_video_mission.py
+          python3 tools/patch_ios_v182_fast_trilingual_search.py
+      - name: Generate Japanese English Korean city catalog
+        run: |
+          curl -fsSL --retry 4 --retry-delay 2 https://download.geonames.org/export/dump/cities15000.zip -o /tmp/cities15000.zip
+          unzip -p /tmp/cities15000.zip cities15000.txt > /tmp/cities15000.txt
+          test -s /tmp/cities15000.txt
+          python3 tools/generate_ios_world_city_catalog.py
+          test $(wc -c < ios/IGNIDOWake/world_cities.tsv) -gt 1000000
       - name: Generate reliable bundled AlarmKit sound
         run: |
           python3 - <<'PY'
@@ -47,10 +57,15 @@ jobs:
               w.writeframes(b''.join(frames))
           assert out.stat().st_size>100000
           PY
-      - name: Validate 1.8.1 fixes
+      - name: Validate 1.8.2 fixes
         run: |
-          grep -q '<string>1.8.1</string>' ios/IGNIDOWake/Info.plist
-          grep -q 'CFBundleShortVersionString: "1.8.1"' ios/project.yml
+          grep -q '<string>1.8.2</string>' ios/IGNIDOWake/Info.plist
+          grep -q '<string>11</string>' ios/IGNIDOWake/Info.plist
+          grep -q 'CFBundleShortVersionString: "1.8.2"' ios/project.yml
+          grep -q 'IOSWorldCityCatalog.shared.search' ios/IGNIDOWake/ClockViews.swift
+          grep -q '日本語・English・한국어で検索' ios/IGNIDOWake/ClockViews.swift
+          grep -q 'func add(_ identifier: String, displayName: String? = nil)' ios/IGNIDOWake/FeatureStores.swift
+          grep -q 'queryCache' ios/IGNIDOWake/WorldCityCatalog.swift
           grep -q 'sound: .named(soundName)' ios/IGNIDOWake/AlarmStore.swift
           grep -q 'systemTitle' ios/IGNIDOWake/AlarmStore.swift
           grep -q 'AlarmHaptics.shared.start' ios/IGNIDOWake/MissionView.swift
@@ -68,6 +83,7 @@ jobs:
           test -s ios/IGNIDOWake/en.lproj/Localizable.strings
           test -s ios/IGNIDOWake/ko.lproj/Localizable.strings
           test -s ios/IGNIDOWake/ignido_alarm.wav
+          test -s ios/IGNIDOWake/world_cities.tsv
       - name: Reconstruct accepted IGNIDO Wake icon and create asset catalog
         run: |
           cd ios
@@ -122,30 +138,33 @@ jobs:
           APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
           test -n "$APP"
           test -f "$APP/ignido_alarm.wav"
+          test -f "$APP/world_cities.tsv"
           rm -rf Payload
           mkdir Payload
           cp -R "$APP" Payload/
-          /usr/bin/zip -qry IGNIDO-Wake-iOS-1.8.1-video-mission-beta.ipa Payload
-          unzip -t IGNIDO-Wake-iOS-1.8.1-video-mission-beta.ipa
-          shasum -a 256 IGNIDO-Wake-iOS-1.8.1-video-mission-beta.ipa | tee IGNIDO-Wake-iOS-1.8.1-video-mission-beta.sha256
+          /usr/bin/zip -qry IGNIDO-Wake-iOS-1.8.2-fast-search-beta.ipa Payload
+          unzip -t IGNIDO-Wake-iOS-1.8.2-fast-search-beta.ipa
+          shasum -a 256 IGNIDO-Wake-iOS-1.8.2-fast-search-beta.ipa | tee IGNIDO-Wake-iOS-1.8.2-fast-search-beta.sha256
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: IGNIDO-Wake-iOS-1.8.1-patched-source
+          name: IGNIDO-Wake-iOS-1.8.2-patched-source
           path: |
             ios/IGNIDOWake/
             ios/project.yml
             tools/patch_ios_v178.py
             tools/patch_ios_v181_video_mission.py
+            tools/patch_ios_v182_fast_trilingual_search.py
+            tools/generate_ios_world_city_catalog.py
       - uses: actions/upload-artifact@v4
         with:
-          name: IGNIDO-Wake-iOS-1.8.1-video-mission-beta
+          name: IGNIDO-Wake-iOS-1.8.2-fast-search-beta
           path: |
-            ios/IGNIDO-Wake-iOS-1.8.1-video-mission-beta.ipa
-            ios/IGNIDO-Wake-iOS-1.8.1-video-mission-beta.sha256
+            ios/IGNIDO-Wake-iOS-1.8.2-fast-search-beta.ipa
+            ios/IGNIDO-Wake-iOS-1.8.2-fast-search-beta.sha256
       - name: Publish prerelease asset
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="ios-181-${GITHUB_RUN_NUMBER}"
-          gh release create "$TAG" ios/IGNIDO-Wake-iOS-1.8.1-video-mission-beta.ipa ios/IGNIDO-Wake-iOS-1.8.1-video-mission-beta.sha256 --title "IGNIDO Wake iOS 1.8.1 video mission beta (${GITHUB_RUN_NUMBER})" --notes "Unsigned IPA for SideStore. Fixes video alarms with missions so the AVPlayer remains mounted and visible while mission UI is shown as a translucent overlay. Retains the 1.8.0 AlarmKit sound, subtitles, clock parity, multiple timers and streak features. iOS system-level restrictions on forced foreground launch remain." --prerelease
+          TAG="ios-182-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" ios/IGNIDO-Wake-iOS-1.8.2-fast-search-beta.ipa ios/IGNIDO-Wake-iOS-1.8.2-fast-search-beta.sha256 --title "IGNIDO Wake iOS 1.8.2 fast search beta (${GITHUB_RUN_NUMBER})" --notes "Unsigned IPA for SideStore. Adds fast offline city search using GeoNames aliases in Japanese, English and Korean, with debounced background lookup and query caching. Retains the 1.8.1 video-mission overlay fix and previous AlarmKit, clock, timer and streak features." --prerelease
