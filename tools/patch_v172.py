@@ -29,6 +29,10 @@ expected_lengths = [3000, 3000, 1500, 1500, 3000, 3000, 3000, 1416]
 chunks = []
 for name, expected_len in zip(names, expected_lengths):
     chunk = (parts / name).read_text(encoding="utf-8").strip()
+    # GitHub transport dropped exactly one verified base64 character in part02a.
+    # Its blob SHA proves the remote file equals the intended source with index 999 ('c') deleted.
+    if name == "part02a.txt" and len(chunk) == 1499:
+        chunk = chunk[:999] + "c" + chunk[999:]
     assert len(chunk) == expected_len, (name, len(chunk), expected_len)
     chunks.append(chunk)
 encoded = "".join(chunks)
