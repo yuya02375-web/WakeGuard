@@ -13,11 +13,9 @@ assert old_layer in s, 'v1.7.1 bitmap layer anchor missing'
 assert mono_write in s, 'v1.7.1 monochrome write anchor missing'
 assert old_assert in s, 'v1.7.1 foreground assert anchor missing'
 
-# The original bitmap transfer was split into text chunks and one chunk was truncated by two
-# characters in GitHub. Avoid fragile binary-in-text transport entirely: the exact Wake mark
-# already exists as the traced vector used for Android 13 themed/notification icons. Reuse that
-# vector as the adaptive-icon foreground, tinted with IGNIDO ember. This is lossless, offline,
-# deterministic, and cannot be corrupted by base64 chunk boundaries.
+# Avoid the fragile binary/base64 transfer path. The exact Wake mark already exists as the
+# traced vector used for Android themed/notification icons, so use that vector directly as the
+# adaptive-icon foreground and tint it with IGNIDO ember.
 s = s.replace(old_binary, '', 1)
 s = s.replace(old_layer, '', 1)
 s = s.replace(
@@ -26,6 +24,10 @@ s = s.replace(
     1,
 )
 s = s.replace('@drawable/ic_ignido_wake_foreground_layer', '@drawable/ic_ignido_wake_foreground')
-s = s.replace(old_assert, 'assert (res/"drawable/ic_ignido_wake_foreground.xml").stat().st_size>5000', 1)
+s = s.replace(
+    old_assert,
+    'fgp=res/"drawable/ic_ignido_wake_foreground.xml"; assert fgp.stat().st_size>3000 and "#FFF13A24" in rd(fgp)',
+    1,
+)
 
 exec(compile(s, 'patch_v171.py', 'exec'), {'__name__':'__main__'})
