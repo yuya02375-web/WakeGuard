@@ -1,4 +1,4 @@
-name: Build WakeGuard Stable APK
+name: Build IGNIDO Wake Stable APK
 
 on:
   workflow_dispatch:
@@ -38,7 +38,7 @@ jobs:
           test -s /tmp/cities15000.txt
           grep -F $'\tSeattle\t' /tmp/cities15000.txt | head -1
 
-      - name: Apply WakeGuard v1.7.0 fixes
+      - name: Apply IGNIDO Wake v1.7.1 branding and icon patch
         run: |
           python3 tools/patch_v156_runner.py
           python3 tools/patch_v157.py
@@ -55,8 +55,19 @@ jobs:
           python3 tools/patch_v168.py
           python3 tools/patch_v169.py
           python3 tools/patch_v170.py
-          grep -n 'versionName = "1.7.0"' WakeGuard/app/build.gradle.kts
-          grep -n 'versionCode = 81' WakeGuard/app/build.gradle.kts
+          python3 tools/patch_v171_prepare.py
+          grep -n 'versionName = "1.7.1"' WakeGuard/app/build.gradle.kts
+          grep -n 'versionCode = 82' WakeGuard/app/build.gradle.kts
+          grep -q '<string name="app_name">IGNIDO Wake</string>' WakeGuard/app/src/main/res/values/strings.xml
+          grep -q 'android:icon="@mipmap/ic_launcher"' WakeGuard/app/src/main/AndroidManifest.xml
+          grep -q 'android:roundIcon="@mipmap/ic_launcher_round"' WakeGuard/app/src/main/AndroidManifest.xml
+          grep -q '<adaptive-icon' WakeGuard/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          grep -q '<monochrome' WakeGuard/app/src/main/res/mipmap-anydpi-v33/ic_launcher.xml
+          test -s WakeGuard/app/src/main/res/drawable-nodpi/ic_ignido_wake_foreground.webp
+          echo 'b45911d900f10bed2faccdb8417471aaeb0db706f8a4d0b16132937124061a4d  WakeGuard/app/src/main/res/drawable-nodpi/ic_ignido_wake_foreground.webp' | sha256sum -c -
+          test -s WakeGuard/app/src/main/res/drawable/ic_ignido_notification.xml
+          grep -q 'R.drawable.ic_ignido_notification' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
+          grep -q 'windowSplashScreenAnimatedIcon' WakeGuard/app/src/main/res/values-v31/ignido_splash.xml
           grep -q 'PendingAlarmQueue.enqueue' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
           grep -q 'PendingAlarmQueue.poll' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
           grep -q 'creditInterval = Math.min(interval, 2500L)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
@@ -70,15 +81,12 @@ jobs:
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.7.0-patched-source
+          name: IGNIDO-Wake-v1.7.1-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
-            WakeGuard/app/src/main/res/layout/*.xml
-            WakeGuard/app/src/main/res/drawable/*.xml
-            WakeGuard/app/src/main/res/values/*.xml
-            WakeGuard/app/src/main/res/xml/*.xml
-            WakeGuard/app/src/main/assets/*
+            WakeGuard/app/src/main/res/
+            WakeGuard/app/src/main/assets/
             WakeGuard/app/build.gradle.kts
 
       - name: Validate stable signing secrets
@@ -124,11 +132,12 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out WakeGuard-v1.7.0-stable.apk \
+            --out IGNIDO-Wake-v1.7.1-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs WakeGuard-v1.7.0-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs IGNIDO-Wake-v1.7.1-stable.apk
+          sha256sum IGNIDO-Wake-v1.7.1-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-v1.7.0-stable-apk
-          path: WakeGuard-v1.7.0-stable.apk
+          name: IGNIDO-Wake-v1.7.1-stable-apk
+          path: IGNIDO-Wake-v1.7.1-stable.apk
