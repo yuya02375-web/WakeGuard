@@ -37,7 +37,7 @@ jobs:
           unzip -p /tmp/cities15000.zip cities15000.txt > /tmp/cities15000.txt
           test -s /tmp/cities15000.txt
 
-      - name: Apply IGNIDO Wake v1.7.6 patch set
+      - name: Apply IGNIDO Wake v1.7.7 patch set
         run: |
           python3 tools/patch_v156_runner.py
           python3 tools/patch_v157.py
@@ -60,24 +60,25 @@ jobs:
           python3 tools/patch_v174_fire.py
           python3 tools/patch_v175_clock_surface.py
           python3 tools/patch_v176_clean_initial_state.py
-          grep -n 'versionName = "1.7.6"' WakeGuard/app/build.gradle.kts
-          grep -n 'versionCode = 87' WakeGuard/app/build.gradle.kts
+          python3 tools/patch_v177_android_ux.py
+          grep -n 'versionName = "1.7.7"' WakeGuard/app/build.gradle.kts
+          grep -n 'versionCode = 88' WakeGuard/app/build.gradle.kts
           grep -q 'setBackgroundColor(Color.TRANSPARENT)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockFaceActivity.java
           grep -q 'primaryConfigured(Context c)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/Prefs.java
           grep -q 'getBoolean("enabled", false)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/Prefs.java
-          grep -q 'getInt("hour", 7)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/Prefs.java
-          grep -q 'getInt("minute", 0)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/Prefs.java
           grep -q 'if(Prefs.primaryConfigured(c)) out.add(primary(c));' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmProfiles.java
-          grep -q 'if(Prefs.primaryConfigured(c)) scheduleSpec' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmScheduler.java
           grep -q 'v176_initial_balance_fixed' WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakProtection.java
-          grep -q 'protectionValue=Ui.text(this,"0 / 3"' WakeGuard/app/src/main/java/jp/wakeguard/alarm/StatsActivity.java
+          grep -q 'MUTED_2 = 0xFF968A80' WakeGuard/app/src/main/java/jp/wakeguard/alarm/Ui.java
+          grep -q 'Button del=Ui.ghostButton(this,"削除")' WakeGuard/app/src/main/java/jp/wakeguard/alarm/MainActivity.java
+          grep -q 'row.setAlpha(1f)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/MainActivity.java
+          grep -q 'private void confirmDelete(AlarmStore.Entry e)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/MainActivity.java
           grep -q '<string name="app_name">IGNIDO Wake</string>' WakeGuard/app/src/main/res/values/strings.xml
           test -s WakeGuard/app/src/main/res/drawable-nodpi/ic_ignido_wake_full_v172.webp
 
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: IGNIDO-Wake-v1.7.6-patched-source
+          name: IGNIDO-Wake-v1.7.7-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -128,14 +129,14 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out IGNIDO-Wake-v1.7.6-stable.apk \
+            --out IGNIDO-Wake-v1.7.7-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs IGNIDO-Wake-v1.7.6-stable.apk
-          sha256sum IGNIDO-Wake-v1.7.6-stable.apk | tee IGNIDO-Wake-v1.7.6-stable.sha256
+          "$APKSIGNER" verify --verbose --print-certs IGNIDO-Wake-v1.7.7-stable.apk
+          sha256sum IGNIDO-Wake-v1.7.7-stable.apk | tee IGNIDO-Wake-v1.7.7-stable.sha256
 
       - uses: actions/upload-artifact@v4
         with:
-          name: IGNIDO-Wake-v1.7.6-stable-apk
+          name: IGNIDO-Wake-v1.7.7-stable-apk
           path: |
-            IGNIDO-Wake-v1.7.6-stable.apk
-            IGNIDO-Wake-v1.7.6-stable.sha256
+            IGNIDO-Wake-v1.7.7-stable.apk
+            IGNIDO-Wake-v1.7.7-stable.sha256
