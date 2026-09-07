@@ -18,7 +18,6 @@ struct WakeMediaPlayerView: UIViewControllerRepresentable {
         controller.showsPlaybackControls = true
         controller.entersFullScreenWhenPlaybackBegins = false
         controller.exitsFullScreenWhenPlaybackEnds = false
-        controller.allowedSubtitleOptionLanguages = nil
         context.coordinator.player = player
         context.coordinator.item = item
         context.coordinator.selectSubtitleIfAvailable()
@@ -43,6 +42,7 @@ struct WakeMediaPlayerView: UIViewControllerRepresentable {
         private var token: NSObjectProtocol?
         init(loop: Bool) { self.loop = loop }
 
+        @MainActor
         func selectSubtitleIfAvailable() {
             guard let item,
                   let group = item.asset.mediaSelectionGroup(forMediaCharacteristic: .legible),
