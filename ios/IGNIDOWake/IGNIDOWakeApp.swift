@@ -8,6 +8,10 @@ struct IGNIDOWakeApp: App {
     @StateObject private var worldClockStore = WorldClockStore()
     @StateObject private var streakStore = StreakStore()
 
+    init() {
+        IgnidoAppearance.configure()
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView()
@@ -16,6 +20,7 @@ struct IGNIDOWakeApp: App {
                 .environmentObject(stopwatchStore)
                 .environmentObject(worldClockStore)
                 .environmentObject(streakStore)
+                .tint(IgnidoTheme.ember)
                 .preferredColorScheme(.dark)
                 .task { await alarmStore.bootstrap() }
         }
