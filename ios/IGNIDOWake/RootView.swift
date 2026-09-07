@@ -21,7 +21,7 @@ struct RootView: View {
             StreakView()
                 .tabItem { Label("ストリーク", systemImage: "flame.fill") }
         }
-        .tint(IgnidoTheme.ember)
+        .tint(IgnidoTheme.flame)
         .toolbarBackground(IgnidoTheme.chrome, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)
         .background(IgnidoTheme.background.ignoresSafeArea())
@@ -41,14 +41,16 @@ struct RootView: View {
             } else {
                 ZStack {
                     IgnidoScreenBackground()
-                    VStack(spacing: 24) {
-                        Image(systemName: "timer")
-                            .font(.system(size: 64, weight: .medium))
-                            .foregroundStyle(IgnidoTheme.emberGradient)
-                        Text("タイマー終了").font(.largeTitle.bold()).foregroundStyle(IgnidoTheme.text)
+                    VStack(spacing: 20) {
+                        IgnidoFlameMark()
+                            .frame(width: 48, height: 68)
+                        Text("タイマー終了")
+                            .font(.system(size: 34, weight: .bold))
+                            .foregroundStyle(IgnidoTheme.text)
                         Button("停止") { showTimerResult = false }
                             .buttonStyle(.borderedProminent)
-                            .tint(IgnidoTheme.ember)
+                            .tint(IgnidoTheme.flame)
+                            .controlSize(.large)
                     }
                     .ignidoCard()
                     .padding(28)
@@ -66,18 +68,23 @@ struct RootView: View {
         } else {
             ZStack {
                 IgnidoScreenBackground()
-                VStack(spacing: 24) {
-                    Image(systemName: "alarm.fill")
-                        .font(.system(size: 64, weight: .medium))
-                        .foregroundStyle(IgnidoTheme.emberGradient)
-                    Text(alarm.label).font(.largeTitle.bold()).foregroundStyle(IgnidoTheme.text)
+                VStack(spacing: 18) {
+                    IgnidoFlameMark()
+                        .frame(width: 46, height: 64)
+                    Text(alarm.label)
+                        .font(.title.bold())
+                        .foregroundStyle(IgnidoTheme.text)
                     Text(alarm.timeText)
-                        .font(.system(size: 64, weight: .light, design: .rounded))
+                        .font(.system(size: 68, weight: .light, design: .default))
                         .monospacedDigit()
                         .foregroundStyle(IgnidoTheme.text)
+                    Rectangle()
+                        .fill(IgnidoTheme.flame)
+                        .frame(width: 44, height: 2)
                     Button("停止") { completeAlarm(alarm) }
                         .buttonStyle(.borderedProminent)
-                        .tint(IgnidoTheme.ember)
+                        .tint(IgnidoTheme.flame)
+                        .controlSize(.large)
                 }
                 .ignidoCard()
                 .padding(26)
@@ -111,34 +118,38 @@ struct StreakView: View {
             ZStack {
                 IgnidoScreenBackground()
                 ScrollView {
-                    VStack(spacing: 24) {
-                        VStack(spacing: 10) {
-                            Text("IGNIDO FLAME")
-                                .font(.caption.bold())
-                                .tracking(2.4)
-                                .foregroundStyle(IgnidoTheme.amber)
-                            FlameCompanionView(stage: store.flameStage)
-                                .frame(height: 210)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .ignidoCard()
+                    VStack(spacing: 22) {
+                        FlameCompanionView(stage: store.flameStage)
+                            .frame(height: 235)
+                            .frame(maxWidth: .infinity)
 
-                        HStack(spacing: 12) {
+                        streakSummary
+
+                        HStack(spacing: 0) {
                             stat("現在", value: store.currentStreak)
+                            Rectangle()
+                                .fill(IgnidoTheme.border.opacity(0.7))
+                                .frame(width: 1, height: 52)
                             stat("最高", value: store.bestStreak)
                         }
+                        .padding(.vertical, 14)
+                        .background(IgnidoTheme.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(IgnidoTheme.border.opacity(0.58), lineWidth: 0.8)
+                        )
 
-                        Text("続けるほど炎が成長します")
-                            .font(.headline)
-                            .foregroundStyle(IgnidoTheme.text)
                         wakeCalendar
+
                         Button("今日の起床を記録") { store.recordWake() }
                             .buttonStyle(.borderedProminent)
-                            .tint(IgnidoTheme.ember)
+                            .tint(IgnidoTheme.flame)
                             .controlSize(.large)
+                            .frame(maxWidth: .infinity)
+
                         NavigationLink("アプリ情報・iOS版の仕様") { AboutView() }
-                            .buttonStyle(.bordered)
-                            .tint(IgnidoTheme.amber)
+                            .foregroundStyle(IgnidoTheme.muted)
                     }
                     .padding()
                 }
@@ -147,16 +158,34 @@ struct StreakView: View {
         }
     }
 
-    private func stat(_ title: String, value: Int) -> some View {
-        VStack(spacing: 5) {
-            Text("\(value)")
-                .font(.system(size: 42, weight: .bold, design: .rounded))
+    private var streakSummary: some View {
+        VStack(spacing: 4) {
+            Text("\(store.currentStreak)")
+                .font(.system(size: 58, weight: .black, design: .default))
                 .monospacedDigit()
                 .foregroundStyle(IgnidoTheme.text)
-            Text(title).foregroundStyle(IgnidoTheme.muted)
+            Text("DAY STREAK")
+                .font(.caption.bold())
+                .tracking(1.5)
+                .foregroundStyle(IgnidoTheme.flame)
+            Text("続けるほど炎が大きくなる")
+                .font(.subheadline)
+                .foregroundStyle(IgnidoTheme.muted)
+                .padding(.top, 2)
+        }
+    }
+
+    private func stat(_ title: String, value: Int) -> some View {
+        VStack(spacing: 3) {
+            Text("\(value)")
+                .font(.system(size: 32, weight: .bold, design: .default))
+                .monospacedDigit()
+                .foregroundStyle(IgnidoTheme.text)
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(IgnidoTheme.muted)
         }
         .frame(maxWidth: .infinity)
-        .ignidoCard()
     }
 
     private var wakeCalendar: some View {
@@ -167,19 +196,27 @@ struct StreakView: View {
             HStack {
                 Text("起床カレンダー").font(.headline)
                 Spacer()
-                Image(systemName: "flame.fill").foregroundStyle(IgnidoTheme.ember)
+                IgnidoFlameMark()
+                    .frame(width: 14, height: 20)
             }
-            LazyVGrid(columns: columns, spacing: 8) {
+            LazyVGrid(columns: columns, spacing: 9) {
                 ForEach(days, id: \.self) { date in
                     let hit = store.wakeDates.contains { calendar.isDate($0, inSameDayAs: date) }
                     VStack(spacing: 4) {
                         Text("\(calendar.component(.day, from: date))")
                             .font(.caption2)
                             .foregroundStyle(hit ? IgnidoTheme.text : IgnidoTheme.muted)
-                        Circle()
-                            .fill(hit ? IgnidoTheme.emberGradient : LinearGradient(colors: [IgnidoTheme.surface2], startPoint: .top, endPoint: .bottom))
-                            .frame(width: 23, height: 23)
-                            .overlay(Circle().stroke(hit ? IgnidoTheme.amber.opacity(0.5) : IgnidoTheme.border, lineWidth: 1))
+                        ZStack {
+                            Circle()
+                                .fill(hit ? IgnidoTheme.flame : IgnidoTheme.surface2)
+                                .frame(width: 22, height: 22)
+                            if hit {
+                                IgnidoFlameShape()
+                                    .fill(IgnidoTheme.hot)
+                                    .frame(width: 8, height: 11)
+                            }
+                        }
+                        .overlay(Circle().stroke(hit ? IgnidoTheme.ember.opacity(0.75) : IgnidoTheme.border, lineWidth: 1))
                     }
                 }
             }
@@ -190,32 +227,61 @@ struct StreakView: View {
 
 struct FlameCompanionView: View {
     let stage: Int
+
     var body: some View {
-        ZStack {
-            Circle()
-                .fill(
-                    RadialGradient(colors: [IgnidoTheme.ember.opacity(0.22), IgnidoTheme.surface.opacity(0.1)], center: .center, startRadius: 10, endRadius: 95)
-                )
-                .frame(width: 190, height: 190)
-            Image(systemName: "flame.fill")
-                .resizable().scaledToFit()
-                .foregroundStyle(IgnidoTheme.emberGradient)
-                .shadow(color: IgnidoTheme.ember.opacity(stage >= 2 ? 0.48 : 0.22), radius: CGFloat(6 + stage * 4))
-                .frame(width: CGFloat(80 + stage * 18), height: CGFloat(105 + stage * 18))
-                .overlay(alignment: .bottom) {
-                    if stage >= 3 {
-                        HStack(spacing: 18) {
-                            Circle().fill(.black.opacity(0.78)).frame(width: 8, height: 8)
-                            Circle().fill(.black.opacity(0.78)).frame(width: 8, height: 8)
-                        }.padding(.bottom, 42)
-                    }
+        GeometryReader { geo in
+            let size = min(geo.size.width, geo.size.height)
+            ZStack {
+                if stage >= 2 {
+                    IgnidoFlameShape()
+                        .fill(IgnidoTheme.ember.opacity(0.72))
+                        .frame(width: size * 0.34, height: size * 0.54)
+                        .rotationEffect(.degrees(-13))
+                        .offset(x: -size * 0.23, y: size * 0.10)
+                    IgnidoFlameShape()
+                        .fill(IgnidoTheme.flame.opacity(0.72))
+                        .frame(width: size * 0.30, height: size * 0.49)
+                        .rotationEffect(.degrees(12))
+                        .offset(x: size * 0.24, y: size * 0.12)
                 }
-            if stage >= 4 {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 36))
-                    .foregroundStyle(IgnidoTheme.amber)
-                    .offset(x: 60, y: -65)
+
+                IgnidoFlameShape()
+                    .fill(IgnidoTheme.flameGradient)
+                    .frame(width: size * CGFloat(0.52 + Double(stage) * 0.035),
+                           height: size * CGFloat(0.72 + Double(stage) * 0.035))
+
+                IgnidoFlameShape()
+                    .fill(IgnidoTheme.hot.opacity(stage >= 3 ? 0.98 : 0.86))
+                    .frame(width: size * 0.22, height: size * 0.34)
+                    .offset(y: size * 0.17)
+
+                HStack(spacing: size * 0.08) {
+                    Capsule()
+                        .fill(Color.black.opacity(0.82))
+                        .frame(width: size * 0.065, height: size * 0.018)
+                        .rotationEffect(.degrees(10))
+                    Capsule()
+                        .fill(Color.black.opacity(0.82))
+                        .frame(width: size * 0.065, height: size * 0.018)
+                        .rotationEffect(.degrees(-10))
+                }
+                .offset(y: size * 0.16)
+
+                Capsule()
+                    .fill(Color.black.opacity(0.70))
+                    .frame(width: size * 0.08, height: size * 0.012)
+                    .offset(y: size * 0.22)
+
+                if stage >= 3 {
+                    Circle().fill(IgnidoTheme.hot).frame(width: 6, height: 6).offset(x: size * 0.30, y: -size * 0.20)
+                    Circle().fill(IgnidoTheme.flame).frame(width: 4, height: 4).offset(x: -size * 0.32, y: -size * 0.10)
+                }
+                if stage >= 4 {
+                    Circle().fill(IgnidoTheme.ember).frame(width: 5, height: 5).offset(x: size * 0.36, y: size * 0.02)
+                    Circle().fill(IgnidoTheme.hot).frame(width: 3, height: 3).offset(x: -size * 0.28, y: -size * 0.26)
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityLabel("炎キャラクター レベル\(stage + 1)")
     }
@@ -225,13 +291,12 @@ struct AboutView: View {
     var body: some View {
         List {
             Section {
-                HStack {
-                    Image(systemName: "flame.circle.fill")
-                        .font(.system(size: 54))
-                        .foregroundStyle(IgnidoTheme.emberGradient)
-                    VStack(alignment: .leading) {
+                HStack(spacing: 14) {
+                    IgnidoFlameMark()
+                        .frame(width: 34, height: 48)
+                    VStack(alignment: .leading, spacing: 3) {
                         Text("IGNIDO Wake").font(.title2.bold())
-                        Text("iOS 1.7.3 Ember Night beta").foregroundStyle(IgnidoTheme.muted)
+                        Text("iOS 1.7.4 beta").foregroundStyle(IgnidoTheme.muted)
                     }
                 }
             }
@@ -239,7 +304,7 @@ struct AboutView: View {
                 Text("アラーム / 13種解除ミッション / 繰り返し / 事前通知 / 音声・動画選択 / 動画字幕 / タイマー / システムのタイマー表示 / ストップウォッチ / ラップ / 世界時計 / デジタル・アナログ切替 / 拡大表示 / ストリーク / 起床カレンダー / 重複アラームのアプリ内キュー")
             }
             Section("デザイン") {
-                Text("Ember Night: グラファイト系の黒を基調に、操作・選択だけ赤橙の炎色で強調するIGNIDO専用テーマです。睡眠直後でも時刻と状態を最優先で読み取れるよう、装飾は強調箇所に限定しています。")
+                Text("焦げた黒を土台にして、炎の赤・橙・黄はアクティブ状態とブランドマークに集中させています。丸いカードや発光を乱用せず、炎の輪郭・焼けたエッジ・細い火線でIGNIDOらしさを出しています。")
             }
             Section("iOS固有") {
                 Text("システムアラームはAlarmKitを使用します。解除ミッションや動画を設定したアラームにはロック画面の「解除」ボタンを追加し、押すと該当アラームのIGNIDO画面を開きます。ただしiOSはシステム提供の停止ボタン自体を削除できないため、Android版のようにミッション完了まで停止操作そのものを完全禁止することはできません。また、バックグラウンドから動画画面を無操作で強制表示することもiOSではできません。")
