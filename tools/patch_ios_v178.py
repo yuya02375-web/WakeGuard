@@ -30,7 +30,7 @@ assert 'IgnidoProgressFace(' in s
 assert 'showClockSettings = true' in s
 assert '.sheet(isPresented: $showClockSettings)' in s
 
-# Alarm editor: preserve and show the actual selected filename instead of a generic label.
+# Alarm list/editor: actual selected filename, direct settings access.
 p = Path('ios/IGNIDOWake/AlarmViews.swift')
 s = p.read_text(encoding='utf-8')
 s = s.replace('Text(draft.mediaFileName == nil ? "標準アラーム音" : "カスタムメディア")',
@@ -39,11 +39,46 @@ old = 'draft.mediaFileName = try MediaLibrary.importFile(from: url)\n           
 new = 'draft.mediaFileName = try MediaLibrary.importFile(from: url)\n                draft.soundName = url.lastPathComponent\n                importError = nil'
 if old in s:
     s = s.replace(old, new, 1)
+if '@State private var showingSettings = false' not in s:
+    s=s.replace('@State private var showingAdd = false\n','@State private var showingAdd = false\n    @State private var showingSettings = false\n',1)
+old_alarm_toolbar='''            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showingAdd = true } label: {
+                        Image(systemName: "plus")
+                            .fontWeight(.semibold)
+                    }
+                    .tint(IgnidoTheme.ember)
+                }
+            }
+'''
+new_alarm_toolbar='''            .toolbar {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button { showingSettings = true } label: { Image(systemName: "gearshape.fill") }
+                        .tint(IgnidoTheme.ember)
+                    Button { showingAdd = true } label: { Image(systemName: "plus").fontWeight(.semibold) }
+                        .tint(IgnidoTheme.ember)
+                }
+            }
+'''
+if old_alarm_toolbar in s:
+    s=s.replace(old_alarm_toolbar,new_alarm_toolbar,1)
+if '.sheet(isPresented: $showingSettings)' not in s:
+    marker='''            .sheet(isPresented: $showingAdd) {
+                NavigationStack {
+                    AlarmEditorView(existing: nil)
+                }
+            }
+'''
+    if marker in s:
+        s=s.replace(marker,marker+'''            .sheet(isPresented: $showingSettings) { AppSettingsView() }
+''',1)
 p.write_text(s, encoding='utf-8')
 assert 'draft.soundName = url.lastPathComponent' in s
 assert 'draft.soundName.isEmpty ? "カスタムメディア" : draft.soundName' in s
+assert 'showingSettings = true' in s
+assert 'AppSettingsView()' in s
 
-# Root navigation: use Android-parity multi timers and streak protection/growth dashboard.
+# Root navigation: Android-parity multi timers and streak protection/growth dashboard.
 p = Path('ios/IGNIDOWake/RootView.swift')
 s = p.read_text(encoding='utf-8')
 if '@EnvironmentObject private var multiTimerStore: MultiTimerStore' not in s:
