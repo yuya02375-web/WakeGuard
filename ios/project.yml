@@ -18,8 +18,8 @@ targets:
       properties:
         CFBundleDisplayName: IGNIDO Wake
         CFBundleName: IGNIDO Wake
-        CFBundleShortVersionString: "1.7.6"
-        CFBundleVersion: "6"
+        CFBundleShortVersionString: "1.7.7"
+        CFBundleVersion: "7"
         UILaunchScreen: {}
         NSAlarmKitUsageDescription: "IGNIDO Wakeで設定した目覚まし・アラームとタイマーを指定時刻に鳴らすために使用します。"
         NSMotionUsageDescription: "アラーム解除の歩数・シェイク判定にiPhoneのモーションセンサーを使用します。"
