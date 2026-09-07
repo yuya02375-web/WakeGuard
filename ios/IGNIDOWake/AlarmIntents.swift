@@ -2,9 +2,25 @@ import Foundation
 import AppIntents
 
 private enum WakeIntentBridge {
-    static let pendingAlarmKey = "ignido.intent.pendingAlarmID"
+    static let pendingAlarmQueueKey = "ignido.intent.pendingAlarmQueue"
     static let pendingTimerKey = "ignido.intent.pendingTimer"
     static let streakKey = "ignido.streak.dates.v2"
+
+    static func enqueueAlarm(_ alarmID: String) {
+        let defaults = UserDefaults.standard
+        var queue = defaults.stringArray(forKey: pendingAlarmQueueKey) ?? []
+        if !queue.contains(alarmID) { queue.append(alarmID) }
+        defaults.set(queue, forKey: pendingAlarmQueueKey)
+    }
+
+    static func dequeueAlarm() -> String? {
+        let defaults = UserDefaults.standard
+        var queue = defaults.stringArray(forKey: pendingAlarmQueueKey) ?? []
+        guard !queue.isEmpty else { return nil }
+        let first = queue.removeFirst()
+        defaults.set(queue, forKey: pendingAlarmQueueKey)
+        return first
+    }
 
     static func markWakeCompleted() {
         let defaults = UserDefaults.standard
@@ -33,7 +49,7 @@ public struct OpenAlarmIntent: LiveActivityIntent {
     public init() { self.alarmID = "" }
 
     public func perform() async throws -> some IntentResult {
-        UserDefaults.standard.set(alarmID, forKey: WakeIntentBridge.pendingAlarmKey)
+        WakeIntentBridge.enqueueAlarm(alarmID)
         return .result()
     }
 }
@@ -69,9 +85,7 @@ public struct OpenTimerIntent: LiveActivityIntent {
 
 enum WakeIntentState {
     static func consumeAlarmID() -> UUID? {
-        let defaults = UserDefaults.standard
-        guard let raw = defaults.string(forKey: WakeIntentBridge.pendingAlarmKey) else { return nil }
-        defaults.removeObject(forKey: WakeIntentBridge.pendingAlarmKey)
+        guard let raw = WakeIntentBridge.dequeueAlarm() else { return nil }
         return UUID(uuidString: raw)
     }
 
