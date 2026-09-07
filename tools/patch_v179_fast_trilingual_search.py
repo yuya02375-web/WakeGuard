@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
 /** Fast offline city aliases for world clock selection. GeoNames aliases include Japanese, English and Korean names. */
@@ -33,9 +32,7 @@ public final class WorldCityCatalog {
     private static final char SEP='\u001F';
     private static volatile ArrayList<Entry> CACHE;
     private static final Object QUERY_LOCK=new Object();
-    private static final LinkedHashMap<String,ArrayList<Entry>> QUERY_CACHE=new LinkedHashMap<String,ArrayList<Entry>>(48,0.75f,true){
-        @Override protected boolean removeEldestEntry(Map.Entry<String,ArrayList<Entry>> e){return size()>48;}
-    };
+    private static final LinkedHashMap<String,ArrayList<Entry>> QUERY_CACHE=new LinkedHashMap<>(48,0.75f,true);
 
     public static final class Entry {
         public final String name,asciiName,countryCode,zoneId,search,nameNorm,asciiNorm;
@@ -95,7 +92,10 @@ public final class WorldCityCatalog {
         Collections.sort(scored,new Comparator<Scored>(){public int compare(Scored x,Scored y){int d=Integer.compare(x.score,y.score);if(d!=0)return d;d=Long.compare(y.e.population,x.e.population);if(d!=0)return d;return x.e.name.compareToIgnoreCase(y.e.name);}});
         ArrayList<Entry> out=new ArrayList<>(Math.min(limit,scored.size()));
         for(Scored s:scored){out.add(s.e);if(out.size()>=limit)break;}
-        synchronized(QUERY_LOCK){QUERY_CACHE.put(key,new ArrayList<>(out));}
+        synchronized(QUERY_LOCK){
+            QUERY_CACHE.put(key,new ArrayList<>(out));
+            while(QUERY_CACHE.size()>48){String oldest=QUERY_CACHE.keySet().iterator().next();QUERY_CACHE.remove(oldest);}
+        }
         return out;
     }
     private static final class Scored{final Entry e;final int score;Scored(Entry x,int s){e=x;score=s;}}
@@ -161,6 +161,7 @@ assert 'versionName = "1.7.9"' in p.read_text(encoding='utf-8')
 assert 'versionCode = 90' in p.read_text(encoding='utf-8')
 cs = catalog.read_text(encoding='utf-8')
 assert 'nameNorm=normalize(n)' in cs and 'QUERY_CACHE' in cs and 'public static void preload' in cs
+assert 'QUERY_CACHE.size()>48' in cs and 'removeEldestEntry' not in cs
 assert 'IGNIDO-CityIndex' in wa.read_text(encoding='utf-8')
 assert 'q.trim().isEmpty()?0L:18L' in clock.read_text(encoding='utf-8')
 print('IGNIDO Wake Android v1.7.9 fast trilingual search patch applied')
