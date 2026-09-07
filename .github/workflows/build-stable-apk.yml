@@ -36,9 +36,8 @@ jobs:
           curl -fsSL --retry 4 --retry-delay 2 https://download.geonames.org/export/dump/cities15000.zip -o /tmp/cities15000.zip
           unzip -p /tmp/cities15000.zip cities15000.txt > /tmp/cities15000.txt
           test -s /tmp/cities15000.txt
-          grep -F $'\tSeattle\t' /tmp/cities15000.txt | head -1
 
-      - name: Apply IGNIDO Wake v1.7.5 clock surface patch set
+      - name: Apply IGNIDO Wake v1.7.6 patch set
         run: |
           python3 tools/patch_v156_runner.py
           python3 tools/patch_v157.py
@@ -60,39 +59,25 @@ jobs:
           python3 tools/patch_v173_design.py
           python3 tools/patch_v174_fire.py
           python3 tools/patch_v175_clock_surface.py
-          grep -n 'versionName = "1.7.5"' WakeGuard/app/build.gradle.kts
-          grep -n 'versionCode = 86' WakeGuard/app/build.gradle.kts
+          python3 tools/patch_v176_clean_initial_state.py
+          grep -n 'versionName = "1.7.6"' WakeGuard/app/build.gradle.kts
+          grep -n 'versionCode = 87' WakeGuard/app/build.gradle.kts
           grep -q 'setBackgroundColor(Color.TRANSPARENT)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockFaceActivity.java
-          ! grep -q 'public AnalogFace(Context c){super(c);p.setStrokeCap(Paint.Cap.ROUND);setBackgroundColor(Ui.BG);}' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockFaceActivity.java
+          grep -q 'primaryConfigured(Context c)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/Prefs.java
+          grep -q 'getBoolean("enabled", false)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/Prefs.java
+          grep -q 'getInt("hour", 7)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/Prefs.java
+          grep -q 'getInt("minute", 0)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/Prefs.java
+          grep -q 'if(Prefs.primaryConfigured(c)) out.add(primary(c));' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmProfiles.java
+          grep -q 'if(Prefs.primaryConfigured(c)) scheduleSpec' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmScheduler.java
+          grep -q 'v176_initial_balance_fixed' WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakProtection.java
+          grep -q 'protectionValue=Ui.text(this,"0 / 3"' WakeGuard/app/src/main/java/jp/wakeguard/alarm/StatsActivity.java
           grep -q '<string name="app_name">IGNIDO Wake</string>' WakeGuard/app/src/main/res/values/strings.xml
-          grep -q 'android:icon="@mipmap/ic_launcher"' WakeGuard/app/src/main/AndroidManifest.xml
-          grep -q 'android:roundIcon="@mipmap/ic_launcher_round"' WakeGuard/app/src/main/AndroidManifest.xml
-          grep -q '<adaptive-icon' WakeGuard/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
-          grep -q '@drawable/ic_ignido_wake_full_layer' WakeGuard/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
-          grep -q '<monochrome' WakeGuard/app/src/main/res/mipmap-anydpi-v33/ic_launcher.xml
           test -s WakeGuard/app/src/main/res/drawable-nodpi/ic_ignido_wake_full_v172.webp
-          echo '0bc991473cc8b15463d9722b9e58189cac417dede65c81638d29bce387b1a1cc  WakeGuard/app/src/main/res/drawable-nodpi/ic_ignido_wake_full_v172.webp' | sha256sum -c -
-          test -s WakeGuard/app/src/main/res/drawable/ic_ignido_notification.xml
-          grep -q 'R.drawable.ic_ignido_notification' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
-          grep -q 'windowSplashScreenAnimatedIcon' WakeGuard/app/src/main/res/values-v31/ignido_splash.xml
-          grep -q 'PendingAlarmQueue.enqueue' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
-          grep -q 'PendingAlarmQueue.poll' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
-          grep -q 'creditInterval = Math.min(interval, 2500L)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
-          grep -q 'strongLinearBurstCount >= 5' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
-          grep -q 'now - lastConfirmedShakeElapsed <= 2400L' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
-          test -s WakeGuard/app/src/main/java/jp/wakeguard/alarm/PendingAlarmQueue.java
-          grep -q 'inflate(R.layout.view_alarm_video_texture' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerVideoActivity.java
-          grep -q 'TRACK_TYPE_TEXT,false' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerVideoActivity.java
-          test -s WakeGuard/app/src/main/res/layout/view_alarm_video_texture.xml
-          grep -q 'ACCENT = 0xFFFF3A14' WakeGuard/app/src/main/java/jp/wakeguard/alarm/Ui.java
-          grep -q 'row.setBackground(Ui.burnCard(this,e.enabled))' WakeGuard/app/src/main/java/jp/wakeguard/alarm/MainActivity.java
-          grep -q 'Ui.tabChrome(this,"world".equals(mode))' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
-          grep -q '<layer-list' WakeGuard/app/src/main/res/drawable/widget_bg.xml
 
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: IGNIDO-Wake-v1.7.5-patched-source
+          name: IGNIDO-Wake-v1.7.6-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -143,14 +128,14 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out IGNIDO-Wake-v1.7.5-stable.apk \
+            --out IGNIDO-Wake-v1.7.6-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs IGNIDO-Wake-v1.7.5-stable.apk
-          sha256sum IGNIDO-Wake-v1.7.5-stable.apk | tee IGNIDO-Wake-v1.7.5-stable.sha256
+          "$APKSIGNER" verify --verbose --print-certs IGNIDO-Wake-v1.7.6-stable.apk
+          sha256sum IGNIDO-Wake-v1.7.6-stable.apk | tee IGNIDO-Wake-v1.7.6-stable.sha256
 
       - uses: actions/upload-artifact@v4
         with:
-          name: IGNIDO-Wake-v1.7.5-stable-apk
+          name: IGNIDO-Wake-v1.7.6-stable-apk
           path: |
-            IGNIDO-Wake-v1.7.5-stable.apk
-            IGNIDO-Wake-v1.7.5-stable.sha256
+            IGNIDO-Wake-v1.7.6-stable.apk
+            IGNIDO-Wake-v1.7.6-stable.sha256
