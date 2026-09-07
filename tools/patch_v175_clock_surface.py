@@ -18,8 +18,9 @@ assert old in s, "AnalogFace background assignment not found"
 s = s.replace(old, new)
 clock_face.write_text(s, encoding="utf-8")
 
+result = clock_face.read_text(encoding="utf-8")
 assert 'versionName = "1.7.5"' in p.read_text(encoding="utf-8")
 assert 'versionCode = 86' in p.read_text(encoding="utf-8")
-assert 'setBackgroundColor(Color.TRANSPARENT)' in clock_face.read_text(encoding="utf-8")
-assert 'setBackgroundColor(Ui.BG)' not in clock_face.read_text(encoding="utf-8")
+assert new in result
+assert old not in result
 print("IGNIDO Wake v1.7.5 transparent analog clock surface patch applied")
