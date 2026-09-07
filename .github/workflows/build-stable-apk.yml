@@ -37,7 +37,7 @@ jobs:
           unzip -p /tmp/cities15000.zip cities15000.txt > /tmp/cities15000.txt
           test -s /tmp/cities15000.txt
 
-      - name: Apply IGNIDO Wake v1.7.7 patch set
+      - name: Apply IGNIDO Wake v1.7.8 patch set
         run: |
           python3 tools/patch_v156_runner.py
           python3 tools/patch_v157.py
@@ -61,8 +61,11 @@ jobs:
           python3 tools/patch_v175_clock_surface.py
           python3 tools/patch_v176_clean_initial_state.py
           python3 tools/patch_v177_android_ux.py
-          grep -n 'versionName = "1.7.7"' WakeGuard/app/build.gradle.kts
-          grep -n 'versionCode = 88' WakeGuard/app/build.gradle.kts
+          python3 tools/patch_v178_video_overlay.py
+          grep -n 'versionName = "1.7.8"' WakeGuard/app/build.gradle.kts
+          grep -n 'versionCode = 89' WakeGuard/app/build.gradle.kts
+          grep -q 'if (isActiveVideo() || AlarmActivity.visible) removeOverlay();' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
+          grep -q 'cancelVideoFallback();removeOverlay();' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
           grep -q 'setBackgroundColor(Color.TRANSPARENT)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockFaceActivity.java
           grep -q 'primaryConfigured(Context c)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/Prefs.java
           grep -q 'getBoolean("enabled", false)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/Prefs.java
@@ -78,7 +81,7 @@ jobs:
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: IGNIDO-Wake-v1.7.7-patched-source
+          name: IGNIDO-Wake-v1.7.8-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -129,14 +132,14 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out IGNIDO-Wake-v1.7.7-stable.apk \
+            --out IGNIDO-Wake-v1.7.8-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs IGNIDO-Wake-v1.7.7-stable.apk
-          sha256sum IGNIDO-Wake-v1.7.7-stable.apk | tee IGNIDO-Wake-v1.7.7-stable.sha256
+          "$APKSIGNER" verify --verbose --print-certs IGNIDO-Wake-v1.7.8-stable.apk
+          sha256sum IGNIDO-Wake-v1.7.8-stable.apk | tee IGNIDO-Wake-v1.7.8-stable.sha256
 
       - uses: actions/upload-artifact@v4
         with:
-          name: IGNIDO-Wake-v1.7.7-stable-apk
+          name: IGNIDO-Wake-v1.7.8-stable-apk
           path: |
-            IGNIDO-Wake-v1.7.7-stable.apk
-            IGNIDO-Wake-v1.7.7-stable.sha256
+            IGNIDO-Wake-v1.7.8-stable.apk
+            IGNIDO-Wake-v1.7.8-stable.sha256
