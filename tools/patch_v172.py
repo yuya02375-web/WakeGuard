@@ -24,7 +24,15 @@ s = re.sub(r'versionCode = \d+', 'versionCode = 83', s)
 s = re.sub(r'versionName = "[^"]+"', 'versionName = "1.7.2"', s)
 wr(p, s)
 
-encoded = "".join((parts / f"part{i:02d}.txt").read_text(encoding="utf-8").strip() for i in range(7))
+names = ["part00.txt", "part01.txt", "part02a.txt", "part02b.txt", "part03.txt", "part04.txt", "part05.txt", "part06.txt"]
+expected_lengths = [3000, 3000, 1500, 1500, 3000, 3000, 3000, 1416]
+chunks = []
+for name, expected_len in zip(names, expected_lengths):
+    chunk = (parts / name).read_text(encoding="utf-8").strip()
+    assert len(chunk) == expected_len, (name, len(chunk), expected_len)
+    chunks.append(chunk)
+encoded = "".join(chunks)
+assert len(encoded) == 19416
 raw = base64.b64decode(encoded, validate=True)
 assert len(raw) == 14562
 assert hashlib.sha256(raw).hexdigest() == "0bc991473cc8b15463d9722b9e58189cac417dede65c81638d29bce387b1a1cc"
