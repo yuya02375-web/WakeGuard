@@ -1,0 +1,88 @@
+name: Build iOS IPA
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ios/**'
+      - '.github/workflows/build-ios.yml'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Reconstruct accepted IGNIDO Wake icon and create asset catalog
+        run: |
+          cd ios
+          mkdir -p IGNIDOWake/Assets.xcassets/AppIcon.appiconset
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64, hashlib
+          parts = Path('../tools/v172_icon_parts')
+          names = ["part00.txt", "part01.txt", "part02a.txt", "part02b.txt", "part03.txt", "part04.txt", "part05.txt", "part06.txt"]
+          expected_lengths = [3000, 3000, 1500, 1500, 3000, 3000, 3000, 1416]
+          chunks=[]
+          for name, expected in zip(names, expected_lengths):
+              chunk=(parts/name).read_text().strip()
+              if name == "part02a.txt" and len(chunk) == 1499:
+                  chunk=chunk[:999]+"c"+chunk[999:]
+              assert len(chunk)==expected, (name,len(chunk),expected)
+              chunks.append(chunk)
+          raw=base64.b64decode(''.join(chunks), validate=True)
+          assert hashlib.sha256(raw).hexdigest()=="0bc991473cc8b15463d9722b9e58189cac417dede65c81638d29bce387b1a1cc"
+          Path('/tmp/icon.webp').write_bytes(raw)
+          PY
+          brew install webp
+          dwebp /tmp/icon.webp -o /tmp/icon.png
+          python3 - <<'PY'
+          import json, os, subprocess
+          out='IGNIDOWake/Assets.xcassets/AppIcon.appiconset'
+          specs=[
+            ('iphone','20x20','2x',40),('iphone','20x20','3x',60),
+            ('iphone','29x29','2x',58),('iphone','29x29','3x',87),
+            ('iphone','40x40','2x',80),('iphone','40x40','3x',120),
+            ('iphone','60x60','2x',120),('iphone','60x60','3x',180),
+            ('ios-marketing','1024x1024','1x',1024),
+          ]
+          images=[]
+          for idx,(idiom,size,scale,pix) in enumerate(specs):
+              name=f'icon-{pix}-{idx}.png'
+              subprocess.run(['sips','-z',str(pix),str(pix),'/tmp/icon.png','--out',f'{out}/{name}'],check=True,stdout=subprocess.DEVNULL)
+              images.append({'idiom':idiom,'size':size,'scale':scale,'filename':name})
+          with open(f'{out}/Contents.json','w') as f: json.dump({'images':images,'info':{'author':'xcode','version':1}},f)
+          os.makedirs('IGNIDOWake/Assets.xcassets',exist_ok=True)
+          with open('IGNIDOWake/Assets.xcassets/Contents.json','w') as f: json.dump({'info':{'author':'xcode','version':1}},f)
+          PY
+      - name: Generate Xcode project
+        run: cd ios && xcodegen generate
+      - name: Build unsigned app
+        run: |
+          cd ios
+          xcodebuild -project IGNIDOWake.xcodeproj -scheme IGNIDOWake -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package IPA
+        run: |
+          cd ios
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          test -n "$APP"
+          rm -rf Payload
+          mkdir Payload
+          cp -R "$APP" Payload/
+          /usr/bin/zip -qry IGNIDO-Wake-iOS-0.1.0-alpha.ipa Payload
+          shasum -a 256 IGNIDO-Wake-iOS-0.1.0-alpha.ipa | tee IGNIDO-Wake-iOS-0.1.0-alpha.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-0.1.0-alpha
+          path: |
+            ios/IGNIDO-Wake-iOS-0.1.0-alpha.ipa
+            ios/IGNIDO-Wake-iOS-0.1.0-alpha.sha256
+      - name: Publish prerelease asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="ios-alpha-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" ios/IGNIDO-Wake-iOS-0.1.0-alpha.ipa ios/IGNIDO-Wake-iOS-0.1.0-alpha.sha256 --title "IGNIDO Wake iOS 0.1.0 alpha (${GITHUB_RUN_NUMBER})" --notes "Unsigned IPA for SideStore re-signing. iOS 26+. AlarmKit alpha." --prerelease
