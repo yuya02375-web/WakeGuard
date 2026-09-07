@@ -10,9 +10,12 @@ struct WakeMediaPlayerView: UIViewControllerRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(loop: loop) }
 
     func makeUIViewController(context: Context) -> AVPlayerViewController {
+        AlarmRuntime.preparePlaybackSession()
         let item = AVPlayerItem(url: url)
         let player = AVPlayer(playerItem: item)
-        player.volume = volume
+        player.volume = min(max(volume, 0), 1)
+        player.isMuted = false
+        player.appliesMediaSelectionCriteriaAutomatically = true
         let controller = AVPlayerViewController()
         controller.player = player
         controller.showsPlaybackControls = true
@@ -22,12 +25,17 @@ struct WakeMediaPlayerView: UIViewControllerRepresentable {
         context.coordinator.item = item
         context.coordinator.selectSubtitleIfAvailable()
         context.coordinator.observeEnd()
-        player.play()
+        player.playImmediately(atRate: 1.0)
         return controller
     }
 
     func updateUIViewController(_ uiViewController: AVPlayerViewController, context: Context) {
-        uiViewController.player?.volume = volume
+        AlarmRuntime.preparePlaybackSession()
+        uiViewController.player?.isMuted = false
+        uiViewController.player?.volume = min(max(volume, 0), 1)
+        if uiViewController.player?.timeControlStatus != .playing {
+            uiViewController.player?.play()
+        }
     }
 
     static func dismantleUIViewController(_ uiViewController: AVPlayerViewController, coordinator: Coordinator) {
@@ -55,7 +63,7 @@ struct WakeMediaPlayerView: UIViewControllerRepresentable {
             token = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main) { [weak self] _ in
                 guard let self, self.loop else { return }
                 self.player?.seek(to: .zero)
-                self.player?.play()
+                self.player?.playImmediately(atRate: 1.0)
             }
         }
         func stop() {
@@ -75,14 +83,34 @@ struct MediaAlarmScreen: View {
         ZStack(alignment: .topTrailing) {
             Color.black.ignoresSafeArea()
             WakeMediaPlayerView(url: url, volume: Float(alarm.volume), loop: true).ignoresSafeArea()
-            Button {
-                if alarm.mission == .none { onDismiss() } else { showMission = true }
-            } label: {
-                Label(alarm.mission == .none ? "停止" : "解除", systemImage: "xmark.circle.fill")
-                    .font(.headline).padding(.horizontal, 14).padding(.vertical, 10)
-                    .background(.ultraThinMaterial, in: Capsule())
-            }.padding()
+            VStack(alignment: .trailing, spacing: 10) {
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(alarm.timeText)
+                        .font(.system(size: 28, weight: .semibold, design: .rounded))
+                        .monospacedDigit()
+                    Text(alarm.label.isEmpty ? "アラーム" : alarm.label)
+                        .font(.headline)
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(.black.opacity(0.58), in: RoundedRectangle(cornerRadius: 12))
+
+                Button {
+                    if alarm.mission == .none { onDismiss() } else { showMission = true }
+                } label: {
+                    Label(alarm.mission == .none ? "停止" : "解除", systemImage: "xmark.circle.fill")
+                        .font(.headline).padding(.horizontal, 14).padding(.vertical, 10)
+                        .background(.ultraThinMaterial, in: Capsule())
+                }
+            }
+            .padding()
         }
+        .onAppear {
+            AlarmRuntime.preparePlaybackSession()
+            AlarmHaptics.shared.start(alarm.vibration)
+        }
+        .onDisappear { AlarmHaptics.shared.stop() }
         .fullScreenCover(isPresented: $showMission) {
             MissionView(alarm: alarm) { showMission = false; onDismiss() }
         }
@@ -102,5 +130,6 @@ struct TimerMediaScreen: View {
                     .background(.ultraThinMaterial, in: Capsule())
             }.padding()
         }
+        .onAppear { AlarmRuntime.preparePlaybackSession() }
     }
 }
