@@ -1,9 +1,9 @@
 from pathlib import Path
-import hashlib, re, shutil
+import base64, hashlib, re
 
 app = Path("WakeGuard/app")
 res = app / "src/main/res"
-src_dir = Path("tools/v172_icon_assets")
+parts = Path("tools/v172_icon_parts")
 
 def rd(p):
     return p.read_text(encoding="utf-8")
@@ -15,30 +15,31 @@ def wr(p, s):
 def sha256(p):
     return hashlib.sha256(p.read_bytes()).hexdigest()
 
-# v1.7.2: restore the original textured IGNIDO Wake mark and keep the entire symbol
-# inside Android's guaranteed adaptive-icon safe region.
+# v1.7.2: restore the textured IGNIDO Wake art and keep the whole visible mark
+# inside Android's 66x66dp adaptive-icon safe region. The WebP is reconstructed
+# from small text chunks so the exact bytes are deterministic in GitHub Actions.
 p = app / "build.gradle.kts"
 s = rd(p)
 s = re.sub(r'versionCode = \d+', 'versionCode = 83', s)
 s = re.sub(r'versionName = "[^"]+"', 'versionName = "1.7.2"', s)
 wr(p, s)
 
-full_src = src_dir / "ic_ignido_wake_full_v172.webp"
-assert full_src.exists()
-assert sha256(full_src) == "0bc991473cc8b15463d9722b9e58189cac417dede65c81638d29bce387b1a1cc"
+encoded = "".join((parts / f"part{i:02d}.txt").read_text(encoding="utf-8").strip() for i in range(7))
+raw = base64.b64decode(encoded, validate=True)
+assert len(raw) == 14562
+assert hashlib.sha256(raw).hexdigest() == "0bc991473cc8b15463d9722b9e58189cac417dede65c81638d29bce387b1a1cc"
 
 dst = res / "drawable-nodpi/ic_ignido_wake_full_v172.webp"
 dst.parent.mkdir(parents=True, exist_ok=True)
-shutil.copyfile(full_src, dst)
+dst.write_bytes(raw)
 
-# The complete textured art is one full-bleed layer. The visible mark inside it was pre-scaled
-# so its alpha/shape bounds fit within the 66x66dp safe zone of a 108x108dp adaptive icon.
+# The full textured art is precomposed: deep-midnight background plus the original
+# ember/copper Wake mark scaled so all meaningful geometry stays inside the safe zone.
 wr(res / "drawable/ic_ignido_wake_full_layer.xml",
    '<?xml version="1.0" encoding="utf-8"?>'
    '<bitmap xmlns:android="http://schemas.android.com/apk/res/android" '
    'android:src="@drawable/ic_ignido_wake_full_v172" android:gravity="fill" />')
 
-# Keep a separate dark background so parallax/mask motion can never expose transparency.
 a26 = ('<?xml version="1.0" encoding="utf-8"?>'
        '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">'
        '<background android:drawable="@color/ignido_midnight"/>'
