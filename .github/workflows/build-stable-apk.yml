@@ -62,9 +62,11 @@ jobs:
           grep -q 'android:icon="@mipmap/ic_launcher"' WakeGuard/app/src/main/AndroidManifest.xml
           grep -q 'android:roundIcon="@mipmap/ic_launcher_round"' WakeGuard/app/src/main/AndroidManifest.xml
           grep -q '<adaptive-icon' WakeGuard/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          grep -q '@drawable/ic_ignido_wake_foreground' WakeGuard/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           grep -q '<monochrome' WakeGuard/app/src/main/res/mipmap-anydpi-v33/ic_launcher.xml
-          test -s WakeGuard/app/src/main/res/drawable-nodpi/ic_ignido_wake_foreground.webp
-          echo 'b45911d900f10bed2faccdb8417471aaeb0db706f8a4d0b16132937124061a4d  WakeGuard/app/src/main/res/drawable-nodpi/ic_ignido_wake_foreground.webp' | sha256sum -c -
+          test -s WakeGuard/app/src/main/res/drawable/ic_ignido_wake_foreground.xml
+          grep -q '<vector' WakeGuard/app/src/main/res/drawable/ic_ignido_wake_foreground.xml
+          grep -q '#FFF13A24' WakeGuard/app/src/main/res/drawable/ic_ignido_wake_foreground.xml
           test -s WakeGuard/app/src/main/res/drawable/ic_ignido_notification.xml
           grep -q 'R.drawable.ic_ignido_notification' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
           grep -q 'windowSplashScreenAnimatedIcon' WakeGuard/app/src/main/res/values-v31/ignido_splash.xml
