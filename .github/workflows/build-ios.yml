@@ -72,17 +72,17 @@ jobs:
           rm -rf Payload
           mkdir Payload
           cp -R "$APP" Payload/
-          /usr/bin/zip -qry IGNIDO-Wake-iOS-1.7.3-ember-beta.ipa Payload
-          shasum -a 256 IGNIDO-Wake-iOS-1.7.3-ember-beta.ipa | tee IGNIDO-Wake-iOS-1.7.3-ember-beta.sha256
+          /usr/bin/zip -qry IGNIDO-Wake-iOS-1.7.4-fire-beta.ipa Payload
+          shasum -a 256 IGNIDO-Wake-iOS-1.7.4-fire-beta.ipa | tee IGNIDO-Wake-iOS-1.7.4-fire-beta.sha256
       - uses: actions/upload-artifact@v4
         with:
-          name: IGNIDO-Wake-iOS-1.7.3-ember-beta
+          name: IGNIDO-Wake-iOS-1.7.4-fire-beta
           path: |
-            ios/IGNIDO-Wake-iOS-1.7.3-ember-beta.ipa
-            ios/IGNIDO-Wake-iOS-1.7.3-ember-beta.sha256
+            ios/IGNIDO-Wake-iOS-1.7.4-fire-beta.ipa
+            ios/IGNIDO-Wake-iOS-1.7.4-fire-beta.sha256
       - name: Publish prerelease asset
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="ios-ember-${GITHUB_RUN_NUMBER}"
-          gh release create "$TAG" ios/IGNIDO-Wake-iOS-1.7.3-ember-beta.ipa ios/IGNIDO-Wake-iOS-1.7.3-ember-beta.sha256 --title "IGNIDO Wake iOS 1.7.3 Ember Night beta (${GITHUB_RUN_NUMBER})" --notes "Unsigned IPA for SideStore re-signing. iOS 26.1+. Android/iOS shared Ember Night visual language; iOS feature-parity work continues." --prerelease
+          TAG="ios-fire-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" ios/IGNIDO-Wake-iOS-1.7.4-fire-beta.ipa ios/IGNIDO-Wake-iOS-1.7.4-fire-beta.sha256 --title "IGNIDO Wake iOS 1.7.4 beta (${GITHUB_RUN_NUMBER})" --notes "Unsigned IPA for SideStore re-signing. Warmer soot-black palette, custom flame mark and companion, fewer generic rounded/glow patterns, and more deliberate fire-state accents." --prerelease
