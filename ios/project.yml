@@ -2,7 +2,7 @@ name: IGNIDOWake
 options:
   bundleIdPrefix: jp.ignido
   deploymentTarget:
-    iOS: "26.0"
+    iOS: "26.1"
 settings:
   base:
     SWIFT_VERSION: 6.0
