@@ -4,6 +4,7 @@ import AppIntents
 private enum WakeIntentBridge {
     static let pendingAlarmQueueKey = "ignido.intent.pendingAlarmQueue"
     static let pendingTimerKey = "ignido.intent.pendingTimer"
+    static let pendingTimerQueueKey = "ignido.intent.pendingTimerQueue"
     static let streakKey = "ignido.streak.dates.v2"
 
     static func enqueueAlarm(_ alarmID: String) {
@@ -19,6 +20,26 @@ private enum WakeIntentBridge {
         guard !queue.isEmpty else { return nil }
         let first = queue.removeFirst()
         defaults.set(queue, forKey: pendingAlarmQueueKey)
+        return first
+    }
+
+    static func enqueueTimer(_ timerID: String) {
+        guard !timerID.isEmpty else {
+            UserDefaults.standard.set(true, forKey: pendingTimerKey)
+            return
+        }
+        let defaults = UserDefaults.standard
+        var queue = defaults.stringArray(forKey: pendingTimerQueueKey) ?? []
+        if !queue.contains(timerID) { queue.append(timerID) }
+        defaults.set(queue, forKey: pendingTimerQueueKey)
+    }
+
+    static func dequeueTimer() -> String? {
+        let defaults = UserDefaults.standard
+        var queue = defaults.stringArray(forKey: pendingTimerQueueKey) ?? []
+        guard !queue.isEmpty else { return nil }
+        let first = queue.removeFirst()
+        defaults.set(queue, forKey: pendingTimerQueueKey)
         return first
     }
 
@@ -75,10 +96,14 @@ public struct OpenTimerIntent: LiveActivityIntent {
     public static let description = IntentDescription("タイマー終了画面を開きます")
     public static let openAppWhenRun = true
 
-    public init() {}
+    @Parameter(title: "timerID")
+    public var timerID: String
+
+    public init(timerID: String = "") { self.timerID = timerID }
+    public init() { self.timerID = "" }
 
     public func perform() async throws -> some IntentResult {
-        UserDefaults.standard.set(true, forKey: WakeIntentBridge.pendingTimerKey)
+        WakeIntentBridge.enqueueTimer(timerID)
         return .result()
     }
 }
@@ -86,6 +111,11 @@ public struct OpenTimerIntent: LiveActivityIntent {
 enum WakeIntentState {
     static func consumeAlarmID() -> UUID? {
         guard let raw = WakeIntentBridge.dequeueAlarm() else { return nil }
+        return UUID(uuidString: raw)
+    }
+
+    static func consumeTimerID() -> UUID? {
+        guard let raw = WakeIntentBridge.dequeueTimer() else { return nil }
         return UUID(uuidString: raw)
     }
 
