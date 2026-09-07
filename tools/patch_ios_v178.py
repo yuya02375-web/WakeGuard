@@ -121,4 +121,12 @@ assert 'StreakParityDashboard()' in s
 assert 'WakeIntentState.consumeTimerID()' in s
 assert 'streakParityStore.recordWake' in s
 
+# Swift 6 requires consistent whitespace around '='. Older compact helper lines in
+# StreakParity used `timeZone=.current`; normalize them before compilation.
+p = Path('ios/IGNIDOWake/StreakParity.swift')
+s = p.read_text(encoding='utf-8')
+s = s.replace('timeZone=.current', 'timeZone = .current')
+p.write_text(s, encoding='utf-8')
+assert 'timeZone=.current' not in s
+
 print('iOS parity patch applied')
