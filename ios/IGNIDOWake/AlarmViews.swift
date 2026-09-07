@@ -8,32 +8,46 @@ struct AlarmListView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                if store.authorizationState != .authorized {
-                    Section {
-                        Button("アラーム権限を許可") { Task { _ = await store.requestAuthorization() } }
-                    } footer: {
-                        Text("AlarmKitを使って消音・集中モード中でもシステムのアラームとして鳴らします。")
-                    }
-                }
-                Section {
-                    ForEach(store.alarms) { alarm in
-                        NavigationLink {
-                            AlarmEditorView(existing: alarm)
-                        } label: {
-                            AlarmRow(alarm: alarm)
+            ZStack {
+                IgnidoScreenBackground()
+                List {
+                    if store.authorizationState != .authorized {
+                        Section {
+                            Button("アラーム権限を許可") { Task { _ = await store.requestAuthorization() } }
+                                .tint(IgnidoTheme.ember)
+                        } footer: {
+                            Text("AlarmKitを使って消音・集中モード中でもシステムのアラームとして鳴らします。")
                         }
+                        .listRowBackground(IgnidoTheme.surface)
                     }
-                    .onDelete(perform: store.delete)
+                    Section {
+                        ForEach(store.alarms) { alarm in
+                            NavigationLink {
+                                AlarmEditorView(existing: alarm)
+                            } label: {
+                                AlarmRow(alarm: alarm)
+                            }
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                        }
+                        .onDelete(perform: store.delete)
+                    }
+                    if let error = store.lastError {
+                        Section("エラー") { Text(error).foregroundStyle(.red) }
+                            .listRowBackground(IgnidoTheme.surface)
+                    }
                 }
-                if let error = store.lastError {
-                    Section("エラー") { Text(error).foregroundStyle(.red) }
-                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
             }
             .navigationTitle("IGNIDO Wake")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { showingAdd = true } label: { Image(systemName: "plus") }
+                    Button { showingAdd = true } label: {
+                        Image(systemName: "plus")
+                            .fontWeight(.semibold)
+                    }
+                    .tint(IgnidoTheme.ember)
                 }
             }
             .sheet(isPresented: $showingAdd) { AlarmEditorView(existing: nil) }
@@ -45,22 +59,37 @@ private struct AlarmRow: View {
     @EnvironmentObject private var store: AlarmStore
     let alarm: WakeAlarm
     var body: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(alarm.timeText).font(.system(size: 40, weight: .light, design: .rounded)).monospacedDigit()
-                Text(alarm.label).font(.headline)
+        HStack(spacing: 14) {
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .fill(alarm.enabled ? IgnidoTheme.emberGradient : LinearGradient(colors: [IgnidoTheme.muted.opacity(0.35)], startPoint: .top, endPoint: .bottom))
+                .frame(width: 4)
+            VStack(alignment: .leading, spacing: 5) {
+                Text(alarm.timeText)
+                    .font(.system(size: 42, weight: .light, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(IgnidoTheme.text)
+                Text(alarm.label)
+                    .font(.headline)
+                    .foregroundStyle(IgnidoTheme.text)
                 HStack(spacing: 8) {
                     Text(alarm.repeatText)
                     if alarm.mission != .none { Text(alarm.mission.title) }
                     if alarm.preAlertMinutes > 0 { Text("\(alarm.preAlertMinutes)分前") }
-                }.font(.caption).foregroundStyle(.secondary)
+                }
+                .font(.caption)
+                .foregroundStyle(IgnidoTheme.muted)
             }
             Spacer()
             Toggle("", isOn: Binding(
                 get: { alarm.enabled },
                 set: { value in Task { await store.setEnabled(alarm, enabled: value) } }
-            )).labelsHidden()
-        }.padding(.vertical, 5)
+            ))
+            .labelsHidden()
+            .tint(IgnidoTheme.ember)
+        }
+        .opacity(alarm.enabled ? 1 : 0.58)
+        .ignidoCard()
+        .padding(.vertical, 4)
     }
 }
 
@@ -87,7 +116,10 @@ struct AlarmEditorView: View {
         Form {
             Section {
                 DatePicker("時刻", selection: $time, displayedComponents: .hourAndMinute)
-                    .datePickerStyle(.wheel).labelsHidden().frame(maxWidth: .infinity)
+                    .datePickerStyle(.wheel)
+                    .labelsHidden()
+                    .frame(maxWidth: .infinity)
+                    .tint(IgnidoTheme.ember)
                 TextField("名前", text: $draft.label)
             }
 
@@ -98,7 +130,7 @@ struct AlarmEditorView: View {
                             if draft.weekdays.contains(day) { draft.weekdays.remove(day) } else { draft.weekdays.insert(day) }
                         }
                         .buttonStyle(.bordered)
-                        .tint(draft.weekdays.contains(day) ? .red : .gray)
+                        .tint(draft.weekdays.contains(day) ? IgnidoTheme.ember : IgnidoTheme.muted)
                     }
                 }
             }
@@ -117,6 +149,7 @@ struct AlarmEditorView: View {
                     TextField("入力する文章", text: $draft.unlockSentence)
                 }
                 Button("解除方法を今すぐテスト") { showMissionTest = true }
+                    .tint(IgnidoTheme.amber)
             }
 
             Section("音・動画") {
@@ -124,14 +157,20 @@ struct AlarmEditorView: View {
                     Text("選択中")
                     Spacer()
                     Text(draft.mediaFileName == nil ? "標準アラーム音" : "カスタムメディア")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(IgnidoTheme.muted)
                 }
                 Button("音声 / 動画ファイルを選ぶ") { importingMedia = true }
+                    .tint(IgnidoTheme.ember)
                 if draft.mediaFileName != nil {
                     Button("選択を解除", role: .destructive) { draft.mediaFileName = nil }
                     Button("メディアをテスト") { showMediaTest = true }
+                        .tint(IgnidoTheme.amber)
                 }
-                HStack { Text("音量"); Slider(value: $draft.volume, in: 0...1); Text("\(Int(draft.volume * 100))%").monospacedDigit() }
+                HStack {
+                    Text("音量")
+                    Slider(value: $draft.volume, in: 0...1).tint(IgnidoTheme.ember)
+                    Text("\(Int(draft.volume * 100))%").monospacedDigit()
+                }
                 Picker("振動", selection: $draft.vibration) {
                     ForEach(VibrationMode.allCases) { mode in Text(mode.title).tag(mode) }
                 }
@@ -145,7 +184,7 @@ struct AlarmEditorView: View {
                     if ![0,5,10,15,30,60,120].contains(draft.preAlertMinutes) { Text("\(draft.preAlertMinutes)分前").tag(draft.preAlertMinutes) }
                 }
                 Stepper("カスタム: \(draft.preAlertMinutes)分前", value: $draft.preAlertMinutes, in: 0...1440)
-                Text("事前通知は音・振動なしで表示します。").font(.caption).foregroundStyle(.secondary)
+                Text("事前通知は音・振動なしで表示します。").font(.caption).foregroundStyle(IgnidoTheme.muted)
             }
 
             Section("スヌーズ") {
@@ -154,17 +193,21 @@ struct AlarmEditorView: View {
 
             Section {
                 Button("5秒後にシステムアラームをテスト") { Task { await store.scheduleTest(draft) } }
+                    .tint(IgnidoTheme.amber)
             }
 
             if !isNew {
                 Section { Button("このアラームを削除", role: .destructive) { store.delete(draft); dismiss() } }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(IgnidoTheme.background)
+        .tint(IgnidoTheme.ember)
         .navigationTitle(isNew ? "アラームを追加" : "アラーム設定")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) { if isNew { Button("キャンセル") { dismiss() } } }
-            ToolbarItem(placement: .confirmationAction) { Button("保存") { save() } }
+            ToolbarItem(placement: .confirmationAction) { Button("保存") { save() }.fontWeight(.semibold) }
         }
         .fileImporter(isPresented: $importingMedia, allowedContentTypes: [.movie, .audio], allowsMultipleSelection: false) { result in
             do {
