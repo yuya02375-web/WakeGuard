@@ -7,16 +7,19 @@ import UIKit
 enum IgnidoTheme {
     static let background = Color(red: 0.031, green: 0.027, blue: 0.024)
     static let background2 = Color(red: 0.051, green: 0.043, blue: 0.035)
-    static let surface = Color(red: 0.082, green: 0.067, blue: 0.051)
-    static let surface2 = Color(red: 0.110, green: 0.086, blue: 0.059)
-    static let border = Color(red: 0.227, green: 0.165, blue: 0.122)
+    static let surface = Color(red: 0.094, green: 0.076, blue: 0.059)
+    static let surface2 = Color(red: 0.126, green: 0.098, blue: 0.070)
+    static let border = Color(red: 0.340, green: 0.235, blue: 0.158)
     static let ember = Color(red: 1.0, green: 0.227, blue: 0.078)
     static let flame = Color(red: 1.0, green: 0.478, blue: 0.0)
     static let amber = flame
     static let hot = Color(red: 1.0, green: 0.784, blue: 0.341)
     static let text = Color(red: 1.0, green: 0.973, blue: 0.941)
-    static let muted = Color(red: 0.694, green: 0.647, blue: 0.604)
-    static let chrome = Color(red: 0.043, green: 0.035, blue: 0.027)
+    /// Secondary text is intentionally brighter than the old muted tone so labels
+    /// stay readable on the soot-black UI, including disabled alarm rows.
+    static let muted = Color(red: 0.815, green: 0.768, blue: 0.724)
+    static let secondaryText = muted
+    static let chrome = Color(red: 0.055, green: 0.045, blue: 0.035)
 
     /// Reserved for flame artwork. Regular buttons and cards should stay solid.
     static let flameGradient = LinearGradient(
@@ -28,7 +31,7 @@ enum IgnidoTheme {
     static let emberGradient = flameGradient
 
     static let screenGradient = LinearGradient(
-        colors: [background, Color(red: 0.039, green: 0.031, blue: 0.024), background2],
+        colors: [background, Color(red: 0.043, green: 0.034, blue: 0.026), background2],
         startPoint: .top,
         endPoint: .bottom
     )
@@ -39,7 +42,7 @@ struct IgnidoScreenBackground: View {
         IgnidoTheme.screenGradient
             .overlay(alignment: .top) {
                 Rectangle()
-                    .fill(IgnidoTheme.ember.opacity(0.18))
+                    .fill(IgnidoTheme.ember.opacity(0.22))
                     .frame(height: 1)
             }
             .ignoresSafeArea()
@@ -131,7 +134,7 @@ struct IgnidoCardModifier: ViewModifier {
                     .fill(IgnidoTheme.surface)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(IgnidoTheme.border.opacity(0.62), lineWidth: 0.8)
+                            .stroke(IgnidoTheme.border.opacity(0.78), lineWidth: 0.9)
                     )
             )
     }
@@ -150,16 +153,16 @@ enum IgnidoAppearance {
         configured = true
 
         let background = UIColor(red: 0.031, green: 0.027, blue: 0.024, alpha: 1)
-        let chrome = UIColor(red: 0.043, green: 0.035, blue: 0.027, alpha: 0.98)
+        let chrome = UIColor(red: 0.055, green: 0.045, blue: 0.035, alpha: 0.99)
         let flame = UIColor(red: 1.0, green: 0.478, blue: 0.0, alpha: 1)
-        let muted = UIColor(red: 0.694, green: 0.647, blue: 0.604, alpha: 1)
+        let muted = UIColor(red: 0.815, green: 0.768, blue: 0.724, alpha: 1)
 
         let nav = UINavigationBarAppearance()
         nav.configureWithOpaqueBackground()
         nav.backgroundColor = chrome
-        nav.shadowColor = UIColor.white.withAlphaComponent(0.03)
-        nav.titleTextAttributes = [.foregroundColor: UIColor.white]
-        nav.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+        nav.shadowColor = UIColor.white.withAlphaComponent(0.08)
+        nav.titleTextAttributes = [.foregroundColor: UIColor(red: 1.0, green: 0.973, blue: 0.941, alpha: 1)]
+        nav.largeTitleTextAttributes = [.foregroundColor: UIColor(red: 1.0, green: 0.973, blue: 0.941, alpha: 1)]
         UINavigationBar.appearance().standardAppearance = nav
         UINavigationBar.appearance().scrollEdgeAppearance = nav
         UINavigationBar.appearance().compactAppearance = nav
@@ -168,7 +171,7 @@ enum IgnidoAppearance {
         let tab = UITabBarAppearance()
         tab.configureWithOpaqueBackground()
         tab.backgroundColor = chrome
-        tab.shadowColor = UIColor.white.withAlphaComponent(0.035)
+        tab.shadowColor = UIColor.white.withAlphaComponent(0.08)
         tab.stackedLayoutAppearance.normal.iconColor = muted
         tab.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: muted]
         tab.stackedLayoutAppearance.selected.iconColor = flame
