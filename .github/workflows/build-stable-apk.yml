@@ -38,7 +38,7 @@ jobs:
           test -s /tmp/cities15000.txt
           grep -F $'\tSeattle\t' /tmp/cities15000.txt | head -1
 
-      - name: Apply IGNIDO Wake v1.7.2 textured safe-zone icon patch
+      - name: Apply IGNIDO Wake v1.7.3 Ember Night patch set
         run: |
           python3 tools/patch_v156_runner.py
           python3 tools/patch_v157.py
@@ -57,8 +57,9 @@ jobs:
           python3 tools/patch_v170.py
           python3 tools/patch_v171_prepare.py
           python3 tools/patch_v172.py
-          grep -n 'versionName = "1.7.2"' WakeGuard/app/build.gradle.kts
-          grep -n 'versionCode = 83' WakeGuard/app/build.gradle.kts
+          python3 tools/patch_v173_design.py
+          grep -n 'versionName = "1.7.3"' WakeGuard/app/build.gradle.kts
+          grep -n 'versionCode = 84' WakeGuard/app/build.gradle.kts
           grep -q '<string name="app_name">IGNIDO Wake</string>' WakeGuard/app/src/main/res/values/strings.xml
           grep -q 'android:icon="@mipmap/ic_launcher"' WakeGuard/app/src/main/AndroidManifest.xml
           grep -q 'android:roundIcon="@mipmap/ic_launcher_round"' WakeGuard/app/src/main/AndroidManifest.xml
@@ -79,11 +80,14 @@ jobs:
           grep -q 'inflate(R.layout.view_alarm_video_texture' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerVideoActivity.java
           grep -q 'TRACK_TYPE_TEXT,false' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerVideoActivity.java
           test -s WakeGuard/app/src/main/res/layout/view_alarm_video_texture.xml
+          grep -q 'ACCENT = 0xFFFF4B2B' WakeGuard/app/src/main/java/jp/wakeguard/alarm/Ui.java
+          grep -q 'row.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,20,this))' WakeGuard/app/src/main/java/jp/wakeguard/alarm/MainActivity.java
+          grep -q '<gradient android:angle="90"' WakeGuard/app/src/main/res/drawable/widget_bg.xml
 
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: IGNIDO-Wake-v1.7.2-patched-source
+          name: IGNIDO-Wake-v1.7.3-patched-source
           path: |
             WakeGuard/app/src/main/java/jp/wakeguard/alarm/*.java
             WakeGuard/app/src/main/AndroidManifest.xml
@@ -134,12 +138,12 @@ jobs:
             --key-pass env:WAKEGUARD_KEY_PASSWORD \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out IGNIDO-Wake-v1.7.2-stable.apk \
+            --out IGNIDO-Wake-v1.7.3-stable.apk \
             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
-          "$APKSIGNER" verify --verbose --print-certs IGNIDO-Wake-v1.7.2-stable.apk
-          sha256sum IGNIDO-Wake-v1.7.2-stable.apk
+          "$APKSIGNER" verify --verbose --print-certs IGNIDO-Wake-v1.7.3-stable.apk
+          sha256sum IGNIDO-Wake-v1.7.3-stable.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: IGNIDO-Wake-v1.7.2-stable-apk
-          path: IGNIDO-Wake-v1.7.2-stable.apk
+          name: IGNIDO-Wake-v1.7.3-stable-apk
+          path: IGNIDO-Wake-v1.7.3-stable.apk
