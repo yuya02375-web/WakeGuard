@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import AlarmKit
+import AppIntents
 
 @MainActor
 final class StopwatchStore: ObservableObject {
@@ -135,14 +136,24 @@ final class TimerStore: ObservableObject {
         do {
             if AlarmManager.shared.authorizationState != .authorized { _ = try await AlarmManager.shared.requestAuthorization() }
             try? AlarmManager.shared.cancel(id: systemAlarmID)
-            let schedule: Alarm.Schedule = .fixed(Date().addingTimeInterval(seconds))
-            let alert = AlarmPresentation.Alert(title: "タイマー終了")
+            let alert = AlarmPresentation.Alert(
+                title: "タイマー終了",
+                secondaryButton: AlarmButton(text: "開く", textColor: .white, systemImageName: "arrow.right.circle.fill"),
+                secondaryButtonBehavior: .custom
+            )
+            let countdown = AlarmPresentation.Countdown(title: "タイマー")
             let attributes = AlarmAttributes<EmptyWakeMetadata>(
-                presentation: AlarmPresentation(alert: alert),
+                presentation: AlarmPresentation(alert: alert, countdown: countdown, paused: nil),
                 metadata: EmptyWakeMetadata(),
                 tintColor: Color(red: 0.95, green: 0.16, blue: 0.08)
             )
-            let configuration = AlarmManager.AlarmConfiguration.alarm(schedule: schedule, attributes: attributes, sound: .default)
+            let configuration = AlarmManager.AlarmConfiguration.timer(
+                duration: seconds,
+                attributes: attributes,
+                stopIntent: nil,
+                secondaryIntent: OpenTimerIntent(),
+                sound: .default
+            )
             _ = try await AlarmManager.shared.schedule(id: systemAlarmID, configuration: configuration)
             lastError = nil
         } catch { lastError = error.localizedDescription }
@@ -178,7 +189,7 @@ final class TimerStore: ObservableObject {
 final class WorldClockStore: ObservableObject {
     @Published var items: [WorldClockItem] = [] { didSet { save() } }
     @Published var use24Hour = true { didSet { UserDefaults.standard.set(use24Hour, forKey: "ignido.worldclock.24h") } }
-    @Published var displayMode = 0 { didSet { UserDefaults.standard.set(displayMode, forKey: "ignido.worldclock.mode") } } // 0 digital, 1 analog, 2 both
+    @Published var displayMode = 0 { didSet { UserDefaults.standard.set(displayMode, forKey: "ignido.worldclock.mode") } }
     private let key = "ignido.worldclock.items.v2"
 
     init() {
@@ -244,6 +255,7 @@ final class StreakStore: ObservableObject {
         wakeDates.append(today)
         save()
     }
+    func reload() { load() }
     private func save() { if let data = try? JSONEncoder().encode(wakeDates) { UserDefaults.standard.set(data, forKey: key) } }
     private func load() { if let data = UserDefaults.standard.data(forKey: key), let d = try? JSONDecoder().decode([Date].self, from: data) { wakeDates = d } }
 }
