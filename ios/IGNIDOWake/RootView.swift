@@ -1,6 +1,13 @@
 import SwiftUI
 
 struct RootView: View {
+    @Environment(\.scenePhase) private var scenePhase
+    @EnvironmentObject private var alarmStore: AlarmStore
+    @EnvironmentObject private var timerStore: TimerStore
+    @EnvironmentObject private var streakStore: StreakStore
+    @State private var activeAlarm: WakeAlarm?
+    @State private var showTimerResult = false
+
     var body: some View {
         TabView {
             AlarmListView()
@@ -15,6 +22,65 @@ struct RootView: View {
                 .tabItem { Label("ストリーク", systemImage: "flame.fill") }
         }
         .tint(Color(red: 0.95, green: 0.18, blue: 0.08))
+        .onAppear { consumeSystemActions() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                streakStore.reload()
+                consumeSystemActions()
+            }
+        }
+        .fullScreenCover(item: $activeAlarm, onDismiss: { consumeSystemActions() }) { alarm in
+            alarmDestination(alarm)
+        }
+        .fullScreenCover(isPresented: $showTimerResult) {
+            if let url = MediaLibrary.url(for: timerStore.mediaFileName) {
+                TimerMediaScreen(url: url) { showTimerResult = false }
+            } else {
+                ZStack {
+                    Color.black.ignoresSafeArea()
+                    VStack(spacing: 24) {
+                        Image(systemName: "timer").font(.system(size: 64)).foregroundStyle(.red)
+                        Text("タイマー終了").font(.largeTitle.bold()).foregroundStyle(.white)
+                        Button("停止") { showTimerResult = false }.buttonStyle(.borderedProminent)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func alarmDestination(_ alarm: WakeAlarm) -> some View {
+        if let url = MediaLibrary.url(for: alarm.mediaFileName) {
+            MediaAlarmScreen(alarm: alarm, url: url) { completeAlarm(alarm) }
+        } else if alarm.mission != .none {
+            MissionView(alarm: alarm) { completeAlarm(alarm) }
+        } else {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                VStack(spacing: 24) {
+                    Image(systemName: "alarm.fill").font(.system(size: 64)).foregroundStyle(.red)
+                    Text(alarm.label).font(.largeTitle.bold()).foregroundStyle(.white)
+                    Text(alarm.timeText).font(.system(size: 62, weight: .light, design: .rounded)).monospacedDigit().foregroundStyle(.white)
+                    Button("停止") { completeAlarm(alarm) }.buttonStyle(.borderedProminent)
+                }
+            }
+        }
+    }
+
+    private func completeAlarm(_ alarm: WakeAlarm) {
+        streakStore.recordWake()
+        activeAlarm = nil
+        DispatchQueue.main.async { consumeSystemActions() }
+    }
+
+    private func consumeSystemActions() {
+        if activeAlarm == nil, let id = WakeIntentState.consumeAlarmID(), let alarm = alarmStore.alarm(id: id) {
+            activeAlarm = alarm
+            return
+        }
+        if !showTimerResult, WakeIntentState.consumeTimer() {
+            showTimerResult = true
+        }
     }
 }
 
@@ -114,10 +180,10 @@ struct AboutView: View {
                 }
             }
             Section("実装済み") {
-                Text("アラーム / 13種解除ミッション / 繰り返し / 事前通知 / 音声・動画選択 / 動画字幕 / タイマー / ストップウォッチ / ラップ / 世界時計 / デジタル・アナログ切替 / 拡大表示 / ストリーク / 起床カレンダー")
+                Text("アラーム / 13種解除ミッション / 繰り返し / 事前通知 / 音声・動画選択 / 動画字幕 / タイマー / システムのタイマー表示 / ストップウォッチ / ラップ / 世界時計 / デジタル・アナログ切替 / 拡大表示 / ストリーク / 起床カレンダー / 重複アラームのアプリ内キュー")
             }
             Section("iOS固有") {
-                Text("システムアラームはAlarmKitを使用します。iOSはロック画面のシステム停止操作や、バックグラウンドから任意の動画画面を強制表示する動作をアプリ側で完全には置き換えられません。アプリ内の解除ミッションと動画再生はAndroid版と同じ操作体系に寄せています。")
+                Text("システムアラームはAlarmKitを使用します。解除ミッションや動画を設定したアラームにはロック画面の「解除」ボタンを追加し、押すと該当アラームのIGNIDO画面を開きます。ただしiOSはシステム提供の停止ボタン自体を削除できないため、Android版のようにミッション完了まで停止操作そのものを完全禁止することはできません。また、バックグラウンドから動画画面を無操作で強制表示することもiOSではできません。")
             }
         }
         .navigationTitle("アプリ情報")
