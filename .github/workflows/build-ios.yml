@@ -16,6 +16,20 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
       - name: Install XcodeGen
         run: brew install xcodegen
+      - name: Validate clean initial state and version
+        run: |
+          grep -q 'InitialState.migrate()' ios/IGNIDOWake/IGNIDOWakeApp.swift
+          grep -q 'encode(\[WakeAlarm\]())' ios/IGNIDOWake/InitialState.swift
+          grep -q 'defaults.set(0, forKey: protectionBalanceKey)' ios/IGNIDOWake/InitialState.swift
+          grep -q '<string>1.7.6</string>' ios/IGNIDOWake/Info.plist
+          grep -q 'CFBundleShortVersionString: "1.7.6"' ios/project.yml
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('ios/IGNIDOWake/RootView.swift')
+          s=p.read_text()
+          s=s.replace('iOS 1.7.4 beta','iOS 1.7.6 beta')
+          p.write_text(s)
+          PY
       - name: Reconstruct accepted IGNIDO Wake icon and create asset catalog
         run: |
           cd ios
@@ -72,17 +86,17 @@ jobs:
           rm -rf Payload
           mkdir Payload
           cp -R "$APP" Payload/
-          /usr/bin/zip -qry IGNIDO-Wake-iOS-1.7.4-fire-beta.ipa Payload
-          shasum -a 256 IGNIDO-Wake-iOS-1.7.4-fire-beta.ipa | tee IGNIDO-Wake-iOS-1.7.4-fire-beta.sha256
+          /usr/bin/zip -qry IGNIDO-Wake-iOS-1.7.6-clean-state-beta.ipa Payload
+          shasum -a 256 IGNIDO-Wake-iOS-1.7.6-clean-state-beta.ipa | tee IGNIDO-Wake-iOS-1.7.6-clean-state-beta.sha256
       - uses: actions/upload-artifact@v4
         with:
-          name: IGNIDO-Wake-iOS-1.7.4-fire-beta
+          name: IGNIDO-Wake-iOS-1.7.6-clean-state-beta
           path: |
-            ios/IGNIDO-Wake-iOS-1.7.4-fire-beta.ipa
-            ios/IGNIDO-Wake-iOS-1.7.4-fire-beta.sha256
+            ios/IGNIDO-Wake-iOS-1.7.6-clean-state-beta.ipa
+            ios/IGNIDO-Wake-iOS-1.7.6-clean-state-beta.sha256
       - name: Publish prerelease asset
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="ios-fire-${GITHUB_RUN_NUMBER}"
-          gh release create "$TAG" ios/IGNIDO-Wake-iOS-1.7.4-fire-beta.ipa ios/IGNIDO-Wake-iOS-1.7.4-fire-beta.sha256 --title "IGNIDO Wake iOS 1.7.4 beta (${GITHUB_RUN_NUMBER})" --notes "Unsigned IPA for SideStore re-signing. Warmer soot-black palette, custom flame mark and companion, fewer generic rounded/glow patterns, and more deliberate fire-state accents." --prerelease
+          TAG="ios-clean-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" ios/IGNIDO-Wake-iOS-1.7.6-clean-state-beta.ipa ios/IGNIDO-Wake-iOS-1.7.6-clean-state-beta.sha256 --title "IGNIDO Wake iOS 1.7.6 beta (${GITHUB_RUN_NUMBER})" --notes "Unsigned IPA for SideStore re-signing. Clean initial state: fresh installs persist an explicit empty alarm list and initialize streak-protection balance at 0/3 instead of preloading days. Existing user-created alarms are preserved." --prerelease
