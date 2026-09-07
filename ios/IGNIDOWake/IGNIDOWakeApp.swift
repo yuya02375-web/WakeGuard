@@ -9,6 +9,7 @@ struct IGNIDOWakeApp: App {
     @StateObject private var streakStore = StreakStore()
 
     init() {
+        InitialState.migrate()
         IgnidoAppearance.configure()
     }
 
