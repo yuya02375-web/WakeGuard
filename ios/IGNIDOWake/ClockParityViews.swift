@@ -134,10 +134,15 @@ private struct IgnidoDial: View {
 struct IgnidoAnalogClockFace: View {
     let date: Date
     let timeZone: TimeZone
-    var body: some View {
+
+    private var components: DateComponents {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
-        let c = calendar.dateComponents([.hour, .minute, .second], from: date)
+        return calendar.dateComponents([.hour, .minute, .second], from: date)
+    }
+
+    var body: some View {
+        let c = components
         let sec = Double(c.second ?? 0)
         let min = Double(c.minute ?? 0) + sec / 60
         let hour = Double(c.hour ?? 0) + min / 60
