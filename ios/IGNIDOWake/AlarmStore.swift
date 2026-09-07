@@ -101,8 +101,10 @@ final class AlarmStore: ObservableObject {
                 textColor: .white,
                 systemImageName: "arrow.right.circle.fill"
             ) : nil
+            let label = item.label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "アラーム" : item.label
+            let systemTitle = LocalizedStringResource(stringLiteral: "\(item.timeText)  \(label)")
             let alert = AlarmPresentation.Alert(
-                title: LocalizedStringResource(stringLiteral: item.label),
+                title: systemTitle,
                 secondaryButton: openButton,
                 secondaryButtonBehavior: needsOpen ? .custom : nil
             )
@@ -110,15 +112,16 @@ final class AlarmStore: ObservableObject {
             let attributes = AlarmAttributes<EmptyWakeMetadata>(
                 presentation: presentation,
                 metadata: EmptyWakeMetadata(),
-                tintColor: Color(red: 0.95, green: 0.16, blue: 0.08)
+                tintColor: IgnidoTheme.ember
             )
             let secondaryIntent: (any LiveActivityIntent)? = needsOpen ? OpenAlarmIntent(alarmID: item.id.uuidString) : nil
+            let soundName = AlarmRuntime.alarmKitSoundName(for: item.mediaFileName)
             let configuration = AlarmManager.AlarmConfiguration.alarm(
                 schedule: schedule,
                 attributes: attributes,
                 stopIntent: StopWakeIntent(alarmID: item.id.uuidString),
                 secondaryIntent: secondaryIntent,
-                sound: .default
+                sound: .named(soundName)
             )
             _ = try await AlarmManager.shared.schedule(id: item.id, configuration: configuration)
             await schedulePreAlert(for: item)
@@ -136,23 +139,25 @@ final class AlarmStore: ObservableObject {
             let id = UUID()
             let schedule: Alarm.Schedule = .fixed(Date().addingTimeInterval(seconds))
             let needsOpen = item.mission != .none || item.mediaFileName != nil
+            let label = item.label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "アラーム" : item.label
             let alert = AlarmPresentation.Alert(
-                title: LocalizedStringResource(stringLiteral: "テスト: \(item.label)"),
+                title: LocalizedStringResource(stringLiteral: "テスト \(item.timeText)  \(label)"),
                 secondaryButton: needsOpen ? AlarmButton(text: "解除", textColor: .white, systemImageName: "arrow.right.circle.fill") : nil,
                 secondaryButtonBehavior: needsOpen ? .custom : nil
             )
             let attributes = AlarmAttributes<EmptyWakeMetadata>(
                 presentation: AlarmPresentation(alert: alert),
                 metadata: EmptyWakeMetadata(),
-                tintColor: Color(red: 0.95, green: 0.16, blue: 0.08)
+                tintColor: IgnidoTheme.ember
             )
             let secondaryIntent: (any LiveActivityIntent)? = needsOpen ? OpenAlarmIntent(alarmID: item.id.uuidString) : nil
+            let soundName = AlarmRuntime.alarmKitSoundName(for: item.mediaFileName)
             let configuration = AlarmManager.AlarmConfiguration.alarm(
                 schedule: schedule,
                 attributes: attributes,
                 stopIntent: nil,
                 secondaryIntent: secondaryIntent,
-                sound: .default
+                sound: .named(soundName)
             )
             _ = try await AlarmManager.shared.schedule(id: id, configuration: configuration)
             lastError = nil
@@ -203,7 +208,8 @@ final class AlarmStore: ObservableObject {
     private func preAlertContent(item: WakeAlarm, alarmDate: Date) -> UNMutableNotificationContent {
         let c = UNMutableNotificationContent()
         c.title = "IGNIDO Wake"
-        c.body = "\(item.preAlertMinutes)分後にアラーム　\(item.timeText)"
+        let label = item.label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "アラーム" : item.label
+        c.body = "\(item.preAlertMinutes)分後に \(item.timeText)  \(label)"
         c.sound = nil
         c.interruptionLevel = .passive
         c.userInfo = ["alarmID": item.id.uuidString]
