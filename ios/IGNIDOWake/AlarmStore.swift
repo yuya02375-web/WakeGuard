@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import AlarmKit
 import UserNotifications
+import AppIntents
 
 @MainActor
 final class AlarmStore: ObservableObject {
@@ -94,16 +95,29 @@ final class AlarmStore: ObservableObject {
             let time = Alarm.Schedule.Relative.Time(hour: item.hour, minute: item.minute)
             let recurrence: Alarm.Schedule.Relative.Recurrence = item.weekdays.isEmpty ? .never : .weekly(localeWeekdays(item.weekdays))
             let schedule: Alarm.Schedule = .relative(.init(time: time, repeats: recurrence))
-            let alert = AlarmPresentation.Alert(title: LocalizedStringResource(stringLiteral: item.label))
+            let needsOpen = item.mission != .none || item.mediaFileName != nil
+            let openButton = needsOpen ? AlarmButton(
+                text: "解除",
+                textColor: .white,
+                systemImageName: "arrow.right.circle.fill"
+            ) : nil
+            let alert = AlarmPresentation.Alert(
+                title: LocalizedStringResource(stringLiteral: item.label),
+                secondaryButton: openButton,
+                secondaryButtonBehavior: needsOpen ? .custom : nil
+            )
             let presentation = AlarmPresentation(alert: alert)
             let attributes = AlarmAttributes<EmptyWakeMetadata>(
                 presentation: presentation,
                 metadata: EmptyWakeMetadata(),
                 tintColor: Color(red: 0.95, green: 0.16, blue: 0.08)
             )
+            let secondaryIntent: (any LiveActivityIntent)? = needsOpen ? OpenAlarmIntent(alarmID: item.id.uuidString) : nil
             let configuration = AlarmManager.AlarmConfiguration.alarm(
                 schedule: schedule,
                 attributes: attributes,
+                stopIntent: StopWakeIntent(alarmID: item.id.uuidString),
+                secondaryIntent: secondaryIntent,
                 sound: .default
             )
             _ = try await AlarmManager.shared.schedule(id: item.id, configuration: configuration)
@@ -121,13 +135,25 @@ final class AlarmStore: ObservableObject {
         do {
             let id = UUID()
             let schedule: Alarm.Schedule = .fixed(Date().addingTimeInterval(seconds))
-            let alert = AlarmPresentation.Alert(title: LocalizedStringResource(stringLiteral: "テスト: \(item.label)"))
+            let needsOpen = item.mission != .none || item.mediaFileName != nil
+            let alert = AlarmPresentation.Alert(
+                title: LocalizedStringResource(stringLiteral: "テスト: \(item.label)"),
+                secondaryButton: needsOpen ? AlarmButton(text: "解除", textColor: .white, systemImageName: "arrow.right.circle.fill") : nil,
+                secondaryButtonBehavior: needsOpen ? .custom : nil
+            )
             let attributes = AlarmAttributes<EmptyWakeMetadata>(
                 presentation: AlarmPresentation(alert: alert),
                 metadata: EmptyWakeMetadata(),
                 tintColor: Color(red: 0.95, green: 0.16, blue: 0.08)
             )
-            let configuration = AlarmManager.AlarmConfiguration.alarm(schedule: schedule, attributes: attributes, sound: .default)
+            let secondaryIntent: (any LiveActivityIntent)? = needsOpen ? OpenAlarmIntent(alarmID: item.id.uuidString) : nil
+            let configuration = AlarmManager.AlarmConfiguration.alarm(
+                schedule: schedule,
+                attributes: attributes,
+                stopIntent: nil,
+                secondaryIntent: secondaryIntent,
+                sound: .default
+            )
             _ = try await AlarmManager.shared.schedule(id: id, configuration: configuration)
             lastError = nil
         } catch {
