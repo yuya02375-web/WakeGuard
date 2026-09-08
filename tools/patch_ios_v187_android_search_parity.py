@@ -84,7 +84,7 @@ new_view = r'''private struct AddTimeZoneView: View {
             }
             .padding(.horizontal, 14)
             .frame(minHeight: 50)
-            .background(IgnidoTheme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(IgnidoTheme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(IgnidoTheme.border, lineWidth: 1))
 
             HStack(spacing: 8) {
@@ -175,7 +175,7 @@ new_view = r'''private struct AddTimeZoneView: View {
                 }
             }
             .padding(14)
-            .background(IgnidoTheme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(IgnidoTheme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(alreadyAdded ? Color.green.opacity(0.45) : IgnidoTheme.border, lineWidth: 1))
         }
         .buttonStyle(.plain)
