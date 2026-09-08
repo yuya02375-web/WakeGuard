@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'tools/patch_ios_v188_online_google_search.py'
+      - 'tools/patch_ios_v188_swift6_compile_fix.py'
       - '.github/workflows/build-ios-v188.yml'
 permissions:
   contents: write
@@ -30,6 +31,7 @@ jobs:
           python3 tools/patch_ios_v186_keyboard_dismiss.py
           python3 tools/patch_ios_v187_android_search_parity.py
           python3 tools/patch_ios_v188_online_google_search.py
+          python3 tools/patch_ios_v188_swift6_compile_fix.py
           test $(wc -c < ios/IGNIDOWake/world_cities.tsv) -gt 1000000
       - name: Generate bundled fallback sound
         run: |
@@ -71,6 +73,8 @@ jobs:
           grep -q 'WKWebView' ios/IGNIDOWake/ClockViews.swift
           grep -q 'presentationDetents' ios/IGNIDOWake/ClockViews.swift
           grep -q 'Task.sleep(for: .milliseconds(350))' ios/IGNIDOWake/ClockViews.swift
+          grep -q 'continuation.resume(returning: out)' ios/IGNIDOWake/ClockViews.swift
+          ! grep -q 'continuation.resume(returning: response)' ios/IGNIDOWake/ClockViews.swift
           grep -q 'MultiTimerViewV186()' ios/IGNIDOWake/RootView.swift
           grep -q 'ToolbarItemGroup(placement: .keyboard)' ios/IGNIDOWake/MultiTimerMainV186.swift
           grep -q 'sound: .default' ios/IGNIDOWake/AlarmStore.swift
@@ -157,6 +161,7 @@ jobs:
             tools/patch_ios_v186_keyboard_dismiss.py
             tools/patch_ios_v187_android_search_parity.py
             tools/patch_ios_v188_online_google_search.py
+            tools/patch_ios_v188_swift6_compile_fix.py
             tools/generate_ios_world_city_catalog.py
       - uses: actions/upload-artifact@v4
         with:
