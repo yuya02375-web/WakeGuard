@@ -9,6 +9,7 @@ on:
       - 'tools/patch_ios_v182_fast_trilingual_search.py'
       - 'tools/patch_ios_v183_language_sound.py'
       - 'tools/patch_ios_v184_timer_parity.py'
+      - 'tools/patch_ios_v185_timer_inline_input.py'
       - 'tools/generate_ios_world_city_catalog.py'
       - '.github/workflows/build-ios.yml'
 permissions:
@@ -27,13 +28,14 @@ jobs:
           python3 tools/patch_ios_v178.py
           python3 tools/patch_ios_v181_video_mission.py
           python3 tools/patch_ios_v182_fast_trilingual_search.py
-      - name: Generate city catalog and apply 1.8.4 timer parity fixes
+      - name: Generate city catalog and apply 1.8.5 timer UI fixes
         run: |
           curl -fsSL --retry 4 --retry-delay 2 https://download.geonames.org/export/dump/cities15000.zip -o /tmp/cities15000.zip
           unzip -p /tmp/cities15000.zip cities15000.txt > /tmp/cities15000.txt
           test -s /tmp/cities15000.txt
           python3 tools/generate_ios_world_city_catalog.py
           python3 tools/patch_ios_v184_timer_parity.py
+          python3 tools/patch_ios_v185_timer_inline_input.py
           test $(wc -c < ios/IGNIDOWake/world_cities.tsv) -gt 1000000
       - name: Generate bundled in-app fallback sound
         run: |
@@ -60,12 +62,12 @@ jobs:
               w.writeframes(b''.join(frames))
           assert out.stat().st_size>100000
           PY
-      - name: Validate 1.8.4 language, sound and timer parity fixes
+      - name: Validate 1.8.5 visible-title and inline-input fixes
         run: |
-          grep -q '<string>1.8.4</string>' ios/IGNIDOWake/Info.plist
-          grep -q '<string>13</string>' ios/IGNIDOWake/Info.plist
-          grep -q 'CFBundleShortVersionString: "1.8.4"' ios/project.yml
-          grep -q 'CFBundleVersion: "13"' ios/project.yml
+          grep -q '<string>1.8.5</string>' ios/IGNIDOWake/Info.plist
+          grep -q '<string>14</string>' ios/IGNIDOWake/Info.plist
+          grep -q 'CFBundleShortVersionString: "1.8.5"' ios/project.yml
+          grep -q 'CFBundleVersion: "14"' ios/project.yml
           grep -q 'CFBundleLocalizations' ios/IGNIDOWake/Info.plist
           test -s ios/IGNIDOWake/ja.lproj/Localizable.strings
           test -s ios/IGNIDOWake/en.lproj/Localizable.strings
@@ -90,16 +92,21 @@ jobs:
           grep -q 'playImmediately' ios/IGNIDOWake/MediaPlayerView.swift
           grep -q 'IgnidoAnalogClockFace' ios/IGNIDOWake/ClockViews.swift
           grep -q 'draft.soundName = url.lastPathComponent' ios/IGNIDOWake/AlarmViews.swift
-          grep -q 'MultiTimerView()' ios/IGNIDOWake/RootView.swift
+          grep -q 'MultiTimerViewV185()' ios/IGNIDOWake/RootView.swift
           grep -q 'StreakParityDashboard()' ios/IGNIDOWake/RootView.swift
           grep -q 'monthlyGrant = 2' ios/IGNIDOWake/StreakParity.swift
           grep -q 'AppSettingsView()' ios/IGNIDOWake/AlarmViews.swift
           grep -q 'createAndStart(label: String, duration: TimeInterval, saved: Bool)' ios/IGNIDOWake/MultiTimer.swift
-          grep -q 'quickMinutes = \[1, 3, 5, 10, 15, 30\]' ios/IGNIDOWake/MultiTimer.swift
-          grep -q 'adjustmentButton("+1秒", 1)' ios/IGNIDOWake/MultiTimer.swift
-          grep -q '230分 → 3:50:00' ios/IGNIDOWake/MultiTimer.swift
-          grep -q 'ignido.timer.displayMode' ios/IGNIDOWake/MultiTimer.swift
-          grep -q 'exclusively(before: TapGesture())' ios/IGNIDOWake/MultiTimer.swift
+          grep -q 'struct MultiTimerViewV185: View' ios/IGNIDOWake/MultiTimerMainV185.swift
+          grep -q 'sectionTitle("時間を入力")' ios/IGNIDOWake/MultiTimerMainV185.swift
+          grep -q 'directField("時", text: .hoursText)' ios/IGNIDOWake/MultiTimerMainV185.swift
+          grep -q 'directField("分", text: .minutesText)' ios/IGNIDOWake/MultiTimerMainV185.swift
+          grep -q 'directField("秒", text: .secondsText)' ios/IGNIDOWake/MultiTimerMainV185.swift
+          grep -q 'Label("開始", systemImage: "play.fill")' ios/IGNIDOWake/MultiTimerMainV185.swift
+          grep -q 'Label("追加", systemImage: "plus")' ios/IGNIDOWake/MultiTimerMainV185.swift
+          grep -q 'toolbar(.hidden, for: .navigationBar)' ios/IGNIDOWake/MultiTimerMainV185.swift
+          grep -q 'foregroundStyle(Color.white)' ios/IGNIDOWake/MultiTimerMainV185.swift
+          grep -q '詳細を設定して追加' ios/IGNIDOWake/MultiTimerMainV185.swift
           test -s ios/IGNIDOWake/ignido_alarm.wav
           test -s ios/IGNIDOWake/world_cities.tsv
       - name: Reconstruct accepted IGNIDO Wake icon and create asset catalog
@@ -159,18 +166,18 @@ jobs:
           test -d "$APP/ja.lproj"
           test -d "$APP/en.lproj"
           test -d "$APP/ko.lproj"
-          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '1.8.4'
-          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '13'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '1.8.5'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '14'
           rm -rf Payload
           mkdir Payload
           cp -R "$APP" Payload/
-          /usr/bin/zip -qry IGNIDO-Wake-iOS-1.8.4-timer-parity-beta.ipa Payload
-          unzip -t IGNIDO-Wake-iOS-1.8.4-timer-parity-beta.ipa
-          shasum -a 256 IGNIDO-Wake-iOS-1.8.4-timer-parity-beta.ipa | tee IGNIDO-Wake-iOS-1.8.4-timer-parity-beta.sha256
+          /usr/bin/zip -qry IGNIDO-Wake-iOS-1.8.5-visible-input-fix-beta.ipa Payload
+          unzip -t IGNIDO-Wake-iOS-1.8.5-visible-input-fix-beta.ipa
+          shasum -a 256 IGNIDO-Wake-iOS-1.8.5-visible-input-fix-beta.ipa | tee IGNIDO-Wake-iOS-1.8.5-visible-input-fix-beta.sha256
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: IGNIDO-Wake-iOS-1.8.4-patched-source
+          name: IGNIDO-Wake-iOS-1.8.5-patched-source
           path: |
             ios/IGNIDOWake/
             ios/project.yml
@@ -179,16 +186,17 @@ jobs:
             tools/patch_ios_v182_fast_trilingual_search.py
             tools/patch_ios_v183_language_sound.py
             tools/patch_ios_v184_timer_parity.py
+            tools/patch_ios_v185_timer_inline_input.py
             tools/generate_ios_world_city_catalog.py
       - uses: actions/upload-artifact@v4
         with:
-          name: IGNIDO-Wake-iOS-1.8.4-timer-parity-beta
+          name: IGNIDO-Wake-iOS-1.8.5-visible-input-fix-beta
           path: |
-            ios/IGNIDO-Wake-iOS-1.8.4-timer-parity-beta.ipa
-            ios/IGNIDO-Wake-iOS-1.8.4-timer-parity-beta.sha256
+            ios/IGNIDO-Wake-iOS-1.8.5-visible-input-fix-beta.ipa
+            ios/IGNIDO-Wake-iOS-1.8.5-visible-input-fix-beta.sha256
       - name: Publish prerelease asset
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="ios-184-${GITHUB_RUN_NUMBER}"
-          gh release create "$TAG" ios/IGNIDO-Wake-iOS-1.8.4-timer-parity-beta.ipa ios/IGNIDO-Wake-iOS-1.8.4-timer-parity-beta.sha256 --title "IGNIDO Wake iOS 1.8.4 timer parity beta (${GITHUB_RUN_NUMBER})" --notes "Unsigned IPA for SideStore. Brings the iPhone multi-timer controls to Android parity: multiple independent timers, quick presets, direct h:m:s input with overflow normalization, fine +/- adjustments, temporary vs saved timers, +1 minute, reset, swipe delete, tap digital/analog toggle, and long-press enlargement. Retains JA/EN/KO localization, default AlarmKit system sound reliability, fast trilingual city search, and the video-mission overlay fix." --prerelease
+          TAG="ios-185-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" ios/IGNIDO-Wake-iOS-1.8.5-visible-input-fix-beta.ipa ios/IGNIDO-Wake-iOS-1.8.5-visible-input-fix-beta.sha256 --title "IGNIDO Wake iOS 1.8.5 visible timer input fix beta (${GITHUB_RUN_NUMBER})" --notes "Unsigned IPA for SideStore. Fixes the timer screen title blending into the black background and adds an always-visible h:m:s input directly on the main timer screen. Keeps both a separate Add button/flow and direct input, with Start and Add actions visible together. Retains multi-timer controls, quick presets, digital/analog toggle, long-press enlargement, JA/EN/KO localization, AlarmKit reliability fixes, world-clock search, and video-mission fixes." --prerelease
