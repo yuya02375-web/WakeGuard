@@ -8,6 +8,7 @@ on:
       - 'tools/patch_ios_v181_video_mission.py'
       - 'tools/patch_ios_v182_fast_trilingual_search.py'
       - 'tools/patch_ios_v183_language_sound.py'
+      - 'tools/patch_ios_v184_timer_parity.py'
       - 'tools/generate_ios_world_city_catalog.py'
       - '.github/workflows/build-ios.yml'
 permissions:
@@ -26,12 +27,13 @@ jobs:
           python3 tools/patch_ios_v178.py
           python3 tools/patch_ios_v181_video_mission.py
           python3 tools/patch_ios_v182_fast_trilingual_search.py
-      - name: Generate Japanese English Korean city catalog and apply 1.8.3 fix
+      - name: Generate city catalog and apply 1.8.4 timer parity fixes
         run: |
           curl -fsSL --retry 4 --retry-delay 2 https://download.geonames.org/export/dump/cities15000.zip -o /tmp/cities15000.zip
           unzip -p /tmp/cities15000.zip cities15000.txt > /tmp/cities15000.txt
           test -s /tmp/cities15000.txt
           python3 tools/generate_ios_world_city_catalog.py
+          python3 tools/patch_ios_v184_timer_parity.py
           test $(wc -c < ios/IGNIDOWake/world_cities.tsv) -gt 1000000
       - name: Generate bundled in-app fallback sound
         run: |
@@ -58,12 +60,12 @@ jobs:
               w.writeframes(b''.join(frames))
           assert out.stat().st_size>100000
           PY
-      - name: Validate 1.8.3 language and sound fixes
+      - name: Validate 1.8.4 language, sound and timer parity fixes
         run: |
-          grep -q '<string>1.8.3</string>' ios/IGNIDOWake/Info.plist
-          grep -q '<string>12</string>' ios/IGNIDOWake/Info.plist
-          grep -q 'CFBundleShortVersionString: "1.8.3"' ios/project.yml
-          grep -q 'CFBundleVersion: "12"' ios/project.yml
+          grep -q '<string>1.8.4</string>' ios/IGNIDOWake/Info.plist
+          grep -q '<string>13</string>' ios/IGNIDOWake/Info.plist
+          grep -q 'CFBundleShortVersionString: "1.8.4"' ios/project.yml
+          grep -q 'CFBundleVersion: "13"' ios/project.yml
           grep -q 'CFBundleLocalizations' ios/IGNIDOWake/Info.plist
           test -s ios/IGNIDOWake/ja.lproj/Localizable.strings
           test -s ios/IGNIDOWake/en.lproj/Localizable.strings
@@ -92,6 +94,12 @@ jobs:
           grep -q 'StreakParityDashboard()' ios/IGNIDOWake/RootView.swift
           grep -q 'monthlyGrant = 2' ios/IGNIDOWake/StreakParity.swift
           grep -q 'AppSettingsView()' ios/IGNIDOWake/AlarmViews.swift
+          grep -q 'createAndStart(label: String, duration: TimeInterval, saved: Bool)' ios/IGNIDOWake/MultiTimer.swift
+          grep -q 'quickMinutes = \[1, 3, 5, 10, 15, 30\]' ios/IGNIDOWake/MultiTimer.swift
+          grep -q 'adjustmentButton("+1秒", 1)' ios/IGNIDOWake/MultiTimer.swift
+          grep -q '230分 → 3:50:00' ios/IGNIDOWake/MultiTimer.swift
+          grep -q 'ignido.timer.displayMode' ios/IGNIDOWake/MultiTimer.swift
+          grep -q 'exclusively(before: TapGesture())' ios/IGNIDOWake/MultiTimer.swift
           test -s ios/IGNIDOWake/ignido_alarm.wav
           test -s ios/IGNIDOWake/world_cities.tsv
       - name: Reconstruct accepted IGNIDO Wake icon and create asset catalog
@@ -151,18 +159,18 @@ jobs:
           test -d "$APP/ja.lproj"
           test -d "$APP/en.lproj"
           test -d "$APP/ko.lproj"
-          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '1.8.3'
-          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '12'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '1.8.4'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '13'
           rm -rf Payload
           mkdir Payload
           cp -R "$APP" Payload/
-          /usr/bin/zip -qry IGNIDO-Wake-iOS-1.8.3-language-sound-fix-beta.ipa Payload
-          unzip -t IGNIDO-Wake-iOS-1.8.3-language-sound-fix-beta.ipa
-          shasum -a 256 IGNIDO-Wake-iOS-1.8.3-language-sound-fix-beta.ipa | tee IGNIDO-Wake-iOS-1.8.3-language-sound-fix-beta.sha256
+          /usr/bin/zip -qry IGNIDO-Wake-iOS-1.8.4-timer-parity-beta.ipa Payload
+          unzip -t IGNIDO-Wake-iOS-1.8.4-timer-parity-beta.ipa
+          shasum -a 256 IGNIDO-Wake-iOS-1.8.4-timer-parity-beta.ipa | tee IGNIDO-Wake-iOS-1.8.4-timer-parity-beta.sha256
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: IGNIDO-Wake-iOS-1.8.3-patched-source
+          name: IGNIDO-Wake-iOS-1.8.4-patched-source
           path: |
             ios/IGNIDOWake/
             ios/project.yml
@@ -170,16 +178,17 @@ jobs:
             tools/patch_ios_v181_video_mission.py
             tools/patch_ios_v182_fast_trilingual_search.py
             tools/patch_ios_v183_language_sound.py
+            tools/patch_ios_v184_timer_parity.py
             tools/generate_ios_world_city_catalog.py
       - uses: actions/upload-artifact@v4
         with:
-          name: IGNIDO-Wake-iOS-1.8.3-language-sound-fix-beta
+          name: IGNIDO-Wake-iOS-1.8.4-timer-parity-beta
           path: |
-            ios/IGNIDO-Wake-iOS-1.8.3-language-sound-fix-beta.ipa
-            ios/IGNIDO-Wake-iOS-1.8.3-language-sound-fix-beta.sha256
+            ios/IGNIDO-Wake-iOS-1.8.4-timer-parity-beta.ipa
+            ios/IGNIDO-Wake-iOS-1.8.4-timer-parity-beta.sha256
       - name: Publish prerelease asset
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="ios-183-${GITHUB_RUN_NUMBER}"
-          gh release create "$TAG" ios/IGNIDO-Wake-iOS-1.8.3-language-sound-fix-beta.ipa ios/IGNIDO-Wake-iOS-1.8.3-language-sound-fix-beta.sha256 --title "IGNIDO Wake iOS 1.8.3 language + sound fix beta (${GITHUB_RUN_NUMBER})" --notes "Unsigned IPA for SideStore. Fixes JA/EN/KO app-language consistency, adds the missing Japanese localization bundle, localizes dynamic labels, and switches AlarmKit system alarms/timers to the iOS default system sound for reliability. Retains fast trilingual city search and the video-mission overlay fix." --prerelease
+          TAG="ios-184-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" ios/IGNIDO-Wake-iOS-1.8.4-timer-parity-beta.ipa ios/IGNIDO-Wake-iOS-1.8.4-timer-parity-beta.sha256 --title "IGNIDO Wake iOS 1.8.4 timer parity beta (${GITHUB_RUN_NUMBER})" --notes "Unsigned IPA for SideStore. Brings the iPhone multi-timer controls to Android parity: multiple independent timers, quick presets, direct h:m:s input with overflow normalization, fine +/- adjustments, temporary vs saved timers, +1 minute, reset, swipe delete, tap digital/analog toggle, and long-press enlargement. Retains JA/EN/KO localization, default AlarmKit system sound reliability, fast trilingual city search, and the video-mission overlay fix." --prerelease
