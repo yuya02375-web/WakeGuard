@@ -1,9 +1,9 @@
-name: Build iOS 1.9.1 IPA retry
+name: Build iOS 1.9.2 IPA
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'tools/patch_ios_v191_prepare_importer.py'
+      - 'tools/patch_ios_v192_stability.py'
       - '.github/workflows/build-ios-v191b.yml'
 permissions:
   contents: write
@@ -16,7 +16,7 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
       - name: Install XcodeGen
         run: brew install xcodegen
-      - name: Apply accumulated iOS fixes and 1.9.1 imported sound fix
+      - name: Apply accumulated iOS fixes and 1.9.2 stability patch
         run: |
           python3 tools/patch_ios_v178.py
           python3 tools/patch_ios_v181_video_mission.py
@@ -34,23 +34,30 @@ jobs:
           python3 tools/patch_ios_v190_alarm_sound_picker.py
           python3 tools/patch_ios_v191_prepare_importer.py
           python3 tools/patch_ios_v191_imported_alarm_sound_fix.py
+          python3 tools/patch_ios_v192_stability.py
           test $(wc -c < ios/IGNIDOWake/world_cities.tsv) -gt 1000000
-      - name: Validate imported MP3/custom alarm path
+      - name: Validate 1.9.2 alarm lifecycle fixes
         run: |
-          grep -q '<string>1.9.1</string>' ios/IGNIDOWake/Info.plist
-          grep -q '<string>20</string>' ios/IGNIDOWake/Info.plist
-          grep -q 'importAsAlarmSound(from sourceURL: URL)' ios/IGNIDOWake/AlarmSoundCatalog.swift
-          grep -q 'customPrefix = "custom:"' ios/IGNIDOWake/AlarmSoundCatalog.swift
-          grep -q 'format.sampleRate \* 25.0' ios/IGNIDOWake/AlarmSoundCatalog.swift
-          grep -q 'return .named(fileName)' ios/IGNIDOWake/AlarmSoundCatalog.swift
-          grep -q 'installBundledSounds()' ios/IGNIDOWake/IGNIDOWakeApp.swift
-          grep -q 'IgnidoAlarmSoundLibrary.importAsAlarmSound(from: url)' ios/IGNIDOWake/AlarmViews.swift
-          grep -q 'draft.soundName = IgnidoAlarmSoundCatalog.customPrefix + alarmFile' ios/IGNIDOWake/AlarmViews.swift
-          ! grep -q 'draft.soundName = url.lastPathComponent' ios/IGNIDOWake/AlarmViews.swift
-          test $(grep -c 'IgnidoAlarmSoundCatalog.alertSound(for: item.soundName)' ios/IGNIDOWake/AlarmStore.swift) -ge 2
-          for f in ignido_ember.wav ignido_blaze.wav ignido_pulse.wav ignido_siren.wav ignido_dawn.wav ignido_deep.wav; do test -s "ios/IGNIDOWake/$f"; done
-          grep -q 'Googleで確認' ios/IGNIDOWake/ClockViews.swift
-          grep -q 'MultiTimerViewV186()' ios/IGNIDOWake/RootView.swift
+          grep -q '<string>1.9.2</string>' ios/IGNIDOWake/Info.plist
+          grep -q '<string>21</string>' ios/IGNIDOWake/Info.plist
+          grep -q 'pendingAlarmRequests.v2' ios/IGNIDOWake/AlarmIntents.swift
+          grep -q 'consumeAlarmRequest' ios/IGNIDOWake/AlarmIntents.swift
+          grep -q 'alarmUpdates' ios/IGNIDOWake/AlarmStore.swift
+          grep -q '.fixed(fire)' ios/IGNIDOWake/AlarmStore.swift
+          grep -q 'completeSystemAlarm' ios/IGNIDOWake/AlarmStore.swift
+          grep -q 'AlarmManager.shared.stop(id:item.id)' ios/IGNIDOWake/AlarmStore.swift
+          grep -q 'request.createdAt' ios/IGNIDOWake/RootView.swift
+          grep -q 'isSystemAlarmAlerting' ios/IGNIDOWake/RootView.swift
+          grep -q 'StepMissionCounter' ios/IGNIDOWake/MissionView.swift
+          grep -q 'queryPedometerData' ios/IGNIDOWake/MissionView.swift
+          grep -q 'CMPedometer.authorizationStatus' ios/IGNIDOWake/MissionView.swift
+          ! grep -q 'IgnidoAlarmSoundPreview.shared.play(selection: draft.soundName)' ios/IGNIDOWake/AlarmViews.swift
+          grep -q 'onDisappear { IgnidoAlarmSoundPreview.shared.stop() }' ios/IGNIDOWake/AlarmViews.swift
+          grep -q 'NSMotionUsageDescription' ios/IGNIDOWake/Info.plist
+          grep -q 'NSAlarmKitUsageDescription' ios/IGNIDOWake/Info.plist
+          test -s ios/IGNIDOWake/ja.lproj/Localizable.strings
+          test -s ios/IGNIDOWake/en.lproj/Localizable.strings
+          test -s ios/IGNIDOWake/ko.lproj/Localizable.strings
       - name: Reconstruct accepted IGNIDO Wake icon
         run: |
           cd ios
@@ -58,28 +65,28 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import base64, hashlib
-          parts = Path('../tools/v172_icon_parts')
-          names = ["part00.txt", "part01.txt", "part02a.txt", "part02b.txt", "part03.txt", "part04.txt", "part05.txt", "part06.txt"]
-          expected_lengths = [3000, 3000, 1500, 1500, 3000, 3000, 3000, 1416]
+          parts=Path('../tools/v172_icon_parts')
+          names=['part00.txt','part01.txt','part02a.txt','part02b.txt','part03.txt','part04.txt','part05.txt','part06.txt']
+          lens=[3000,3000,1500,1500,3000,3000,3000,1416]
           chunks=[]
-          for name, expected in zip(names, expected_lengths):
-              chunk=(parts/name).read_text().strip()
-              if name == "part02a.txt" and len(chunk) == 1499: chunk=chunk[:999]+"c"+chunk[999:]
-              assert len(chunk)==expected
-              chunks.append(chunk)
-          raw=base64.b64decode(''.join(chunks), validate=True)
-          assert hashlib.sha256(raw).hexdigest()=="0bc991473cc8b15463d9722b9e58189cac417dede65c81638d29bce387b1a1cc"
+          for name,n in zip(names,lens):
+              c=(parts/name).read_text().strip()
+              if name=='part02a.txt' and len(c)==1499: c=c[:999]+'c'+c[999:]
+              assert len(c)==n
+              chunks.append(c)
+          raw=base64.b64decode(''.join(chunks),validate=True)
+          assert hashlib.sha256(raw).hexdigest()=='0bc991473cc8b15463d9722b9e58189cac417dede65c81638d29bce387b1a1cc'
           Path('/tmp/icon.webp').write_bytes(raw)
           PY
           brew install webp
           dwebp /tmp/icon.webp -o /tmp/icon.png
           python3 - <<'PY'
-          import json, os, subprocess
+          import json,os,subprocess
           out='IGNIDOWake/Assets.xcassets/AppIcon.appiconset'
           specs=[('iphone','20x20','2x',40),('iphone','20x20','3x',60),('iphone','29x29','2x',58),('iphone','29x29','3x',87),('iphone','40x40','2x',80),('iphone','40x40','3x',120),('iphone','60x60','2x',120),('iphone','60x60','3x',180),('ios-marketing','1024x1024','1x',1024)]
           images=[]
-          for idx,(idiom,size,scale,pix) in enumerate(specs):
-              name=f'icon-{pix}-{idx}.png'; subprocess.run(['sips','-z',str(pix),str(pix),'/tmp/icon.png','--out',f'{out}/{name}'],check=True,stdout=subprocess.DEVNULL); images.append({'idiom':idiom,'size':size,'scale':scale,'filename':name})
+          for i,(idiom,size,scale,pix) in enumerate(specs):
+              name=f'icon-{pix}-{i}.png'; subprocess.run(['sips','-z',str(pix),str(pix),'/tmp/icon.png','--out',f'{out}/{name}'],check=True,stdout=subprocess.DEVNULL); images.append({'idiom':idiom,'size':size,'scale':scale,'filename':name})
           with open(f'{out}/Contents.json','w') as f: json.dump({'images':images,'info':{'author':'xcode','version':1}},f)
           os.makedirs('IGNIDOWake/Assets.xcassets',exist_ok=True)
           with open('IGNIDOWake/Assets.xcassets/Contents.json','w') as f: json.dump({'info':{'author':'xcode','version':1}},f)
@@ -95,32 +102,31 @@ jobs:
           cd ios
           APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
           test -n "$APP"
-          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '1.9.1'
-          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '20'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '1.9.2'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '21'
           for f in ignido_ember.wav ignido_blaze.wav ignido_pulse.wav ignido_siren.wav ignido_dawn.wav ignido_deep.wav; do test -s "$APP/$f"; done
           test -f "$APP/world_cities.tsv"
           rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
-          /usr/bin/zip -qry IGNIDO-Wake-iOS-1.9.1-imported-alarm-sound-fix.ipa Payload
-          unzip -t IGNIDO-Wake-iOS-1.9.1-imported-alarm-sound-fix.ipa
-          shasum -a 256 IGNIDO-Wake-iOS-1.9.1-imported-alarm-sound-fix.ipa | tee IGNIDO-Wake-iOS-1.9.1-imported-alarm-sound-fix.sha256
+          /usr/bin/zip -qry IGNIDO-Wake-iOS-1.9.2-alarm-stability.ipa Payload
+          unzip -t IGNIDO-Wake-iOS-1.9.2-alarm-stability.ipa
+          shasum -a 256 IGNIDO-Wake-iOS-1.9.2-alarm-stability.ipa | tee IGNIDO-Wake-iOS-1.9.2-alarm-stability.sha256
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: IGNIDO-Wake-iOS-1.9.1-patched-source
+          name: IGNIDO-Wake-iOS-1.9.2-patched-source
           path: |
             ios/IGNIDOWake/
             ios/project.yml
-            tools/patch_ios_v191_prepare_importer.py
-            tools/patch_ios_v191_imported_alarm_sound_fix.py
+            tools/patch_ios_v192_stability.py
       - uses: actions/upload-artifact@v4
         with:
-          name: IGNIDO-Wake-iOS-1.9.1-imported-alarm-sound-fix
+          name: IGNIDO-Wake-iOS-1.9.2-alarm-stability
           path: |
-            ios/IGNIDO-Wake-iOS-1.9.1-imported-alarm-sound-fix.ipa
-            ios/IGNIDO-Wake-iOS-1.9.1-imported-alarm-sound-fix.sha256
+            ios/IGNIDO-Wake-iOS-1.9.2-alarm-stability.ipa
+            ios/IGNIDO-Wake-iOS-1.9.2-alarm-stability.sha256
       - name: Publish prerelease asset
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="ios-191b-${GITHUB_RUN_NUMBER}"
-          gh release create "$TAG" ios/IGNIDO-Wake-iOS-1.9.1-imported-alarm-sound-fix.ipa ios/IGNIDO-Wake-iOS-1.9.1-imported-alarm-sound-fix.sha256 --title "IGNIDO Wake iOS 1.9.1 imported alarm sound fix (${GITHUB_RUN_NUMBER})" --notes "Fixes imported MP3/M4A being ignored: converts imported audio to <=25s PCM CAF in Library/Sounds and points AlarmKit to that converted file. Bundled IGNIDO sounds are also copied to Library/Sounds. Retains prior features." --prerelease
+          TAG="ios-192-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" ios/IGNIDO-Wake-iOS-1.9.2-alarm-stability.ipa ios/IGNIDO-Wake-iOS-1.9.2-alarm-stability.sha256 --title "IGNIDO Wake iOS 1.9.2 alarm stability (${GITHUB_RUN_NUMBER})" --notes "Alarm reliability rebuild: system AlarmKit owns ringing; one-shot uses a concrete future fixed date; schedule result is verified; custom-sound scheduling falls back to system sound on registration failure; app startup no longer resurrects missing one-shot alarms; stale Open intent requests expire and can no longer start media at unrelated times; imported audio no longer auto-previews; mission completion explicitly stops AlarmKit; step mission uses a stable CMPedometer plus live and historical queries and preserves its start time across app close/reopen." --prerelease
