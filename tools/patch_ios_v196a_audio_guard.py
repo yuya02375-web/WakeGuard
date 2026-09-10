@@ -4,17 +4,23 @@ root=Path('ios/IGNIDOWake')
 
 # 1.9.6 / build 25 + background audio only while an alarm session is active.
 p=root/'Info.plist'; s=p.read_text()
-s=re.sub(r'(<key>CFBundleShortVersionString</key>\s*<string>)[^<]+',r'\g<1>1.9.6',s,1)
-s=re.sub(r'(<key>CFBundleVersion</key>\s*<string>)[^<]+',r'\g<1>25',s,1)
+s=re.sub(r'(<key>CFBundleShortVersionString</key>\s*<string>)[^<]+',r'\g<1>1.9.6',s,count=1)
+s=re.sub(r'(<key>CFBundleVersion</key>\s*<string>)[^<]+',r'\g<1>25',s,count=1)
 if '<key>UIBackgroundModes</key>' not in s:
-    s=s.replace('\t<key>UILaunchScreen</key>\n','\t<key>UIBackgroundModes</key>\n\t<array>\n\t\t<string>audio</string>\n\t</array>\n\t<key>UILaunchScreen</key>\n',1)
+    marker='<key>UILaunchScreen</key>'
+    if marker not in s:
+        raise SystemExit('Info.plist UILaunchScreen insertion point not found')
+    s=s.replace(marker,'<key>UIBackgroundModes</key>\n  <array><string>audio</string></array>\n  '+marker,1)
 p.write_text(s)
 
 p=Path('ios/project.yml'); s=p.read_text()
 s=re.sub(r'CFBundleShortVersionString: "[^"]+"','CFBundleShortVersionString: "1.9.6"',s)
 s=re.sub(r'CFBundleVersion: "[^"]+"','CFBundleVersion: "25"',s)
 if 'UIBackgroundModes:' not in s:
-    s=s.replace('        NSMotionUsageDescription: "アラーム解除の歩数・シェイク判定にiPhoneのモーションセンサーを使用します。"\n','        NSMotionUsageDescription: "アラーム解除の歩数・シェイク判定にiPhoneのモーションセンサーを使用します。"\n        UIBackgroundModes:\n          - audio\n',1)
+    marker='        NSMotionUsageDescription: "アラーム解除の歩数・シェイク判定にiPhoneのモーションセンサーを使用します。"\n'
+    if marker not in s:
+        raise SystemExit('project.yml NSMotionUsageDescription insertion point not found')
+    s=s.replace(marker,marker+'        UIBackgroundModes:\n          - audio\n',1)
 p.write_text(s)
 
 p=root/'IGNIDOWakeApp.swift'; s=p.read_text(); s=s.replace('        AlarmRuntime.preparePlaybackSession()\n',''); p.write_text(s)
@@ -99,7 +105,8 @@ p.write_text(s)
 
 assert '<string>1.9.6</string>' in (root/'Info.plist').read_text()
 assert '<string>25</string>' in (root/'Info.plist').read_text()
-assert 'UIBackgroundModes' in (root/'Info.plist').read_text()
+assert '<key>UIBackgroundModes</key>' in (root/'Info.plist').read_text()
+assert '<string>audio</string>' in (root/'Info.plist').read_text()
 assert 'p.numberOfLoops = -1' in (root/'AlarmSoundCatalog.swift').read_text()
 assert 'AlarmRuntime.preparePlaybackSession()' not in (root/'IGNIDOWakeApp.swift').read_text()
 print('v196a audio guard applied')
