@@ -1,0 +1,168 @@
+name: Build iOS 1.9.6 Volume Button Handoff IPA
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/patch_ios_v196a_audio_guard.py'
+      - 'tools/patch_ios_v196b_intent_handoff.py'
+      - 'tools/patch_ios_v196c_alarm_store.py'
+      - 'tools/patch_ios_v196d_root_ui.py'
+      - '.github/workflows/build-ios-v196.yml'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+      - name: Install build tools
+        run: brew install xcodegen webp
+      - name: Apply accumulated iOS fixes through 1.9.6
+        run: |
+          python3 tools/patch_ios_v178.py
+          python3 tools/patch_ios_v181_video_mission.py
+          python3 tools/patch_ios_v182_fast_trilingual_search.py
+          curl -fsSL --retry 4 --retry-delay 2 https://download.geonames.org/export/dump/cities15000.zip -o /tmp/cities15000.zip
+          unzip -p /tmp/cities15000.zip cities15000.txt > /tmp/cities15000.txt
+          test -s /tmp/cities15000.txt
+          python3 tools/generate_ios_world_city_catalog.py
+          python3 tools/patch_ios_v184_timer_parity.py
+          python3 tools/patch_ios_v185_timer_inline_input.py
+          python3 tools/patch_ios_v186_keyboard_dismiss.py
+          python3 tools/patch_ios_v187_android_search_parity.py
+          python3 tools/patch_ios_v188_online_google_search.py
+          python3 tools/patch_ios_v188_swift6_compile_fix.py
+          python3 tools/patch_ios_v190_alarm_sound_picker.py
+          python3 tools/patch_ios_v191_prepare_importer.py
+          python3 tools/patch_ios_v191_imported_alarm_sound_fix.py
+          python3 tools/patch_ios_v192_stability.py
+          python3 tools/patch_ios_v192_compile_fix.py
+          python3 tools/patch_ios_v193_alarm_core_rebuild.py
+          python3 tools/patch_ios_v194_ghost_alarm_guard.py
+          python3 tools/patch_ios_v195_sound_picker_stability.py
+          python3 tools/patch_ios_v196a_audio_guard.py
+          python3 tools/patch_ios_v196b_intent_handoff.py
+          python3 tools/patch_ios_v196c_alarm_store.py
+          python3 tools/patch_ios_v196d_root_ui.py
+          test $(wc -c < ios/IGNIDOWake/world_cities.tsv) -gt 1000000
+      - name: Validate 1.9.6 alarm invariants
+        run: |
+          grep -q '<string>1.9.6</string>' ios/IGNIDOWake/Info.plist
+          grep -q '<string>25</string>' ios/IGNIDOWake/Info.plist
+          grep -q 'UIBackgroundModes' ios/IGNIDOWake/Info.plist
+          grep -q '<string>audio</string>' ios/IGNIDOWake/Info.plist
+          grep -q 'final class IgnidoAlarmForegroundSoundGuardian' ios/IGNIDOWake/AlarmSoundCatalog.swift
+          grep -q 'p.numberOfLoops = -1' ios/IGNIDOWake/AlarmSoundCatalog.swift
+          grep -q 'withTimeInterval: 0.45' ios/IGNIDOWake/AlarmSoundCatalog.swift
+          grep -q 'systemAlarmID' ios/IGNIDOWake/AlarmIntents.swift
+          grep -q 'allowStoppedSource' ios/IGNIDOWake/AlarmIntents.swift
+          grep -q 'openAppWhenRun = true' ios/IGNIDOWake/AlarmIntents.swift
+          grep -q 'beginForegroundAlarmSession' ios/IGNIDOWake/AlarmStore.swift
+          grep -q 'armEscapeGuard(for item: WakeAlarm' ios/IGNIDOWake/AlarmStore.swift
+          grep -q 'liveEscapeGuardIDs' ios/IGNIDOWake/AlarmStore.swift
+          grep -q 'testGeneration += 1' ios/IGNIDOWake/AlarmStore.swift
+          grep -q 'func cancelTestAlarm()' ios/IGNIDOWake/AlarmStore.swift
+          grep -q 'armEscapeGuard(for: alarm, after: 3)' ios/IGNIDOWake/RootView.swift
+          grep -q 'sourceAlreadyStopped:request.allowStoppedSource == true' ios/IGNIDOWake/RootView.swift
+          grep -q '5秒テストを停止・消去' ios/IGNIDOWake/AlarmViews.swift
+          grep -q 'private let livePedometer = CMPedometer()' ios/IGNIDOWake/MissionView.swift
+          grep -q 'private let historyPedometer = CMPedometer()' ios/IGNIDOWake/MissionView.swift
+          python3 - <<'PY'
+          from pathlib import Path
+          app=Path('ios/IGNIDOWake/IGNIDOWakeApp.swift').read_text()
+          intents=Path('ios/IGNIDOWake/AlarmIntents.swift').read_text()
+          store=Path('ios/IGNIDOWake/AlarmStore.swift').read_text()
+          assert 'AlarmRuntime.preparePlaybackSession()' not in app
+          assert 'WakeIntentBridge.markWakeCompleted(); return .result()' not in intents
+          assert '.fixed(' not in store
+          assert 'let id = UUID()' not in store[store.index('func scheduleTest'):store.index('func rescheduleAll')]
+          PY
+          for f in ignido_ember.wav ignido_blaze.wav ignido_pulse.wav ignido_siren.wav ignido_dawn.wav ignido_deep.wav; do test -s "ios/IGNIDOWake/$f"; done
+          test -s ios/IGNIDOWake/ja.lproj/Localizable.strings
+          test -s ios/IGNIDOWake/en.lproj/Localizable.strings
+          test -s ios/IGNIDOWake/ko.lproj/Localizable.strings
+      - name: Reconstruct accepted icon
+        run: |
+          cd ios
+          mkdir -p IGNIDOWake/Assets.xcassets/AppIcon.appiconset
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64, hashlib
+          parts=Path('../tools/v172_icon_parts')
+          names=['part00.txt','part01.txt','part02a.txt','part02b.txt','part03.txt','part04.txt','part05.txt','part06.txt']
+          lens=[3000,3000,1500,1500,3000,3000,3000,1416]
+          chunks=[]
+          for name,n in zip(names,lens):
+              c=(parts/name).read_text().strip()
+              if name=='part02a.txt' and len(c)==1499: c=c[:999]+'c'+c[999:]
+              assert len(c)==n
+              chunks.append(c)
+          raw=base64.b64decode(''.join(chunks),validate=True)
+          assert hashlib.sha256(raw).hexdigest()=='0bc991473cc8b15463d9722b9e58189cac417dede65c81638d29bce387b1a1cc'
+          Path('/tmp/icon.webp').write_bytes(raw)
+          PY
+          dwebp /tmp/icon.webp -o /tmp/icon.png
+          python3 - <<'PY'
+          import json,os,subprocess
+          out='IGNIDOWake/Assets.xcassets/AppIcon.appiconset'
+          specs=[('iphone','20x20','2x',40),('iphone','20x20','3x',60),('iphone','29x29','2x',58),('iphone','29x29','3x',87),('iphone','40x40','2x',80),('iphone','40x40','3x',120),('iphone','60x60','2x',120),('iphone','60x60','3x',180),('ios-marketing','1024x1024','1x',1024)]
+          imgs=[]
+          for i,(idiom,size,scale,pix) in enumerate(specs):
+              name=f'icon-{pix}-{i}.png'
+              subprocess.run(['sips','-z',str(pix),str(pix),'/tmp/icon.png','--out',f'{out}/{name}'],check=True,stdout=subprocess.DEVNULL)
+              imgs.append({'idiom':idiom,'size':size,'scale':scale,'filename':name})
+          with open(f'{out}/Contents.json','w') as f: json.dump({'images':imgs,'info':{'author':'xcode','version':1}},f)
+          os.makedirs('IGNIDOWake/Assets.xcassets',exist_ok=True)
+          with open('IGNIDOWake/Assets.xcassets/Contents.json','w') as f: json.dump({'info':{'author':'xcode','version':1}},f)
+          PY
+      - name: Generate Xcode project
+        run: cd ios && xcodegen generate
+      - name: Build unsigned app
+        run: |
+          cd ios
+          xcodebuild -project IGNIDOWake.xcodeproj -scheme IGNIDOWake -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package and inspect IPA
+        run: |
+          cd ios
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          test -n "$APP"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '1.9.6'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '25'
+          /usr/libexec/PlistBuddy -c 'Print :UIBackgroundModes:0' "$APP/Info.plist" | grep -qx 'audio'
+          /usr/libexec/PlistBuddy -c 'Print :NSAlarmKitUsageDescription' "$APP/Info.plist" | grep -q .
+          /usr/libexec/PlistBuddy -c 'Print :NSMotionUsageDescription' "$APP/Info.plist" | grep -q .
+          for f in ignido_ember.wav ignido_blaze.wav ignido_pulse.wav ignido_siren.wav ignido_dawn.wav ignido_deep.wav; do test -s "$APP/$f"; done
+          test -f "$APP/world_cities.tsv"
+          rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
+          zip -qry IGNIDO-Wake-iOS-1.9.6-volume-button-handoff.ipa Payload
+          unzip -t IGNIDO-Wake-iOS-1.9.6-volume-button-handoff.ipa
+          shasum -a 256 IGNIDO-Wake-iOS-1.9.6-volume-button-handoff.ipa | tee IGNIDO-Wake-iOS-1.9.6-volume-button-handoff.sha256
+      - name: Upload patched source
+        uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-1.9.6-patched-source
+          path: |
+            ios/IGNIDOWake/
+            ios/project.yml
+            tools/patch_ios_v193_alarm_core_rebuild.py
+            tools/patch_ios_v194_ghost_alarm_guard.py
+            tools/patch_ios_v195_sound_picker_stability.py
+            tools/patch_ios_v196a_audio_guard.py
+            tools/patch_ios_v196b_intent_handoff.py
+            tools/patch_ios_v196c_alarm_store.py
+            tools/patch_ios_v196d_root_ui.py
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-1.9.6-volume-button-handoff
+          path: |
+            ios/IGNIDO-Wake-iOS-1.9.6-volume-button-handoff.ipa
+            ios/IGNIDO-Wake-iOS-1.9.6-volume-button-handoff.sha256
+      - name: Publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="ios-196-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" ios/IGNIDO-Wake-iOS-1.9.6-volume-button-handoff.ipa ios/IGNIDO-Wake-iOS-1.9.6-volume-button-handoff.sha256 --title "IGNIDO Wake iOS 1.9.6 volume-button handoff (${GITHUB_RUN_NUMBER})" --notes "Adds a two-stage alarm path for the AlarmKit hardware-button dismissal problem. AlarmKit remains the system wake trigger. When IGNIDO opens, app-owned looping audio starts before the system alert is stopped, so volume +/- controls normal playback volume instead of being the sole owner of the wake sound. If an unfinished alarm leaves the foreground, a short AlarmKit escape guard is armed. The system Stop action now opens IGNIDO instead of directly recording a wake. Also hardens the 5-second test: one stable test ID, no fixed-date/random-ID test alarms, generation-safe auto-cleanup after 20 seconds, explicit test cancel button, and expired test registrations are purged. Retains 1.9.4 ghost-alarm cleanup, 1.9.5 sound picker, custom audio import and pedometer fixes." --prerelease
