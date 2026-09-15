@@ -62,6 +62,20 @@ repl('AlarmStore.swift','''    private func cancelScheduling(for id: UUID) async
         try? AlarmManager.shared.cancel(id: id)
 ''')
 
+repl('AlarmStore.swift','''    func isSystemAlarmAlerting(id: UUID) -> Bool {
+        refreshSystemState()
+        return systemAlarmStates[id] == .alerting
+    }
+''','''    func isSystemAlarmAlerting(id: UUID) -> Bool {
+        refreshSystemState()
+        return systemAlarmStates[id] == .alerting
+    }
+
+    func firstExpectedAlertingAlarm() -> WakeAlarm? {
+        alarms.first { systemAlarmStates[$0.id] == .alerting && isWithinExpectedAlertWindow($0) }
+    }
+''')
+
 repl('RootView.swift',r'''        .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 streakStore.reload()
@@ -79,6 +93,19 @@ repl('RootView.swift',r'''        .onChange(of: scenePhase) { _, phase in
                 else { Task { await reconcileDaemonOwnership(); await alarmStore.clearStaleAlertingAlarms(); await consumeSystemActions() } }
             }
         }
+''')
+repl('RootView.swift','''        .fullScreenCover(item: $activeAlarm, onDismiss: { Task { await consumeSystemActions() } }) { alarm in
+''','''        .onReceive(alarmStore.$systemAlarmStates) { _ in
+            guard scenePhase == .active, activeAlarm == nil else { return }
+            if let alarm = alarmStore.firstExpectedAlertingAlarm() {
+                startForegroundAlarmAudio(alarm)
+                activeAlarm = alarm
+                Task { await alarmStore.beginForegroundAlarmSession(alarm, sourceSystemID: alarm.id, sourceAlreadyStopped: false) }
+            } else {
+                Task { await alarmStore.clearStaleAlertingAlarms() }
+            }
+        }
+        .fullScreenCover(item: $activeAlarm, onDismiss: { Task { await consumeSystemActions() } }) { alarm in
 ''')
 
 repl('FeatureStores.swift','    var alarmKitIdentifier: UUID { systemAlarmID }','    var alarmKitIdentifiers: Set<UUID> { running ? [systemAlarmID] : [] }')
@@ -105,5 +132,6 @@ assert 'func armEscapeGuard(for item:' not in A
 assert 'liveEscapeGuardIDs' not in A
 assert 'var allowed = enabledAlarmIDs.union(knownTimerIDs)' in A
 assert 'armEscapeGuard(for: alarm' not in R
+assert 'firstExpectedAlertingAlarm' in A and '.onReceive(alarmStore.$systemAlarmStates)' in R
 assert '<string>1.9.7</string>' in (r/'Info.plist').read_text()
 print('v197 applied')
