@@ -1,0 +1,85 @@
+name: Build iOS 1.9.7 Force Quit Ghost Fix IPA
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/patch_ios_v197_forcequit_ghost_fix.py'
+      - '.github/workflows/build-ios-v197.yml'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Restore exact iOS 1.9.6 patched source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf /tmp/ios196
+          mkdir -p /tmp/ios196
+          gh run download 34480187933 -n IGNIDO-Wake-iOS-1.9.6-patched-source -D /tmp/ios196
+          test -f /tmp/ios196/ios/IGNIDOWake/AlarmStore.swift
+          rm -rf ios/IGNIDOWake
+          cp -R /tmp/ios196/ios/IGNIDOWake ios/IGNIDOWake
+          cp /tmp/ios196/ios/project.yml ios/project.yml
+      - name: Apply iOS 1.9.7 fix
+        run: python3 tools/patch_ios_v197_forcequit_ghost_fix.py
+      - name: Validate 1.9.7 invariants
+        run: |
+          grep -q '<string>1.9.7</string>' ios/IGNIDOWake/Info.plist
+          grep -q '<string>26</string>' ios/IGNIDOWake/Info.plist
+          grep -q 'purgeLegacyEscapeGuards()' ios/IGNIDOWake/AlarmStore.swift
+          grep -q 'var allowed = enabledAlarmIDs.union(knownTimerIDs)' ios/IGNIDOWake/AlarmStore.swift
+          grep -q 'firstExpectedAlertingAlarm' ios/IGNIDOWake/AlarmStore.swift
+          grep -q 'onReceive(alarmStore.\$systemAlarmStates)' ios/IGNIDOWake/RootView.swift
+          grep -q 'items.filter(\\.running)' ios/IGNIDOWake/MultiTimer.swift
+          grep -q 'running ? \[systemAlarmID\] : \[\]' ios/IGNIDOWake/FeatureStores.swift
+          ! grep -q 'func armEscapeGuard(for item:' ios/IGNIDOWake/AlarmStore.swift
+          ! grep -q 'armEscapeGuard(for: alarm' ios/IGNIDOWake/RootView.swift
+          test -d ios/IGNIDOWake/Assets.xcassets/AppIcon.appiconset
+          test -s ios/IGNIDOWake/world_cities.tsv
+      - name: Generate Xcode project
+        run: cd ios && xcodegen generate
+      - name: Build unsigned app
+        run: |
+          cd ios
+          xcodebuild -project IGNIDOWake.xcodeproj -scheme IGNIDOWake -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package and inspect IPA
+        run: |
+          cd ios
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          test -n "$APP"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '1.9.7'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '26'
+          /usr/libexec/PlistBuddy -c 'Print :UIBackgroundModes:0' "$APP/Info.plist" | grep -qx 'audio'
+          rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
+          zip -qry IGNIDO-Wake-iOS-1.9.7-forcequit-ghost-fix.ipa Payload
+          unzip -t IGNIDO-Wake-iOS-1.9.7-forcequit-ghost-fix.ipa
+          shasum -a 256 IGNIDO-Wake-iOS-1.9.7-forcequit-ghost-fix.ipa | tee IGNIDO-Wake-iOS-1.9.7-forcequit-ghost-fix.sha256
+      - name: Upload patched source
+        uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-1.9.7-patched-source
+          path: |
+            ios/IGNIDOWake/
+            ios/project.yml
+            tools/patch_ios_v197_forcequit_ghost_fix.py
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-1.9.7-forcequit-ghost-fix
+          path: |
+            ios/IGNIDO-Wake-iOS-1.9.7-forcequit-ghost-fix.ipa
+            ios/IGNIDO-Wake-iOS-1.9.7-forcequit-ghost-fix.sha256
+      - name: Publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="ios-197-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" ios/IGNIDO-Wake-iOS-1.9.7-forcequit-ghost-fix.ipa ios/IGNIDO-Wake-iOS-1.9.7-forcequit-ghost-fix.sha256 --title "IGNIDO Wake iOS 1.9.7 force-quit / ghost-alarm fix (${GITHUB_RUN_NUMBER})" --notes "Removes the v1.9.6 three-second escape-guard alarm re-scheduling path, purges legacy guard registrations, keeps the original AlarmKit alert alive until IGNIDO completion, keeps app-owned audio alive during ordinary backgrounding, limits AlarmKit ownership to enabled alarms and running timers, cancels finished timers, and automatically presents IGNIDO full-screen when a valid alarm starts while the app is already foreground." --prerelease
