@@ -1,5 +1,6 @@
 from pathlib import Path
 r=Path('ios/IGNIDOWake')
+project=Path('ios/project.yml')
 
 def repl(path,a,b):
  p=r/path; s=p.read_text(); assert a in s,(path,a[:80]); p.write_text(s.replace(a,b,1))
@@ -9,6 +10,13 @@ def replace_between(path,start,end,new):
 
 repl('Info.plist','<string>1.9.6</string>','<string>1.9.7</string>')
 repl('Info.plist','<string>25</string>','<string>26</string>')
+ps=project.read_text()
+assert 'CFBundleShortVersionString: "1.9.6"' in ps
+assert 'CFBundleVersion: "25"' in ps
+ps=ps.replace('CFBundleShortVersionString: "1.9.6"','CFBundleShortVersionString: "1.9.7"',1)
+ps=ps.replace('CFBundleVersion: "25"','CFBundleVersion: "26"',1)
+project.write_text(ps)
+
 repl('AlarmStore.swift','        WakeIntentState.clearExpiredAlarmRequests()\n','        WakeIntentState.clearExpiredAlarmRequests()\n        purgeLegacyEscapeGuards()\n')
 
 replace_between('AlarmStore.swift','    func beginForegroundAlarmSession(','    func isSystemAlarmAlerting',r'''    func beginForegroundAlarmSession(_ item: WakeAlarm, sourceSystemID: UUID, sourceAlreadyStopped: Bool) async {
@@ -127,11 +135,12 @@ repl('MultiTimer.swift','''    func finish(_ id: UUID) {
 for f in ['RootView.swift','IGNIDOWakeApp.swift']:
  p=r/f; s=p.read_text(); s=s.replace('ids.insert(timerStore.alarmKitIdentifier)','ids.formUnion(timerStore.alarmKitIdentifiers)'); p.write_text(s)
 
-A=(r/'AlarmStore.swift').read_text(); R=(r/'RootView.swift').read_text()
+A=(r/'AlarmStore.swift').read_text(); R=(r/'RootView.swift').read_text(); P=project.read_text()
 assert 'func armEscapeGuard(for item:' not in A
 assert 'liveEscapeGuardIDs' not in A
 assert 'var allowed = enabledAlarmIDs.union(knownTimerIDs)' in A
 assert 'armEscapeGuard(for: alarm' not in R
 assert 'firstExpectedAlertingAlarm' in A and '.onReceive(alarmStore.$systemAlarmStates)' in R
 assert '<string>1.9.7</string>' in (r/'Info.plist').read_text()
+assert 'CFBundleShortVersionString: "1.9.7"' in P and 'CFBundleVersion: "26"' in P
 print('v197 applied')
