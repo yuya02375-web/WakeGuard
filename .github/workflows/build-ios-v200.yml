@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'tools/patch_ios_v200_parity.py'
+      - 'tools/trigger_ios_v200.txt'
       - '.github/workflows/build-ios-v200.yml'
 permissions:
   contents: read
