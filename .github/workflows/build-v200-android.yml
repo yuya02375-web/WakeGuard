@@ -1,0 +1,72 @@
+name: Build IGNIDO Wake Android 2.0.0 Parity
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/patch_v200_parity.py'
+      - '.github/workflows/build-v200-android.yml'
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '9.5.0' }
+      - name: Reconstruct source
+        run: |
+          cat .wakeguard-parts/*.b64 | base64 --decode > WakeGuard-v0.5.0-source-fixed.zip
+          unzip -q WakeGuard-v0.5.0-source-fixed.zip
+      - name: Download GeoNames
+        run: |
+          curl -fsSL --retry 4 https://download.geonames.org/export/dump/cities15000.zip -o /tmp/cities15000.zip
+          unzip -p /tmp/cities15000.zip cities15000.txt > /tmp/cities15000.txt
+      - name: Patch through 2.0.0
+        run: |
+          for f in patch_v156_runner.py patch_v157.py patch_v158.py patch_v159.py patch_v160.py patch_v161.py patch_v162.py patch_v163.py patch_v164.py patch_v165.py patch_v166.py patch_v167.py patch_v168.py patch_v169.py patch_v170.py patch_v171_prepare.py patch_v172.py patch_v173_design.py patch_v174_fire.py patch_v175_clock_surface.py patch_v176_clean_initial_state.py patch_v177_android_ux.py patch_v178_video_overlay.py patch_v179_fast_trilingual_search.py patch_v180_ghost_guard_timer_video.py patch_v200_parity.py; do python3 tools/$f; done
+      - name: Validate
+        run: |
+          grep -q 'versionName = "2.0.0"' WakeGuard/app/build.gradle.kts
+          grep -q 'versionCode = 100' WakeGuard/app/build.gradle.kts
+          grep -q 'ACTION_SNOOZE' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmService.java
+          grep -q 'togglePreview' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java
+          grep -q 'isExpectedFire' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmScheduler.java
+          grep -q 'launchTimerVideo' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerReceiver.java
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-Android-2.0.0-parity-source
+          path: |
+            WakeGuard/app/
+            tools/patch_v200_parity.py
+      - name: Signing key
+        env:
+          K: ${{ secrets.WAKEGUARD_KEYSTORE_B64 }}
+          KP: ${{ secrets.WAKEGUARD_KEYSTORE_PASSWORD }}
+          A: ${{ secrets.WAKEGUARD_KEY_ALIAS }}
+          AP: ${{ secrets.WAKEGUARD_KEY_PASSWORD }}
+        run: |
+          test -n "$K" && test -n "$KP" && test -n "$A" && test -n "$AP"
+          printf '%s' "$K" | tr -d '\r\n\t ' | base64 --decode > "$RUNNER_TEMP/key.p12"
+      - name: Build
+        working-directory: WakeGuard
+        run: gradle assembleDebug --stacktrace
+      - name: Sign
+        env:
+          KP: ${{ secrets.WAKEGUARD_KEYSTORE_PASSWORD }}
+          A: ${{ secrets.WAKEGUARD_KEY_ALIAS }}
+          AP: ${{ secrets.WAKEGUARD_KEY_PASSWORD }}
+        run: |
+          $ANDROID_HOME/build-tools/36.0.0/apksigner sign --ks "$RUNNER_TEMP/key.p12" --ks-type PKCS12 --ks-key-alias "$A" --ks-pass env:KP --key-pass env:AP --out IGNIDO-Wake-Android-2.0.0-parity.apk WakeGuard/app/build/outputs/apk/debug/app-debug.apk
+          $ANDROID_HOME/build-tools/36.0.0/apksigner verify --verbose --print-certs IGNIDO-Wake-Android-2.0.0-parity.apk
+          sha256sum IGNIDO-Wake-Android-2.0.0-parity.apk | tee IGNIDO-Wake-Android-2.0.0-parity.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-Android-2.0.0-parity
+          path: |
+            IGNIDO-Wake-Android-2.0.0-parity.apk
+            IGNIDO-Wake-Android-2.0.0-parity.sha256
