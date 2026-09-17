@@ -35,26 +35,13 @@ jobs:
           from pathlib import Path
           p=Path('ios/IGNIDOWake/ClockViews.swift')
           s=p.read_text()
-          old='''        .fullScreenCover(isPresented: $showMedia) {
-              if let url = MediaLibrary.url(for: store.mediaFileName) {
-                  TimerMediaScreen(url: url) { showMedia = false }
-              } else {
-                  VStack { Text("タイマー終了").font(.largeTitle.bold()); Button("停止") { showMedia = false }.buttonStyle(.borderedProminent) }
-              }
-          }
-          .onReceive(ticker) { _ in
-              if store.finished {
-                  store.markFinished()
-                  showMedia = true
-              }
-          }
-          '''
-          new='''        .onReceive(ticker) { _ in
+          start=s.index('        .fullScreenCover(isPresented: $showMedia) {')
+          end=s.index('    }\n\n    private func start()', start)
+          replacement='''        .onReceive(ticker) { _ in
               _ = store.remaining
           }
-          '''
-          assert old in s
-          p.write_text(s.replace(old,new,1))
+'''
+          p.write_text(s[:start]+replacement+s[end:])
           PY
       - name: Validate parity invariants
         run: |
