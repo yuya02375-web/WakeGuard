@@ -1,12 +1,12 @@
-name: Build iOS 1.9.7 Force Quit Ghost Fix IPA
+name: Build IGNIDO Wake iOS 2.0.0 Parity IPA
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'tools/patch_ios_v197_forcequit_ghost_fix.py'
+      - 'tools/patch_ios_v200_parity.py'
       - '.github/workflows/build-ios-v197.yml'
 permissions:
-  contents: write
+  contents: read
   actions: read
 jobs:
   build:
@@ -17,31 +17,41 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
       - name: Install xcodegen
         run: brew install xcodegen
-      - name: Restore exact iOS 1.9.6 patched source
+      - name: Restore exact iOS 1.9.7 source
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          rm -rf /tmp/ios196
-          mkdir -p /tmp/ios196
-          gh run download 34480187933 -n IGNIDO-Wake-iOS-1.9.6-patched-source -D /tmp/ios196
-          test -f /tmp/ios196/ios/IGNIDOWake/AlarmStore.swift
+          rm -rf /tmp/ios197 && mkdir -p /tmp/ios197
+          gh run download 34918469293 -n IGNIDO-Wake-iOS-1.9.7-patched-source -D /tmp/ios197
+          test -f /tmp/ios197/ios/IGNIDOWake/AlarmStore.swift
           rm -rf ios/IGNIDOWake
-          cp -R /tmp/ios196/ios/IGNIDOWake ios/IGNIDOWake
-          cp /tmp/ios196/ios/project.yml ios/project.yml
-      - name: Apply iOS 1.9.7 fix
-        run: python3 tools/patch_ios_v197_forcequit_ghost_fix.py
-      - name: Validate 1.9.7 invariants
+          cp -R /tmp/ios197/ios/IGNIDOWake ios/IGNIDOWake
+          cp /tmp/ios197/ios/project.yml ios/project.yml
+      - name: Apply iOS 2.0.0 parity patch
+        run: python3 tools/patch_ios_v200_parity.py
+      - name: Centralize timer firing
         run: |
-          grep -q '<string>1.9.7</string>' ios/IGNIDOWake/Info.plist
-          grep -q '<string>26</string>' ios/IGNIDOWake/Info.plist
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('ios/IGNIDOWake/ClockViews.swift')
+          s=p.read_text()
+          start=s.index('        .fullScreenCover(isPresented: $showMedia) {')
+          end=s.index('    }\n\n    private func start()', start)
+          p.write_text(s[:start]+'        .onReceive(ticker) { _ in\n            _ = store.remaining\n        }\n'+s[end:])
+          PY
+      - name: Validate 2.0.0 parity invariants
+        run: |
+          grep -q '<string>2.0.0</string>' ios/IGNIDOWake/Info.plist
+          grep -q '<string>100</string>' ios/IGNIDOWake/Info.plist
           grep -q 'purgeLegacyEscapeGuards()' ios/IGNIDOWake/AlarmStore.swift
           grep -q 'var allowed = enabledAlarmIDs.union(knownTimerIDs)' ios/IGNIDOWake/AlarmStore.swift
-          grep -q 'firstExpectedAlertingAlarm' ios/IGNIDOWake/AlarmStore.swift
-          grep -q 'onReceive(alarmStore.\$systemAlarmStates)' ios/IGNIDOWake/RootView.swift
-          grep -q 'items.filter(\\.running)' ios/IGNIDOWake/MultiTimer.swift
-          grep -q 'running ? \[systemAlarmID\] : \[\]' ios/IGNIDOWake/FeatureStores.swift
+          grep -q 'secondaryButtonBehavior: .countdown' ios/IGNIDOWake/AlarmStore.swift
+          grep -q 'snoozeSystemAlarm' ios/IGNIDOWake/AlarmStore.swift
+          grep -q 'firstAlertingTimer' ios/IGNIDOWake/MultiTimer.swift
+          grep -q 'consumeFinishedAlert' ios/IGNIDOWake/FeatureStores.swift
+          grep -q 'Label("時計"' ios/IGNIDOWake/RootView.swift
           ! grep -q 'func armEscapeGuard(for item:' ios/IGNIDOWake/AlarmStore.swift
-          ! grep -q 'armEscapeGuard(for: alarm' ios/IGNIDOWake/RootView.swift
+          ! grep -q 'store.markFinished()' ios/IGNIDOWake/ClockViews.swift
           test -d ios/IGNIDOWake/Assets.xcassets/AppIcon.appiconset
           test -s ios/IGNIDOWake/world_cities.tsv
       - name: Generate Xcode project
@@ -55,31 +65,24 @@ jobs:
           cd ios
           APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
           test -n "$APP"
-          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '1.9.7'
-          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '26'
-          /usr/libexec/PlistBuddy -c 'Print :UIBackgroundModes:0' "$APP/Info.plist" | grep -qx 'audio'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '2.0.0'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '100'
           rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
-          zip -qry IGNIDO-Wake-iOS-1.9.7-forcequit-ghost-fix.ipa Payload
-          unzip -t IGNIDO-Wake-iOS-1.9.7-forcequit-ghost-fix.ipa
-          shasum -a 256 IGNIDO-Wake-iOS-1.9.7-forcequit-ghost-fix.ipa | tee IGNIDO-Wake-iOS-1.9.7-forcequit-ghost-fix.sha256
-      - name: Upload patched source
+          zip -qry IGNIDO-Wake-iOS-2.0.0-parity.ipa Payload
+          unzip -t IGNIDO-Wake-iOS-2.0.0-parity.ipa
+          shasum -a 256 IGNIDO-Wake-iOS-2.0.0-parity.ipa | tee IGNIDO-Wake-iOS-2.0.0-parity.sha256
+      - name: Upload parity source
         uses: actions/upload-artifact@v4
         with:
-          name: IGNIDO-Wake-iOS-1.9.7-patched-source
+          name: IGNIDO-Wake-iOS-2.0.0-parity-source
           path: |
             ios/IGNIDOWake/
             ios/project.yml
-            tools/patch_ios_v197_forcequit_ghost_fix.py
+            tools/patch_ios_v200_parity.py
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: IGNIDO-Wake-iOS-1.9.7-forcequit-ghost-fix
+          name: IGNIDO-Wake-iOS-2.0.0-parity
           path: |
-            ios/IGNIDO-Wake-iOS-1.9.7-forcequit-ghost-fix.ipa
-            ios/IGNIDO-Wake-iOS-1.9.7-forcequit-ghost-fix.sha256
-      - name: Publish prerelease
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          TAG="ios-197-${GITHUB_RUN_NUMBER}"
-          gh release create "$TAG" ios/IGNIDO-Wake-iOS-1.9.7-forcequit-ghost-fix.ipa ios/IGNIDO-Wake-iOS-1.9.7-forcequit-ghost-fix.sha256 --title "IGNIDO Wake iOS 1.9.7 force-quit / ghost-alarm fix (${GITHUB_RUN_NUMBER})" --notes "Removes the v1.9.6 three-second escape-guard alarm re-scheduling path, purges legacy guard registrations, keeps the original AlarmKit alert alive until IGNIDO completion, keeps app-owned audio alive during ordinary backgrounding, limits AlarmKit ownership to enabled alarms and running timers, cancels finished timers, and automatically presents IGNIDO full-screen when a valid alarm starts while the app is already foreground." --prerelease
+            ios/IGNIDO-Wake-iOS-2.0.0-parity.ipa
+            ios/IGNIDO-Wake-iOS-2.0.0-parity.sha256
