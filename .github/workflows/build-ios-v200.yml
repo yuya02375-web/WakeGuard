@@ -13,18 +13,50 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
-      - run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
-      - run: brew install xcodegen
-      - name: Restore iOS 1.9.7 source
-        env: { GH_TOKEN: '${{ github.token }}' }
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Restore exact iOS 1.9.7 source
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           rm -rf /tmp/ios197 && mkdir -p /tmp/ios197
           gh run download 34918469293 -n IGNIDO-Wake-iOS-1.9.7-patched-source -D /tmp/ios197
+          test -f /tmp/ios197/ios/IGNIDOWake/AlarmStore.swift
           rm -rf ios/IGNIDOWake
           cp -R /tmp/ios197/ios/IGNIDOWake ios/IGNIDOWake
           cp /tmp/ios197/ios/project.yml ios/project.yml
-      - run: python3 tools/patch_ios_v200_parity.py
-      - name: Validate
+      - name: Apply parity patch
+        run: python3 tools/patch_ios_v200_parity.py
+      - name: Centralize legacy timer firing in RootView
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('ios/IGNIDOWake/ClockViews.swift')
+          s=p.read_text()
+          old='''        .fullScreenCover(isPresented: $showMedia) {
+              if let url = MediaLibrary.url(for: store.mediaFileName) {
+                  TimerMediaScreen(url: url) { showMedia = false }
+              } else {
+                  VStack { Text("タイマー終了").font(.largeTitle.bold()); Button("停止") { showMedia = false }.buttonStyle(.borderedProminent) }
+              }
+          }
+          .onReceive(ticker) { _ in
+              if store.finished {
+                  store.markFinished()
+                  showMedia = true
+              }
+          }
+          '''
+          new='''        .onReceive(ticker) { _ in
+              _ = store.remaining
+          }
+          '''
+          assert old in s
+          p.write_text(s.replace(old,new,1))
+          PY
+      - name: Validate parity invariants
         run: |
           grep -q '<string>2.0.0</string>' ios/IGNIDOWake/Info.plist
           grep -q '<string>100</string>' ios/IGNIDOWake/Info.plist
@@ -34,13 +66,19 @@ jobs:
           grep -q 'consumeFinishedAlert' ios/IGNIDOWake/FeatureStores.swift
           grep -q 'purgeLegacyEscapeGuards()' ios/IGNIDOWake/AlarmStore.swift
           ! grep -q 'func armEscapeGuard(for item:' ios/IGNIDOWake/AlarmStore.swift
-      - run: cd ios && xcodegen generate
-      - name: Build
-        run: cd ios && xcodebuild -project IGNIDOWake.xcodeproj -scheme IGNIDOWake -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
-      - name: Package
+          ! grep -q 'store.markFinished()' ios/IGNIDOWake/ClockViews.swift
+          grep -q 'Label("時計"' ios/IGNIDOWake/RootView.swift
+      - name: Generate Xcode project
+        run: cd ios && xcodegen generate
+      - name: Build unsigned app
+        run: |
+          cd ios
+          xcodebuild -project IGNIDOWake.xcodeproj -scheme IGNIDOWake -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package and inspect IPA
         run: |
           cd ios
           APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          test -n "$APP"
           /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '2.0.0'
           /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '100'
           rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
