@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'tools/patch_ios_v200_parity.py'
+      - 'tools/patch_ios_v200_scope_fix.py'
       - '.github/workflows/build-ios-v197.yml'
 permissions:
   contents: read
@@ -28,7 +29,9 @@ jobs:
           cp -R /tmp/ios197/ios/IGNIDOWake ios/IGNIDOWake
           cp /tmp/ios197/ios/project.yml ios/project.yml
       - name: Apply iOS 2.0.0 parity patch
-        run: python3 tools/patch_ios_v200_parity.py
+        run: |
+          python3 tools/patch_ios_v200_parity.py
+          python3 tools/patch_ios_v200_scope_fix.py
       - name: Centralize timer firing
         run: |
           python3 - <<'PY'
@@ -49,6 +52,7 @@ jobs:
           grep -q 'snoozeSystemAlarm' ios/IGNIDOWake/AlarmStore.swift
           grep -q 'firstAlertingTimer' ios/IGNIDOWake/MultiTimer.swift
           grep -q 'consumeFinishedAlert' ios/IGNIDOWake/FeatureStores.swift
+          grep -q 'ignidoAutoStopText' ios/IGNIDOWake/AlarmViews.swift
           grep -q 'Label("時計"' ios/IGNIDOWake/RootView.swift
           ! grep -q 'func armEscapeGuard(for item:' ios/IGNIDOWake/AlarmStore.swift
           ! grep -q 'store.markFinished()' ios/IGNIDOWake/ClockViews.swift
@@ -79,6 +83,7 @@ jobs:
             ios/IGNIDOWake/
             ios/project.yml
             tools/patch_ios_v200_parity.py
+            tools/patch_ios_v200_scope_fix.py
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
