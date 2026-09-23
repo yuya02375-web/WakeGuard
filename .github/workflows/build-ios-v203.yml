@@ -22,7 +22,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           rm -rf /tmp/ios202 && mkdir -p /tmp/ios202
-          gh run download 35811707817 -n IGNIDO-Wake-iOS-2.0.2-balanced-world-clock-analog-source -D /tmp/ios202
+          gh run download 35811707817 -n IGNIDO-Wake-iOS-2.0.2-larger-world-text-source -D /tmp/ios202
           test -f /tmp/ios202/ios/IGNIDOWake/ClockViews.swift
           rm -rf ios/IGNIDOWake
           cp -R /tmp/ios202/ios/IGNIDOWake ios/IGNIDOWake
