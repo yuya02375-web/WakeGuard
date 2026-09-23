@@ -30,22 +30,22 @@ jobs:
           cat .wakeguard-parts/*.b64 | base64 --decode > WakeGuard-v0.5.0-source-fixed.zip
           unzip -t WakeGuard-v0.5.0-source-fixed.zip
           unzip -q WakeGuard-v0.5.0-source-fixed.zip
-      - name: Restore exact Android 2.0.0 app source
+      - name: Restore exact Android 2.0.1 app source
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           rm -rf /tmp/android201 && mkdir -p /tmp/android201
-          gh run download 35804530719 -n IGNIDO-Wake-Android-2.0.1-larger-world-text-source -D /tmp/android201
+          gh run download 35804530719 -n IGNIDO-Wake-Android-2.0.1-world-overview-source -D /tmp/android201
           test -f /tmp/android201/WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
           rm -rf WakeGuard/app
           cp -R /tmp/android201/WakeGuard/app WakeGuard/app
-      - name: Apply Android 2.0.2 world overview patch
+      - name: Apply Android 2.0.2 larger text patch
         run: python3 tools/patch_v202_world_clock_larger_text_android.py
-      - name: Validate world overview invariants
+      - name: Validate larger text invariants
         run: |
           grep -q 'versionName = "2.0.2"' WakeGuard/app/build.gradle.kts
           grep -q 'versionCode = 102' WakeGuard/app/build.gradle.kts
-          grep -q 'world_overview_v202' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
+          grep -q 'world_overview_v201' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
           grep -q 'buildWorldOverview' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
           grep -q 'columns==3?34' WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
           grep -q 'isExpectedFire' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmScheduler.java
