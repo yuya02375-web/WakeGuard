@@ -35,7 +35,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           rm -rf /tmp/android202 && mkdir -p /tmp/android202
-          gh run download 35811704907 -n IGNIDO-Wake-Android-2.0.2-balanced-world-clock-analog-source -D /tmp/android202
+          gh run download 35811704907 -n IGNIDO-Wake-Android-2.0.2-larger-world-text-source -D /tmp/android202
           test -f /tmp/android202/WakeGuard/app/src/main/java/jp/wakeguard/alarm/ClockActivity.java
           rm -rf WakeGuard/app
           cp -R /tmp/android202/WakeGuard/app WakeGuard/app
