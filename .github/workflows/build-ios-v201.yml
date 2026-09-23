@@ -1,0 +1,70 @@
+name: Build IGNIDO Wake iOS 2.0.1 World Overview
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/patch_ios_v201_world_clock_overview.py'
+      - '.github/workflows/build-ios-v201.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Restore exact iOS 2.0.0 source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf /tmp/ios200 && mkdir -p /tmp/ios200
+          gh run download 35175502897 -n IGNIDO-Wake-iOS-2.0.0-parity-source -D /tmp/ios200
+          test -f /tmp/ios200/ios/IGNIDOWake/ClockViews.swift
+          rm -rf ios/IGNIDOWake
+          cp -R /tmp/ios200/ios/IGNIDOWake ios/IGNIDOWake
+          cp /tmp/ios200/ios/project.yml ios/project.yml
+      - name: Apply iOS 2.0.1 world overview patch
+        run: python3 tools/patch_ios_v201_world_clock_overview.py
+      - name: Validate world overview invariants
+        run: |
+          grep -q '<string>2.0.1</string>' ios/IGNIDOWake/Info.plist
+          grep -q '<string>101</string>' ios/IGNIDOWake/Info.plist
+          grep -q 'overviewMode = true' ios/IGNIDOWake/ClockViews.swift
+          grep -q 'WorldClockOverviewGrid' ios/IGNIDOWake/ClockViews.swift
+          grep -q 'rectangle.grid.2x2.fill' ios/IGNIDOWake/ClockViews.swift
+          grep -q 'purgeLegacyEscapeGuards()' ios/IGNIDOWake/AlarmStore.swift
+          grep -q 'firstAlertingTimer' ios/IGNIDOWake/MultiTimer.swift
+      - name: Generate Xcode project
+        run: cd ios && xcodegen generate
+      - name: Build unsigned app
+        run: |
+          cd ios
+          xcodebuild -project IGNIDOWake.xcodeproj -scheme IGNIDOWake -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package and inspect IPA
+        run: |
+          cd ios
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          test -n "$APP"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '2.0.1'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '101'
+          rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
+          zip -qry IGNIDO-Wake-iOS-2.0.1-world-overview.ipa Payload
+          unzip -t IGNIDO-Wake-iOS-2.0.1-world-overview.ipa
+          shasum -a 256 IGNIDO-Wake-iOS-2.0.1-world-overview.ipa | tee IGNIDO-Wake-iOS-2.0.1-world-overview.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.0.1-world-overview-source
+          path: |
+            ios/IGNIDOWake/
+            ios/project.yml
+            tools/patch_ios_v201_world_clock_overview.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.0.1-world-overview
+          path: |
+            ios/IGNIDO-Wake-iOS-2.0.1-world-overview.ipa
+            ios/IGNIDO-Wake-iOS-2.0.1-world-overview.sha256
