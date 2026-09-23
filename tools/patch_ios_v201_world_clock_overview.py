@@ -152,7 +152,7 @@ private struct WorldClockOverviewCell: View {
         else if d == -1 { day = AppText.localized("昨日") }
         else { let f = DateFormatter(); f.timeZone = zone; f.dateFormat = "M/d"; day = f.string(from: date) }
         let offset = zone.secondsFromGMT(for: date); let h = offset / 3600; let m = abs(offset % 3600) / 60
-        return "\\(day) · UTC\\(h >= 0 ? "+" : "")\\(h):\\(String(format: "%02d", m))"
+        return "\(day) · UTC\(h >= 0 ? "+" : "")\(h):\(String(format: "%02d", m))"
     }
 }
 
@@ -186,7 +186,7 @@ private struct WorldClockRow: View {
         let currentOffset = TimeZone.current.secondsFromGMT(for: date)
         let diff = Double(offset - currentOffset) / 3600.0
         let dst = zone.isDaylightSavingTime(for: date) ? " DST" : ""
-        return "\\(f.string(from: date))  UTC\\(h >= 0 ? "+" : "")\\(h):\\(String(format: "%02d", m))  \\(AppText.localized("現在地"))\\(diff >= 0 ? "+" : "")\\(String(format: "%.1f", diff))h\\(dst)"
+        return "\(f.string(from: date))  UTC\(h >= 0 ? "+" : "")\(h):\(String(format: "%02d", m))  \(AppText.localized("現在地"))\(diff >= 0 ? "+" : "")\(String(format: "%.1f", diff))h\(dst)"
     }
 }
 
