@@ -74,6 +74,10 @@ jobs:
           printf '%s' "$CLEANED" | base64 --decode > "$RUNNER_TEMP/wakeguard-release.p12"
           test -s "$RUNNER_TEMP/wakeguard-release.p12"
           chmod 600 "$RUNNER_TEMP/wakeguard-release.p12"
+      - name: Enable AndroidX for restored 2.0.x source
+        run: |
+          sed -i 's/^android.useAndroidX=.*/android.useAndroidX=true/' WakeGuard/gradle.properties
+          grep -q '^android.useAndroidX=true' WakeGuard/gradle.properties
       - name: Build APK
         working-directory: WakeGuard
         run: gradle assembleDebug --stacktrace
