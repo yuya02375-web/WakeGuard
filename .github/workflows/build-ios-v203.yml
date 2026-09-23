@@ -1,0 +1,72 @@
+name: Build IGNIDO Wake iOS 2.0.3 Balanced World Clock + Analog
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/patch_ios_v203_world_clock_balance_analog.py'
+      - '.github/workflows/build-ios-v203.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Restore exact iOS 2.0.2 source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf /tmp/ios202 && mkdir -p /tmp/ios202
+          gh run download 35811707817 -n IGNIDO-Wake-iOS-2.0.2-balanced-world-clock-analog-source -D /tmp/ios202
+          test -f /tmp/ios202/ios/IGNIDOWake/ClockViews.swift
+          rm -rf ios/IGNIDOWake
+          cp -R /tmp/ios202/ios/IGNIDOWake ios/IGNIDOWake
+          cp /tmp/ios202/ios/project.yml ios/project.yml
+      - name: Apply iOS 2.0.3 balanced text + analog patch
+        run: python3 tools/patch_ios_v203_world_clock_balance_analog.py
+      - name: Validate balanced text + analog invariants
+        run: |
+          grep -q '<string>2.0.3</string>' ios/IGNIDOWake/Info.plist
+          grep -q '<string>103</string>' ios/IGNIDOWake/Info.plist
+          grep -q 'overviewMode = true' ios/IGNIDOWake/ClockViews.swift
+          grep -q 'columns == 3 ? 30' ios/IGNIDOWake/ClockViews.swift
+          grep -q 'store.displayMode = (store.displayMode + 1) % 3' ios/IGNIDOWake/ClockViews.swift
+          grep -q 'analogSize' ios/IGNIDOWake/ClockViews.swift
+          grep -q 'rectangle.grid.2x2.fill' ios/IGNIDOWake/ClockViews.swift
+          grep -q 'purgeLegacyEscapeGuards()' ios/IGNIDOWake/AlarmStore.swift
+          grep -q 'firstAlertingTimer' ios/IGNIDOWake/MultiTimer.swift
+      - name: Generate Xcode project
+        run: cd ios && xcodegen generate
+      - name: Build unsigned app
+        run: |
+          cd ios
+          xcodebuild -project IGNIDOWake.xcodeproj -scheme IGNIDOWake -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package and inspect IPA
+        run: |
+          cd ios
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          test -n "$APP"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '2.0.3'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '103'
+          rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
+          zip -qry IGNIDO-Wake-iOS-2.0.3-balanced-world-clock-analog.ipa Payload
+          unzip -t IGNIDO-Wake-iOS-2.0.3-balanced-world-clock-analog.ipa
+          shasum -a 256 IGNIDO-Wake-iOS-2.0.3-balanced-world-clock-analog.ipa | tee IGNIDO-Wake-iOS-2.0.3-balanced-world-clock-analog.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.0.3-balanced-world-clock-analog-source
+          path: |
+            ios/IGNIDOWake/
+            ios/project.yml
+            tools/patch_ios_v203_world_clock_balance_analog.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.0.3-balanced-world-clock-analog
+          path: |
+            ios/IGNIDO-Wake-iOS-2.0.3-balanced-world-clock-analog.ipa
+            ios/IGNIDO-Wake-iOS-2.0.3-balanced-world-clock-analog.sha256
