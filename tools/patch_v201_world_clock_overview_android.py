@@ -6,7 +6,7 @@ def read(p): return (r/p).read_text()
 def write(p,s): (r/p).write_text(s)
 
 p='build.gradle.kts'; s=read(p)
-s=re.sub(r'versionCode = \\d+', 'versionCode = 101', s, count=1)
+s=re.sub(r'versionCode = \d+', 'versionCode = 101', s, count=1)
 s=re.sub(r'versionName = "[^"]+"', 'versionName = "2.0.1"', s, count=1)
 write(p,s)
 
