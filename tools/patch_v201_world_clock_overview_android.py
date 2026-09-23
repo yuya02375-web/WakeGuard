@@ -146,7 +146,7 @@ new='''                r.time.setText(now.format(worldOverview()?compactTf:tf));
                         + "\nUTC" + formatOffset(offset)
                         + "  •  " + I18n.tr(this,"端末との差")+" " + formatDiff(diff)
                         + "  •  " + I18n.tr(this,"夏時間")+" " + (dst ? "ON" : "OFF"));'''
-s2,n=re.subn(pattern,new,s,count=1)
+s2,n=re.subn(pattern,lambda m:new,s,count=1)
 if n!=1: raise SystemExit('world row update block not found')
 s=s2
 s=s.replace('+ "
