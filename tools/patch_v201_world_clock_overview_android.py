@@ -149,8 +149,6 @@ new='''                r.time.setText(now.format(worldOverview()?compactTf:tf));
 s2,n=re.subn(pattern,lambda m:new,s,count=1)
 if n!=1: raise SystemExit('world row update block not found')
 s=s2
-s=s.replace('+ "
-UTC" + formatOffset(offset)', '+ "\\nUTC" + formatOffset(offset)')
 write(p,s)
 
 assert 'versionName = "2.0.1"' in read('build.gradle.kts')
