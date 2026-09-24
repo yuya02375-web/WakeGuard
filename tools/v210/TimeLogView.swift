@@ -13,7 +13,6 @@ struct TimeLogEntry: Identifiable, Codable, Hashable {
     var end: Date
 }
 
-@MainActor
 final class TimeLogStore: ObservableObject {
     @Published var folders: [TimeLogFolder] = [] { didSet { save() } }
     @Published var entries: [TimeLogEntry] = [] { didSet { save() } }
@@ -109,7 +108,7 @@ private struct FolderSummaryRow: View {
             }
         }.padding(.vertical, 5)
     }
-    @ViewBuilder private func mini(_ label: String, _ t: TimeInterval) -> some View { VStack(alignment: .leading, spacing: 2) { Text(label).font(.caption2).foregroundStyle(.secondary); Text(timeLogDuration(t)).font(.caption.monospacedDigit()) } }
+    @ViewBuilder private func mini(_ label: String, _ t: TimeInterval) -> some View { VStack(alignment: .leading, spacing: 2) { Text(label).font(.caption2).foregroundStyle(.secondary); Text(timeLogDuration(t)).font(.caption).monospacedDigit() } }
 }
 
 private struct FolderEditorState: Identifiable { let id = UUID(); var folderID: UUID?; var name: String }
