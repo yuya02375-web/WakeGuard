@@ -70,3 +70,5 @@ jobs:
           path: |
             ios/IGNIDO-Wake-iOS-2.1.0-time-log-folders.ipa
             ios/IGNIDO-Wake-iOS-2.1.0-time-log-folders.sha256
+
+# retry after StopwatchView state fix
