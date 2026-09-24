@@ -22,7 +22,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           rm -rf /tmp/ios203 && mkdir -p /tmp/ios203
-          gh run download 35812555739 -n IGNIDO-Wake-iOS-2.0.3-time-log-folders-source -D /tmp/ios203
+          gh run download 35812555739 -n IGNIDO-Wake-iOS-2.0.3-balanced-world-clock-analog-source -D /tmp/ios203
           test -f /tmp/ios203/ios/IGNIDOWake/ClockViews.swift
           rm -rf ios/IGNIDOWake
           cp -R /tmp/ios203/ios/IGNIDOWake ios/IGNIDOWake
@@ -37,7 +37,7 @@ jobs:
           grep -q '時間記録・集計' ios/IGNIDOWake/ClockViews.swift
           test -f ios/IGNIDOWake/TimeLogView.swift
           grep -q '1日平均' ios/IGNIDOWake/TimeLogView.swift
-                    grep -q 'rectangle.grid.2x2.fill' ios/IGNIDOWake/ClockViews.swift
+          grep -q 'rectangle.grid.2x2.fill' ios/IGNIDOWake/ClockViews.swift
           grep -q 'purgeLegacyEscapeGuards()' ios/IGNIDOWake/AlarmStore.swift
           grep -q 'firstAlertingTimer' ios/IGNIDOWake/MultiTimer.swift
       - name: Generate Xcode project
