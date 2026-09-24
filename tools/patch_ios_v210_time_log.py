@@ -17,7 +17,7 @@ p='ClockViews.swift'; s=read(p)
 stopwatch_marker='struct StopwatchView: View {'
 idx=s.index(stopwatch_marker)
 state_idx=s.index('@State private var fullScreen = false',idx)
-s=s[:state_idx]+s[state_idx:].replace('@State private var fullScreen = false','@State private var fullScreen = false\\n    @State private var showTimeLog = false',1)
+s=s[:state_idx]+s[state_idx:].replace('@State private var fullScreen = false','@State private var fullScreen = false\n    @State private var showTimeLog = false',1)
 needle='''                HStack(spacing: 14) {
                     Button(store.running ? "停止" : (store.accumulated > 0 ? "再開" : "開始")) { store.toggle() }.buttonStyle(.borderedProminent)
                     Button("ラップ") { store.lap() }.buttonStyle(.bordered).disabled(!store.running)
