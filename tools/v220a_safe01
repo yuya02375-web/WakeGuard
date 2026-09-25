@@ -1,0 +1,128 @@
+     public static final class Entry {
+         public long id; public int hour,minute,dayMask,steps,missionCount,volume,ringDurationSec,fullStopDurationSec,preNotifyMin,snoozeMinutes; public boolean enabled;
+-        public String label,missionType,vibration,soundUri,soundName; public long soundBytes,soundDurationMs;
++        public String label,missionType,vibration,soundUri,soundName; public long soundBytes,soundDurationMs,fixedAt;
+         public Entry(long id,int hour,int minute,int dayMask,boolean enabled,String label,
+                      int steps,String missionType,int missionCount,int volume,String vibration,
+                      String soundUri,String soundName,long soundBytes,long soundDurationMs,int ringDurationSec,int fullStopDurationSec,int preNotifyMin,int snoozeMinutes) {
+@@ -38,7 +38,7 @@
+     private static SharedPreferences p(Context c){return c.getSharedPreferences(FILE,Context.MODE_PRIVATE);}
+     private static Entry read(Context c,JSONObject o){
+         long id=o.optLong("id",-1); if(id<1000)return null;
+-        return new Entry(id,Math.max(0,Math.min(23,o.optInt("hour",7))),Math.max(0,Math.min(59,o.optInt("minute",0))),o.optInt("days",0)&0x7F,
++        Entry e=new Entry(id,Math.max(0,Math.min(23,o.optInt("hour",7))),Math.max(0,Math.min(59,o.optInt("minute",0))),o.optInt("days",0)&0x7F,
+                 o.optBoolean("enabled",true),o.optString("label",""),
+                 o.has("steps")?o.optInt("steps",50):Prefs.steps(c),
+                 o.optString("missionType","STEPS"),o.optInt("missionCount",3),
+@@ -46,6 +46,7 @@
+                 o.has("vibration")?o.optString("vibration","IRREGULAR"):Prefs.vibration(c),
+                 o.has("soundUri")?o.optString("soundUri",""):Prefs.soundUri(c),o.has("soundName")?o.optString("soundName",""):Prefs.soundName(c),
+                 o.has("soundBytes")?o.optLong("soundBytes",-1):Prefs.soundBytes(c),o.has("soundDurationMs")?o.optLong("soundDurationMs",-1):Prefs.soundDurationMs(c),o.optInt("ringDurationSec",0),o.optInt("fullStopDurationSec",0),o.has("preNotifyMin")?o.optInt("preNotifyMin",30):30,o.has("snoozeMinutes")?o.optInt("snoozeMinutes",5):5);
++        e.fixedAt=Math.max(0L,o.optLong("fixedAt",0L));return e;
+     }
+     public static synchronized List<Entry> all(Context c){
+         ArrayList<Entry> out=new ArrayList<>(); String raw=p(c).getString(KEY_ALARMS,"[]");
+@@ -55,7 +56,7 @@
+     private static JSONObject json(Entry e)throws Exception{
+         JSONObject o=new JSONObject();o.put("id",e.id);o.put("hour",e.hour);o.put("minute",e.minute);o.put("days",e.dayMask&0x7F);o.put("enabled",e.enabled);o.put("label",e.label);
+         o.put("steps",e.steps);o.put("missionType",normalizeMission(e.missionType));o.put("missionCount",e.missionCount);
+-        o.put("volume",e.volume);o.put("vibration",e.vibration);o.put("soundUri",e.soundUri);o.put("soundName",e.soundName);o.put("soundBytes",e.soundBytes);o.put("soundDurationMs",e.soundDurationMs);o.put("ringDurationSec",e.ringDurationSec);o.put("fullStopDurationSec",e.fullStopDurationSec);o.put("preNotifyMin",e.preNotifyMin);o.put("snoozeMinutes",e.snoozeMinutes);return o;
++        o.put("volume",e.volume);o.put("vibration",e.vibration);o.put("soundUri",e.soundUri);o.put("soundName",e.soundName);o.put("soundBytes",e.soundBytes);o.put("soundDurationMs",e.soundDurationMs);o.put("fixedAt",e.fixedAt);o.put("ringDurationSec",e.ringDurationSec);o.put("fullStopDurationSec",e.fullStopDurationSec);o.put("preNotifyMin",e.preNotifyMin);o.put("snoozeMinutes",e.snoozeMinutes);return o;
+     }
+     private static synchronized void save(Context c,List<Entry> list){
+         JSONArray a=new JSONArray();Set<String> known=new HashSet<>(p(c).getStringSet(KEY_KNOWN_IDS,new HashSet<>()));
+@@ -64,7 +65,7 @@
+     }
+     public static synchronized Entry add(Context c,Entry draft){
+         SharedPreferences sp=p(c);long id=Math.max(1000L,sp.getLong(KEY_NEXT_ID,1000L));sp.edit().putLong(KEY_NEXT_ID,id+1).commit();
+-        Entry e=new Entry(id,draft.hour,draft.minute,draft.dayMask,draft.enabled,draft.label,draft.steps,draft.missionType,draft.missionCount,draft.volume,draft.vibration,draft.soundUri,draft.soundName,draft.soundBytes,draft.soundDurationMs,draft.ringDurationSec,draft.fullStopDurationSec,draft.preNotifyMin,draft.snoozeMinutes);
++        Entry e=new Entry(id,draft.hour,draft.minute,draft.dayMask,draft.enabled,draft.label,draft.steps,draft.missionType,draft.missionCount,draft.volume,draft.vibration,draft.soundUri,draft.soundName,draft.soundBytes,draft.soundDurationMs,draft.ringDurationSec,draft.fullStopDurationSec,draft.preNotifyMin,draft.snoozeMinutes);e.fixedAt=draft.fixedAt;
+         List<Entry> list=all(c);list.add(e);save(c,list);return e;
+     }
+     public static synchronized void update(Context c,Entry changed){List<Entry> list=all(c);boolean found=false;for(int i=0;i<list.size();i++)if(list.get(i).id==changed.id){list.set(i,changed);found=true;break;}if(!found&&changed.id>=1000)list.add(changed);save(c,list);}
+--- a/WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmScheduler.java
++++ b/WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmScheduler.java
+@@ -114,8 +114,23 @@
+         } catch(Throwable ignored) {}
+     }
+ 
+-    private static int scheduleSpec(Context c, AlarmManager am, long id, int hour, int minute, int mask, boolean enabled, boolean primary, int preNotifyMin, ZoneId zone, LocalDate today, Instant now) {
++    private static int scheduleSpec(Context c, AlarmManager am, long id, int hour, int minute, int mask, boolean enabled, boolean primary, int preNotifyMin, long fixedAt, ZoneId zone, LocalDate today, Instant now) {
+         if(!enabled)return 0;
++        if(fixedAt>0L&&mask==0){
++            Instant target=Instant.ofEpochMilli(fixedAt);
++            if(!target.isAfter(now.plusSeconds(2)))return 0;
++            ZonedDateTime when=target.atZone(zone);LocalDate d=when.toLocalDate();long expectedAt=fixedAt;
++            PendingIntent fire=scheduledActivityPi(c,id,d,expectedAt,PendingIntent.FLAG_UPDATE_CURRENT);
++            Intent open=new Intent(c, primary?MainActivity.class:MultiAlarmActivity.class);open.setData(data(id,d,"open"));
++            PendingIntent showPi=activityPi(c,code(id,d,4),open,PendingIntent.FLAG_UPDATE_CURRENT);
++            am.setAlarmClock(new AlarmManager.AlarmClockInfo(expectedAt,showPi),fire);
++            PendingIntent show=showAlarmUiPi(c,id,d,expectedAt,PendingIntent.FLAG_UPDATE_CURRENT);
++            if(Build.VERSION.SDK_INT>=23)am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,expectedAt+900L,show); else am.setExact(AlarmManager.RTC_WAKEUP,expectedAt+900L,show);
++            PendingIntent backup=backupFirePi(c,id,d,expectedAt,PendingIntent.FLAG_UPDATE_CURRENT);
++            if(Build.VERSION.SDK_INT>=23)am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,expectedAt+1500L,backup); else am.setExact(AlarmManager.RTC_WAKEUP,expectedAt+1500L,backup);
++            if(preNotifyMin>0){long remindAt=Math.max(System.currentTimeMillis()+1500L,expectedAt-preNotifyMin*60000L);if(remindAt<expectedAt){PendingIntent reminder=reminderPi(c,id,d,expectedAt,PendingIntent.FLAG_UPDATE_CURRENT);if(Build.VERSION.SDK_INT>=23)am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,remindAt,reminder);else am.setExact(AlarmManager.RTC_WAKEUP,remindAt,reminder);}}
++            return 1;
++        }
+         int count=0;
+         for(int i=0;i<=120 && count<14;i++) {
+             LocalDate d=today.plusDays(i);
+@@ -154,6 +169,10 @@
+             }else{
+                 AlarmStore.Entry e=AlarmStore.find(c,alarmId);if(e==null)return -1L;
+                 hour=e.hour;minute=e.minute;mask=e.dayMask;enabled=e.enabled;
++                if(enabled&&mask==0&&e.fixedAt>0L){
++                    LocalDate fixedDate=Instant.ofEpochMilli(e.fixedAt).atZone(ZoneId.systemDefault()).toLocalDate();
++                    return fixedDate.equals(date)?e.fixedAt:-1L;
++                }
+             }
+             if(!enabled)return -1L;
+             if(mask!=0&&!selected(date,mask))return -1L;
+@@ -187,9 +206,9 @@
+             for(int i=-2;i<=120;i++) cancelPair(c,am,PRIMARY_ALARM_ID,today.plusDays(i));
+             for(long id:AlarmStore.knownIds(c)) for(int i=-2;i<=120;i++) cancelPair(c,am,id,today.plusDays(i));
+ 
+-            if(Prefs.primaryConfigured(c)) scheduleSpec(c,am,PRIMARY_ALARM_ID,Prefs.hour(c),Prefs.minute(c),Prefs.dayMask(c),Prefs.enabled(c),true,Prefs.preNotifyMin(c),zone,today,now);
++            if(Prefs.primaryConfigured(c)) scheduleSpec(c,am,PRIMARY_ALARM_ID,Prefs.hour(c),Prefs.minute(c),Prefs.dayMask(c),Prefs.enabled(c),true,Prefs.preNotifyMin(c),0L,zone,today,now);
+             for(AlarmStore.Entry e:AlarmStore.all(c))
+-                scheduleSpec(c,am,e.id,e.hour,e.minute,e.dayMask,e.enabled,false,e.preNotifyMin,zone,today,now);
++                scheduleSpec(c,am,e.id,e.hour,e.minute,e.dayMask,e.enabled,false,e.preNotifyMin,e.fixedAt,zone,today,now);
+         } catch(Throwable t) {
+             try{Prefs.lastAlarmError(c,"AlarmScheduler: "+t.getClass().getSimpleName()+(t.getMessage()==null?"":": "+t.getMessage()));}catch(Throwable ignored){}
+         }
+@@ -209,8 +228,9 @@
+         } catch(Throwable t) { try{Prefs.lastAlarmError(c,"RecoveryAlarm: "+t.getClass().getSimpleName());}catch(Throwable ignored){} }
+     }
+ 
+-    private static long nextFor(int h,int m,int mask,boolean enabled,ZoneId zone,LocalDate today,Instant now) {
++    private static long nextFor(int h,int m,int mask,boolean enabled,long fixedAt,ZoneId zone,LocalDate today,Instant now) {
+         if(!enabled)return -1L;
++        if(mask==0&&fixedAt>0L)return fixedAt>now.toEpochMilli()?fixedAt:-1L;
+         for(int i=0;i<=120;i++) {
+             LocalDate d=today.plusDays(i); if(mask!=0&&!selected(d,mask))continue;
+             Instant x=d.atTime(h,m).atZone(zone).toInstant(); if(x.isAfter(now))return x.toEpochMilli();
+@@ -221,9 +241,9 @@
+ 
+     public static long nextTriggerMillis(Context c) {
+         ZoneId zone=ZoneId.systemDefault(); LocalDate today=LocalDate.now(zone); Instant now=Instant.now(); long best=-1;
+-        if(Prefs.primaryConfigured(c)){long p=nextFor(Prefs.hour(c),Prefs.minute(c),Prefs.dayMask(c),Prefs.enabled(c),zone,today,now); if(p>0)best=p;}
++        if(Prefs.primaryConfigured(c)){long p=nextFor(Prefs.hour(c),Prefs.minute(c),Prefs.dayMask(c),Prefs.enabled(c),0L,zone,today,now); if(p>0)best=p;}
+         for(AlarmStore.Entry e:AlarmStore.all(c)) {
+-            long x=nextFor(e.hour,e.minute,e.dayMask,e.enabled,zone,today,now); if(x>0&&(best<0||x<best))best=x;
++            long x=nextFor(e.hour,e.minute,e.dayMask,e.enabled,e.fixedAt,zone,today,now); if(x>0&&(best<0||x<best))best=x;
+         }
+         return best;
+     }
+--- a/WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java
++++ b/WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java
+@@ -20,7 +20,7 @@
+     private static final String[] MISSION_KEYS={"NONE","STEPS","MATH","TAP","CODE","SHAKE","MEMORY","TYPE","HOLD","SWIPE","ORDER","REVERSE","RANDOM"};
+     private static final String[] MISSION_LABELS={"なし","歩数","計算","連打","コード入力","シェイク","記憶","文章入力","長押し","スワイプ","順番タップ","逆順入力","ランダム"};
+     private long alarmId; private AlarmStore.Entry draft;
+-    private EditText label,steps,missionCount; private Button time,sound,missionPicker,ringDuration,fullStopDuration,preNotify,snooze,preview; private CheckBox[] days=new CheckBox[7];
++    private EditText label,steps,missionCount; private Button time,afterButton,sound,missionPicker,ringDuration,fullStopDuration,preNotify,snooze,preview; private CheckBox[] days=new CheckBox[7];
+     private Switch enabled,ringAutoStop,fullAutoStop; private SeekBar volume; private TextView volumeText,soundStatus,stepsLabel,countLabel,missionNote;
+     private Spinner vibration; private String selectedMission="STEPS"; private MediaPlayer previewPlayer;
+ 
+@@ -35,7 +35,8 @@
+ 
