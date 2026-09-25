@@ -1,0 +1,73 @@
+name: Build IGNIDO Wake iOS 2.1.1 Midnight Time Log Fix
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/patch_ios_v211_time_log_midnight.py'
+      - '.github/workflows/build-ios-v211.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Restore exact iOS 2.0.3 source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf /tmp/ios203 && mkdir -p /tmp/ios203
+          gh run download 35812555739 -n IGNIDO-Wake-iOS-2.0.3-balanced-world-clock-analog-source -D /tmp/ios203
+          test -f /tmp/ios203/ios/IGNIDOWake/ClockViews.swift
+          rm -rf ios/IGNIDOWake
+          cp -R /tmp/ios203/ios/IGNIDOWake ios/IGNIDOWake
+          cp /tmp/ios203/ios/project.yml ios/project.yml
+      - name: Apply iOS 2.1.0 time log folders patch
+        run: python3 tools/patch_ios_v210_time_log.py
+      - name: Apply iOS 2.1.1 midnight grouping fix
+        run: python3 tools/patch_ios_v211_time_log_midnight.py
+      - name: Validate invariants
+        run: |
+          grep -q '<string>2.1.1</string>' ios/IGNIDOWake/Info.plist
+          grep -q '<string>111</string>' ios/IGNIDOWake/Info.plist
+          grep -q 'EntryRow(entry: e, day: day)' ios/IGNIDOWake/TimeLogView.swift
+          grep -q 'var days = Set<Date>()' ios/IGNIDOWake/TimeLogView.swift
+          grep -q '記録全体' ios/IGNIDOWake/TimeLogView.swift
+          grep -q 'purgeLegacyEscapeGuards()' ios/IGNIDOWake/AlarmStore.swift
+          grep -q 'firstAlertingTimer' ios/IGNIDOWake/MultiTimer.swift
+      - name: Generate Xcode project
+        run: cd ios && xcodegen generate
+      - name: Build unsigned app
+        run: |
+          cd ios
+          xcodebuild -project IGNIDOWake.xcodeproj -scheme IGNIDOWake -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package and inspect IPA
+        run: |
+          cd ios
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          test -n "$APP"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '2.1.1'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '111'
+          rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
+          zip -qry IGNIDO-Wake-iOS-2.1.1-midnight-time-log-fix.ipa Payload
+          unzip -t IGNIDO-Wake-iOS-2.1.1-midnight-time-log-fix.ipa
+          shasum -a 256 IGNIDO-Wake-iOS-2.1.1-midnight-time-log-fix.ipa | tee IGNIDO-Wake-iOS-2.1.1-midnight-time-log-fix.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.1.1-midnight-time-log-fix-source
+          path: |
+            ios/IGNIDOWake/
+            ios/project.yml
+            tools/patch_ios_v210_time_log.py
+            tools/patch_ios_v211_time_log_midnight.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.1.1-midnight-time-log-fix
+          path: |
+            ios/IGNIDO-Wake-iOS-2.1.1-midnight-time-log-fix.ipa
+            ios/IGNIDO-Wake-iOS-2.1.1-midnight-time-log-fix.sha256
