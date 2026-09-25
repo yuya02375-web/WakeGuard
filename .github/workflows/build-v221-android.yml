@@ -49,7 +49,7 @@ jobs:
           grep -q 'nextTriggerMillis(Context c, AlarmStore.Entry e)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmScheduler.java
           grep -q 'あと "+relativeText(next-now)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/MainActivity.java
           grep -q 'countdownHandler' WakeGuard/app/src/main/java/jp/wakeguard/alarm/MainActivity.java
-          grep -q 'ストップウォッチで記録' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimeLogActivity.java
+          grep -q 'ストップウォッチ計測' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimeLogActivity.java
           grep -q 'Ui.applySystemBarInsets' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimeLogActivity.java
           grep -q 'fixedAt>0L' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmScheduler.java
       - uses: actions/upload-artifact@v4
