@@ -1,0 +1,16 @@
+     private String repeatText(int m){if(m==0)return I18n.tr(this,"1回のみ");if((m&127)==127)return I18n.tr(this,"毎日");String[]n={"月","火","水","木","金","土","日"};StringBuilder b=new StringBuilder();for(int i=0;i<7;i++)if((m&(1<<i))!=0){if(b.length()>0)b.append(" ");b.append(I18n.tr(this,n[i]));}return b.toString();}
+ 
+     private void requestRuntimePermissions(){try{ArrayList<String> req=new ArrayList<>();if(Build.VERSION.SDK_INT>=29&&checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION)!=PackageManager.PERMISSION_GRANTED)req.add(Manifest.permission.ACTIVITY_RECOGNITION);if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)req.add(Manifest.permission.POST_NOTIFICATIONS);if(!req.isEmpty())requestPermissions(req.toArray(new String[0]),41);}catch(Throwable ignored){}}
+--- a/WakeGuard/app/build.gradle.kts
++++ b/WakeGuard/app/build.gradle.kts
+@@ -10,8 +10,8 @@
+         applicationId = "jp.wakeguard.alarm"
+         minSdk = 29
+         targetSdk = 36
+-        versionCode = 111
+-        versionName = "2.1.1"
++        versionCode = 120
++        versionName = "2.2.0"
+     }
+ 
+     buildFeatures {
