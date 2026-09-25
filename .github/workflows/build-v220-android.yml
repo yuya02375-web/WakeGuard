@@ -41,7 +41,7 @@ jobs:
           cp -R /tmp/a211/WakeGuard/app WakeGuard/app
       - name: Apply Android 2.2.0 patch
         run: |
-          cat tools/v220a_safe00 tools/v220a_safe01 tools/v220a_safe02 tools/v220a_safe03 > /tmp/v220-android.patch
+          cat tools/v220a_safe00 tools/v220a_safe01 tools/v220a_safe02 tools/v220a_safe03 tools/v220a_safe04 > /tmp/v220-android.patch
           patch -p1 --fuzz=0 < /tmp/v220-android.patch
       - name: Validate 2.2.0 changes
         run: |
@@ -63,6 +63,7 @@ jobs:
             tools/v220a_safe01
             tools/v220a_safe02
             tools/v220a_safe03
+            tools/v220a_safe04
       - name: Restore stable signing key
         env:
           WAKEGUARD_KEYSTORE_B64: ${{ secrets.WAKEGUARD_KEYSTORE_B64 }}
