@@ -1,0 +1,60 @@
+         ScrollView sv=new ScrollView(this);LinearLayout body=new LinearLayout(this);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(Ui.dp(this,22),Ui.dp(this,10),Ui.dp(this,22),Ui.dp(this,48));sv.addView(body);root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
+ 
+-        time=Ui.ghostButton(this,"07:00");time.setTextSize(52);time.setTypeface(Typeface.MONOSPACE,Typeface.NORMAL);time.setGravity(Gravity.CENTER);time.setOnClickListener(v->new TimePickerDialog(this,(x,h,m)->{draft.hour=h;draft.minute=m;time.setText(String.format(Locale.JAPAN,"%02d:%02d",h,m));},draft.hour,draft.minute,true).show());body.addView(time,new LinearLayout.LayoutParams(-1,Ui.dp(this,86)));
++        time=Ui.ghostButton(this,"07:00");time.setTextSize(52);time.setTypeface(Typeface.MONOSPACE,Typeface.NORMAL);time.setGravity(Gravity.CENTER);time.setOnClickListener(v->new TimePickerDialog(this,(x,h,m)->{draft.fixedAt=0L;draft.hour=h;draft.minute=m;time.setText(String.format(Locale.JAPAN,"%02d:%02d",h,m));renderAfterButton();},draft.hour,draft.minute,true).show());body.addView(time,new LinearLayout.LayoutParams(-1,Ui.dp(this,86)));
++        afterButton=Ui.button(this,"○時間後で設定",false);afterButton.setOnClickListener(v->showAfterDialog());if(alarmId==AlarmScheduler.PRIMARY_ALARM_ID)afterButton.setVisibility(View.GONE);LinearLayout.LayoutParams alp=new LinearLayout.LayoutParams(-1,Ui.dp(this,50));alp.setMargins(0,0,0,Ui.dp(this,6));body.addView(afterButton,alp);
+ 
+         enabled=new Switch(this);enabled.setText(I18n.tr(this,"アラームを有効にする"));enabled.setTextColor(Ui.TEXT);Ui.styleSwitch(enabled,this);body.addView(enabled,Ui.gapTop(this,8));
+         body.addView(Ui.divider(this),Ui.dividerTop(this,14));
+@@ -161,14 +162,32 @@
+         d.setContentView(box);d.show();android.view.Window w=d.getWindow();if(w!=null){w.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));w.setDimAmount(.65f);w.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND);w.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.92f),-2);}
+     }
+ 
+-    private void render(){enabled.setChecked(draft.enabled);label.setText(draft.label);time.setText(String.format(Locale.JAPAN,"%02d:%02d",draft.hour,draft.minute));for(int i=0;i<7;i++)days[i].setChecked((draft.dayMask&(1<<i))!=0);steps.setText(String.valueOf(draft.steps));missionCount.setText(String.valueOf(draft.missionCount));selectedMission=AlarmStore.normalizeMission(draft.missionType);missionPicker.setText(I18n.tr(this,AlarmProfiles.missionName(selectedMission))+"  ›");volume.setProgress(draft.volume);vibration.setSelection("OFF".equals(draft.vibration)?0:("STRONG".equals(draft.vibration)?2:1));renderSound();renderPreNotify();renderSnooze();renderAutoStop();refreshMissionFields();}
++    private void showAfterDialog(){
++        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(Ui.dp(this,22),Ui.dp(this,10),Ui.dp(this,22),Ui.dp(this,4));
++        long remain=draft.fixedAt>System.currentTimeMillis()?draft.fixedAt-System.currentTimeMillis():3600000L;
++        int totalMin=Math.max(1,(int)Math.round(remain/60000.0));
++        TextView help=Ui.text(this,"今から何時間・何分後に鳴らすかを指定します。1回だけのアラームになります。",13,Ui.MUTED);box.addView(help);
++        LinearLayout picks=new LinearLayout(this);picks.setGravity(Gravity.CENTER);NumberPicker hours=new NumberPicker(this);hours.setMinValue(0);hours.setMaxValue(168);hours.setValue(Math.min(168,totalMin/60));NumberPicker mins=new NumberPicker(this);mins.setMinValue(0);mins.setMaxValue(59);mins.setValue(totalMin%60);
++        picks.addView(hours);TextView h=Ui.text(this,"時間",15,Ui.TEXT);h.setPadding(Ui.dp(this,8),0,Ui.dp(this,18),0);picks.addView(h);picks.addView(mins);TextView m=Ui.text(this,"分",15,Ui.TEXT);m.setPadding(Ui.dp(this,8),0,0,0);picks.addView(m);box.addView(picks);
++        AlertDialog d=new AlertDialog.Builder(this).setTitle("○時間後で設定").setView(box).setNegativeButton("キャンセル",null).setPositiveButton("設定",null).create();
++        d.setOnShowListener(x->d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{int minutes=hours.getValue()*60+mins.getValue();if(minutes<=0){Toast.makeText(this,"1分以上に設定してください",Toast.LENGTH_SHORT).show();return;}draft.fixedAt=System.currentTimeMillis()+minutes*60000L;draft.dayMask=0;for(CheckBox cb:days)cb.setChecked(false);ZonedDateTime z=Instant.ofEpochMilli(draft.fixedAt).atZone(ZoneId.systemDefault());draft.hour=z.getHour();draft.minute=z.getMinute();time.setText(String.format(Locale.JAPAN,"%02d:%02d",draft.hour,draft.minute));renderAfterButton();d.dismiss();}));
++        d.show();
++    }
++    private void renderAfterButton(){
++        if(afterButton==null)return;long now=System.currentTimeMillis();
++        if(draft.fixedAt>now){ZonedDateTime z=Instant.ofEpochMilli(draft.fixedAt).atZone(ZoneId.systemDefault());afterButton.setText("あと "+formatAfter(draft.fixedAt-now)+"  →  "+z.format(java.time.format.DateTimeFormatter.ofPattern("M/d HH:mm")));}
++        else afterButton.setText("○時間後で設定  ›");
++    }
++    private String formatAfter(long ms){long mins=Math.max(1,(long)Math.ceil(ms/60000.0));long h=mins/60,m=mins%60;if(h==0)return m+"分";if(m==0)return h+"時間";return h+"時間"+m+"分";}
++
++    private void render(){enabled.setChecked(draft.enabled);label.setText(draft.label);time.setText(String.format(Locale.JAPAN,"%02d:%02d",draft.hour,draft.minute));for(int i=0;i<7;i++)days[i].setChecked((draft.dayMask&(1<<i))!=0);steps.setText(String.valueOf(draft.steps));missionCount.setText(String.valueOf(draft.missionCount));selectedMission=AlarmStore.normalizeMission(draft.missionType);missionPicker.setText(I18n.tr(this,AlarmProfiles.missionName(selectedMission))+"  ›");volume.setProgress(draft.volume);vibration.setSelection("OFF".equals(draft.vibration)?0:("STRONG".equals(draft.vibration)?2:1));renderSound();renderPreNotify();renderSnooze();renderAutoStop();renderAfterButton();refreshMissionFields();}
+     private void renderSound(){
+         if(draft.soundName==null||draft.soundName.isEmpty()){soundStatus.setText(I18n.tr(this,"標準アラーム音"));return;}
+         String size=draft.soundBytes>0?String.format(Locale.JAPAN,"%.1f MB",draft.soundBytes/1048576.0):I18n.tr(this,"サイズ不明");
+         String dur=draft.soundDurationMs>0?String.format(Locale.JAPAN,"%d:%02d",draft.soundDurationMs/60000,(draft.soundDurationMs/1000)%60):I18n.tr(this,"長さ不明");
+         soundStatus.setText(I18n.tr(this,isVideoMedia(draft.soundUri,draft.soundName)?"動画":"音声")+"  ·  "+draft.soundName+"  ·  "+size+"  ·  "+dur);
+     }
+-    private AlarmStore.Entry saveDraft(boolean toast){try{draft.enabled=enabled.isChecked();draft.label=label.getText().toString().trim();draft.dayMask=0;for(int i=0;i<7;i++)if(days[i].isChecked())draft.dayMask|=1<<i;draft.missionType=selectedMission;draft.steps=Math.max(1,Math.min(9999,Integer.parseInt(steps.getText().toString().trim().isEmpty()?"50":steps.getText().toString().trim())));draft.missionCount=Math.max(1,Math.min(500,Integer.parseInt(missionCount.getText().toString().trim().isEmpty()?"3":missionCount.getText().toString().trim())));draft.volume=volume.getProgress();int vp=vibration.getSelectedItemPosition();draft.vibration=vp==0?"OFF":(vp==2?"STRONG":"IRREGULAR");draft=AlarmProfiles.save(this,draft);alarmId=draft.id;if(!draft.enabled)SnoozeScheduler.cancel(this,alarmId);AlarmScheduler.reschedule(this);if(toast)Toast.makeText(this,I18n.tr(this,"保存しました"),Toast.LENGTH_SHORT).show();return draft;}catch(Throwable t){Toast.makeText(this,I18n.tr(this,"設定値を確認してください"),Toast.LENGTH_LONG).show();return null;}}
++    private AlarmStore.Entry saveDraft(boolean toast){try{draft.enabled=enabled.isChecked();draft.label=label.getText().toString().trim();draft.dayMask=0;for(int i=0;i<7;i++)if(days[i].isChecked())draft.dayMask|=1<<i;if(draft.dayMask!=0)draft.fixedAt=0L;if(draft.fixedAt>0L){if(draft.fixedAt<=System.currentTimeMillis()+1000L)draft.fixedAt=0L;else{java.time.ZonedDateTime z=java.time.Instant.ofEpochMilli(draft.fixedAt).atZone(java.time.ZoneId.systemDefault());draft.hour=z.getHour();draft.minute=z.getMinute();}}draft.missionType=selectedMission;draft.steps=Math.max(1,Math.min(9999,Integer.parseInt(steps.getText().toString().trim().isEmpty()?"50":steps.getText().toString().trim())));draft.missionCount=Math.max(1,Math.min(500,Integer.parseInt(missionCount.getText().toString().trim().isEmpty()?"3":missionCount.getText().toString().trim())));draft.volume=volume.getProgress();int vp=vibration.getSelectedItemPosition();draft.vibration=vp==0?"OFF":(vp==2?"STRONG":"IRREGULAR");draft=AlarmProfiles.save(this,draft);alarmId=draft.id;if(!draft.enabled)SnoozeScheduler.cancel(this,alarmId);AlarmScheduler.reschedule(this);if(toast)Toast.makeText(this,I18n.tr(this,"保存しました"),Toast.LENGTH_SHORT).show();return draft;}catch(Throwable t){Toast.makeText(this,I18n.tr(this,"設定値を確認してください"),Toast.LENGTH_LONG).show();return null;}}
+     private void pickSound(){
+         new AlertDialog.Builder(this).setTitle(I18n.tr(this,"アラームの音・動画")).setItems(new String[]{I18n.tr(this,"音声を選択"),I18n.tr(this,"動画を選択"),I18n.tr(this,"標準に戻す")},(d,w)->{if(w==0)pickMedia(false);else if(w==1)pickMedia(true);else{draft.soundUri="";draft.soundName="";draft.soundBytes=-1;draft.soundDurationMs=-1;renderSound();}}).show();
+     }
+--- a/WakeGuard/app/src/main/java/jp/wakeguard/alarm/MainActivity.java
++++ b/WakeGuard/app/src/main/java/jp/wakeguard/alarm/MainActivity.java
+@@ -86,7 +86,8 @@
+         }
+         Switch on=new Switch(this);on.setChecked(e.enabled);Ui.styleSwitch(on,this);first.addView(on);row.addView(first);
+         String label=(e.label==null||e.label.trim().isEmpty())?"アラーム":e.label.trim();TextView name=Ui.text(this,label,16,e.enabled?Ui.TEXT:Ui.MUTED);row.addView(name,Ui.gapTop(this,3));
+-        TextView detail=Ui.text(this,repeatText(e.dayMask)+"   ·   "+I18n.tr(this,AlarmProfiles.missionName(e.missionType))+" "+I18n.tr(this,AlarmProfiles.missionSummary(this,e.id)),13,Ui.MUTED);row.addView(detail,Ui.gapTop(this,4));
++        String scheduleText=(e.dayMask==0&&e.fixedAt>System.currentTimeMillis())?"あと "+relativeText(e.fixedAt-System.currentTimeMillis()):repeatText(e.dayMask);
++        TextView detail=Ui.text(this,scheduleText+"   ·   "+I18n.tr(this,AlarmProfiles.missionName(e.missionType))+" "+I18n.tr(this,AlarmProfiles.missionSummary(this,e.id)),13,Ui.MUTED);row.addView(detail,Ui.gapTop(this,4));
+         on.setOnClickListener(v->{e.enabled=on.isChecked();AlarmProfiles.save(this,e);if(!e.enabled){SnoozeScheduler.cancel(this,e.id);if(e.id>=1000)AlarmScheduler.cancelExtraAlarm(this,e.id);}AlarmScheduler.reschedule(this);render();});
+         list.addView(row,Ui.cardParams(this));
+     }
+@@ -107,6 +108,7 @@
+ 
+     private void refreshNext(){long ms=AlarmScheduler.nextTriggerMillis(this);if(ms<=0){nextText.setText(I18n.tr(this,"次のアラームはありません"));return;}ZonedDateTime z=Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault());nextText.setText(I18n.tr(this,"次は "+z.format(DateTimeFormatter.ofPattern(I18n.datePattern(this,"next"),I18n.locale(this)))));}
+     private void refreshStats(){if(statsText!=null)statsText.setText(I18n.tr(this,"🔥 "+StreakTracker.displayCurrent(this)+"日  ·  最高 "+Prefs.bestStreak(this)+"日"));}
++    private String relativeText(long ms){long mins=Math.max(1,(long)Math.ceil(ms/60000.0));long h=mins/60,m=mins%60;if(h==0)return m+"分";if(m==0)return h+"時間";return h+"時間"+m+"分";}
