@@ -1,0 +1,74 @@
++    func cancelSession(_ folderID: UUID) { guard activeFolderID == folderID else { return }; activeFolderID = nil; activeStart = nil; persistActiveSession() }
++    func activeElapsed(_ folderID: UUID, now: Date = Date()) -> TimeInterval { guard activeFolderID == folderID, let start = activeStart else { return 0 }; return max(0, now.timeIntervalSince(start)) }
++    private func loadActiveSession() { if let raw = UserDefaults.standard.string(forKey: activeFolderKey), let id = UUID(uuidString: raw), let start = UserDefaults.standard.object(forKey: activeStartKey) as? Date { activeFolderID = id; activeStart = start } }
++    private func persistActiveSession() { if let id = activeFolderID, let start = activeStart { UserDefaults.standard.set(id.uuidString, forKey: activeFolderKey); UserDefaults.standard.set(start, forKey: activeStartKey) } else { UserDefaults.standard.removeObject(forKey: activeFolderKey); UserDefaults.standard.removeObject(forKey: activeStartKey) } }
+     func updateEntry(_ entry: TimeLogEntry) { guard let i = entries.firstIndex(where: { $0.id == entry.id }) else { return }; entries[i] = entry }
+     func deleteEntry(_ id: UUID) { entries.removeAll { $0.id == id } }
+     func entries(for folderID: UUID) -> [TimeLogEntry] { entries.filter { $0.folderID == folderID }.sorted { $0.start > $1.start } }
+@@ -157,8 +175,9 @@
+     var body: some View {
+         ScrollView {
+             VStack(spacing: 14) {
++                trackingCard
+                 statsGrid
+-                if entries.isEmpty { ContentUnavailableView("まだ記録がありません", systemImage: "clock.badge.plus", description: Text("右上の＋から開始・終了時刻を追加してください。")) .padding(.top, 40) }
++                if entries.isEmpty { ContentUnavailableView("まだ記録がありません", systemImage: "clock.badge.plus", description: Text("上のストップウォッチで計測するか、右上の＋から開始・終了時刻を追加してください。")) .padding(.top, 40) }
+                 else {
+                     ForEach(groups.indices, id: \.self) { index in
+                         let day = groups[index].0
+@@ -187,6 +206,28 @@
+         .confirmationDialog("フォルダーを削除しますか？", isPresented: $deleteFolderConfirm, titleVisibility: .visible) { Button("削除", role: .destructive) { store.deleteFolder(folderID); dismiss() } }
+     }
+ 
++    private var trackingCard: some View {
++        let mine = store.activeFolderID == folderID && store.activeStart != nil
++        let other = store.activeFolderID != nil && store.activeFolderID != folderID
++        return VStack(spacing: 10) {
++            HStack { Label("ストップウォッチ計測", systemImage: "stopwatch.fill").font(.headline); Spacer() }
++            TimelineView(.periodic(from: .now, by: 1)) { context in
++                Text(formatStopwatch(store.activeElapsed(folderID, now: context.date)))
++                    .font(.system(size: 38, weight: .semibold, design: .monospaced))
++                    .minimumScaleFactor(0.7).lineLimit(1)
++            }
++            if other { Text("別のフォルダーで計測中です。停止してから開始してください。").font(.caption).foregroundStyle(.secondary) }
++            HStack {
++                Button(mine ? "停止して登録" : "計測開始") { if mine { _ = store.stopSession(folderID) } else { _ = store.startSession(folderID) } }
++                    .buttonStyle(.borderedProminent).tint(IgnidoTheme.ember).disabled(other)
++                if mine { Button("キャンセル", role: .destructive) { store.cancelSession(folderID) }.buttonStyle(.bordered) }
++            }
++        }
++        .padding(14)
++        .background(IgnidoTheme.surface, in: RoundedRectangle(cornerRadius: 14))
++        .overlay(RoundedRectangle(cornerRadius: 14).stroke(IgnidoTheme.border, lineWidth: 1))
++    }
++
+     private var statsGrid: some View {
+         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 9) {
+             StatCard(label: "合計", value: store.total(folderID)); StatCard(label: "今日", value: store.today(folderID)); StatCard(label: "今週", value: store.week(folderID)); StatCard(label: "1日平均", value: store.averageDay(folderID))
+--- a/ios/IGNIDOWake/Info.plist
++++ b/ios/IGNIDOWake/Info.plist
+@@ -17,9 +17,9 @@
+ 	<key>CFBundlePackageType</key>
+ 	<string>APPL</string>
+ 	<key>CFBundleShortVersionString</key>
+-	<string>2.1.1</string>
++	<string>2.2.0</string>
+ 	<key>CFBundleVersion</key>
+-	<string>111</string>
++	<string>120</string>
+ 	<key>NSAlarmKitUsageDescription</key>
+ 	<string>IGNIDO Wakeで設定した目覚まし・アラームとタイマーを指定時刻に鳴らすために使用します。</string>
+ 	<key>NSMotionUsageDescription</key>
+--- a/ios/project.yml
++++ b/ios/project.yml
+@@ -18,8 +18,8 @@
+       properties:
+         CFBundleDisplayName: IGNIDO Wake
+         CFBundleName: IGNIDO Wake
+-        CFBundleShortVersionString: "2.1.1"
+-        CFBundleVersion: "111"
++        CFBundleShortVersionString: "2.2.0"
++        CFBundleVersion: "120"
+         UILaunchScreen: {}
+         NSAlarmKitUsageDescription: "IGNIDO Wakeで設定した目覚まし・アラームとタイマーを指定時刻に鳴らすために使用します。"
+         NSMotionUsageDescription: "アラーム解除の歩数・シェイク判定にiPhoneのモーションセンサーを使用します。"
