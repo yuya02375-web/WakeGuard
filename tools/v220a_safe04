@@ -1,0 +1,10 @@
+--- a/WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java
++++ b/WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java
+@@ -12,6 +12,7 @@
+ import android.view.View;
+ import android.widget.*;
+ import java.io.*;
++import java.time.*;
+ import java.util.Locale;
+ 
+ public class AlarmEditorActivity extends Activity {
