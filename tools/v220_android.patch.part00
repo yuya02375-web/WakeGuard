@@ -1,0 +1,116 @@
+--- a/WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimeLogActivity.java
++++ b/WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimeLogActivity.java
+@@ -3,7 +3,7 @@
+ import android.app.*;
+ import android.content.*;
+ import android.graphics.Typeface;
+-import android.os.Bundle;
++import android.os.*;
+ import android.view.*;
+ import android.widget.*;
+ 
+@@ -24,6 +24,11 @@
+     private Button action;
+     private String selectedFolderId=null;
+     private final ZoneId zone=ZoneId.systemDefault();
++    private static final String KEY_ACTIVE_FOLDER="active_folder";
++    private static final String KEY_ACTIVE_START="active_start";
++    private final Handler ticker=new Handler(Looper.getMainLooper());
++    private TextView trackingClock;
++    private Runnable trackingTick;
+ 
+     static final class Folder {
+         String id,name; long createdAt;
+@@ -44,14 +49,15 @@
+     private void buildShell(){
+         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setBackground(Ui.screenGradient(this));
+         LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);top.setPadding(Ui.dp(this,10),Ui.dp(this,12),Ui.dp(this,12),Ui.dp(this,8));
+-        Button back=Ui.ghostButton(this,"‹");back.setTextSize(30);back.setOnClickListener(v->{if(selectedFolderId!=null){selectedFolderId=null;showFolders();}else finish();});top.addView(back,new LinearLayout.LayoutParams(Ui.dp(this,48),Ui.dp(this,48)));
++        Button back=Ui.ghostButton(this,"‹");back.setTextSize(30);back.setOnClickListener(v->handleBack());top.addView(back,new LinearLayout.LayoutParams(Ui.dp(this,48),Ui.dp(this,48)));
+         title=Ui.title(this,"時間記録",27);top.addView(title,new LinearLayout.LayoutParams(0,-2,1));
+         action=Ui.ghostButton(this,"＋");action.setTextSize(26);top.addView(action,new LinearLayout.LayoutParams(Ui.dp(this,54),Ui.dp(this,48)));
+         root.addView(top);
+-        ScrollView scroll=new ScrollView(this);body=new LinearLayout(this);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(Ui.dp(this,18),Ui.dp(this,8),Ui.dp(this,18),Ui.dp(this,36));scroll.addView(body);root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));setContentView(root);
++        ScrollView scroll=new ScrollView(this);body=new LinearLayout(this);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(Ui.dp(this,18),Ui.dp(this,8),Ui.dp(this,18),Ui.dp(this,36));scroll.addView(body);root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));setContentView(root);Ui.applySystemBarInsets(this,root);
+     }
+ 
+     private void showFolders(){
++        stopTrackingTicker();
+         selectedFolderId=null;body.removeAllViews();title.setText("時間記録");action.setText("＋");action.setOnClickListener(v->showFolderDialog(null));
+         TextView intro=text("フォルダーごとに時間を記録・集計",13,Ui.MUTED);intro.setPadding(0,0,0,Ui.dp(this,14));body.addView(intro);
+         if(folders.isEmpty()){
+@@ -74,13 +80,14 @@
+ 
+     private void showFolder(String folderId){
+         Folder f=findFolder(folderId);if(f==null){showFolders();return;}selectedFolderId=folderId;body.removeAllViews();title.setText(f.name);action.setText("＋");action.setOnClickListener(v->showEntryDialog(f,null));
++        addTrackingCard(f);
+         addStatsGrid(f);
+         LinearLayout actions=new LinearLayout(this);actions.setPadding(0,Ui.dp(this,10),0,Ui.dp(this,10));
+         Button rename=Ui.ghostButton(this,"名称変更");rename.setOnClickListener(v->showFolderDialog(f));actions.addView(rename,new LinearLayout.LayoutParams(0,Ui.dp(this,46),1));
+         Button delete=Ui.ghostButton(this,"削除");delete.setTextColor(Ui.DANGER);delete.setOnClickListener(v->confirmDeleteFolder(f));actions.addView(delete,new LinearLayout.LayoutParams(0,Ui.dp(this,46),1));body.addView(actions);
+         ArrayList<Entry> list=entriesFor(folderId);list.sort((a,b)->Long.compare(b.start,a.start));
+         if(list.isEmpty()){
+-            TextView empty=text("まだ記録がありません。右上の＋から開始・終了時刻を追加できます。",14,Ui.MUTED);empty.setGravity(Gravity.CENTER);empty.setPadding(0,Ui.dp(this,60),0,0);body.addView(empty);return;
++            TextView empty=text("まだ記録がありません。上のストップウォッチで計測するか、右上の＋から開始・終了時刻を追加できます。",14,Ui.MUTED);empty.setGravity(Gravity.CENTER);empty.setPadding(0,Ui.dp(this,60),0,0);body.addView(empty);return;
+         }
+         ArrayList<LocalDate> days=daysWithEntries(folderId);
+         DateTimeFormatter df=DateTimeFormatter.ofPattern("yyyy/MM/dd (E)",Locale.JAPAN);
+@@ -91,6 +98,62 @@
+             for(Entry e:entriesForDay(folderId,day)) addEntryRow(f,e,day);
+         }
+     }
++
++    private void addTrackingCard(Folder f){
++        LinearLayout card=Ui.glowCard(this);
++        TextView label=text("ストップウォッチ計測",12,Ui.MUTED);card.addView(label);
++        trackingClock=Ui.title(this,"00:00:00",34);trackingClock.setTypeface(Typeface.MONOSPACE,Typeface.NORMAL);trackingClock.setGravity(Gravity.CENTER);trackingClock.setPadding(0,Ui.dp(this,8),0,Ui.dp(this,10));card.addView(trackingClock);
++        String active=p().getString(KEY_ACTIVE_FOLDER,null);long started=p().getLong(KEY_ACTIVE_START,0L);
++        boolean mine=f.id.equals(active)&&started>0L;
++        boolean other=active!=null&&!mine&&started>0L;
++        if(other){
++            Folder af=findFolder(active);
++            TextView note=text("「"+(af==null?"別のフォルダー":af.name)+"」で計測中です。停止してから開始してください。",12,Ui.MUTED);note.setGravity(Gravity.CENTER);card.addView(note);
++        }
++        LinearLayout row=new LinearLayout(this);row.setGravity(Gravity.CENTER);
++        Button main=Ui.button(this,mine?"停止して登録":"計測開始",true);
++        main.setEnabled(!other);
++        main.setOnClickListener(v->{if(isTrackingFolder(f.id))stopAndRegisterTracking(f);else startTracking(f);});
++        row.addView(main,new LinearLayout.LayoutParams(0,Ui.dp(this,50),1));
++        if(mine){
++            View gap=new View(this);row.addView(gap,new LinearLayout.LayoutParams(Ui.dp(this,8),1));
++            Button cancel=Ui.ghostButton(this,"キャンセル");cancel.setTextColor(Ui.DANGER);cancel.setOnClickListener(v->cancelTracking(f));row.addView(cancel,new LinearLayout.LayoutParams(0,Ui.dp(this,50),1));
++        }
++        card.addView(row);
++        LinearLayout.LayoutParams cp=Ui.cardParams(this);cp.setMargins(Ui.dp(this,4),0,Ui.dp(this,4),Ui.dp(this,10));body.addView(card,cp);
++        if(mine)startTrackingTicker(f.id);else updateTrackingClock(0L);
++    }
++
++    private boolean isTrackingFolder(String folderId){return folderId!=null&&folderId.equals(p().getString(KEY_ACTIVE_FOLDER,null))&&p().getLong(KEY_ACTIVE_START,0L)>0L;}
++    private void startTracking(Folder f){
++        if(f==null)return;
++        String active=p().getString(KEY_ACTIVE_FOLDER,null);long started=p().getLong(KEY_ACTIVE_START,0L);
++        if(active!=null&&started>0L&&!active.equals(f.id)){Toast.makeText(this,"別のフォルダーで計測中です",Toast.LENGTH_SHORT).show();return;}
++        p().edit().putString(KEY_ACTIVE_FOLDER,f.id).putLong(KEY_ACTIVE_START,System.currentTimeMillis()).apply();
++        showFolder(f.id);
++    }
++    private void stopAndRegisterTracking(Folder f){
++        if(f==null||!isTrackingFolder(f.id))return;
++        long start=p().getLong(KEY_ACTIVE_START,0L),end=System.currentTimeMillis();
++        p().edit().remove(KEY_ACTIVE_FOLDER).remove(KEY_ACTIVE_START).apply();
++        if(start>0L&&end>start){entries.add(new Entry(UUID.randomUUID().toString(),f.id,start,end));save();Toast.makeText(this,"計測時間を登録しました",Toast.LENGTH_SHORT).show();}
++        showFolder(f.id);
++    }
++    private void cancelTracking(Folder f){
++        p().edit().remove(KEY_ACTIVE_FOLDER).remove(KEY_ACTIVE_START).apply();stopTrackingTicker();if(f!=null)showFolder(f.id);
++    }
++    private void startTrackingTicker(String folderId){
++        stopTrackingTicker();
++        trackingTick=new Runnable(){@Override public void run(){if(selectedFolderId==null||!selectedFolderId.equals(folderId)||!isTrackingFolder(folderId)){return;}long start=p().getLong(KEY_ACTIVE_START,0L);updateTrackingClock(Math.max(0L,System.currentTimeMillis()-start));ticker.postDelayed(this,1000L);}};
++        ticker.post(trackingTick);
++    }
++    private void stopTrackingTicker(){if(trackingTick!=null)ticker.removeCallbacks(trackingTick);trackingTick=null;}
++    private void updateTrackingClock(long ms){
++        if(trackingClock==null)return;long total=Math.max(0,ms/1000L);long h=total/3600L,m=(total%3600L)/60L,sec=total%60L;trackingClock.setText(String.format(Locale.US,"%02d:%02d:%02d",h,m,sec));
++    }
++    private void handleBack(){if(selectedFolderId!=null){selectedFolderId=null;showFolders();}else finish();}
++    @Ov
