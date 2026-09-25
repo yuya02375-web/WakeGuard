@@ -1,0 +1,74 @@
+name: Build IGNIDO Wake iOS 2.2.0 Relative Alarm + Time Log Stopwatch
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/v220i_safe*'
+      - '.github/workflows/build-ios-v220.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Restore exact iOS 2.1.1 source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf /tmp/i211 && mkdir -p /tmp/i211
+          gh run download 36083934238 -n IGNIDO-Wake-iOS-2.1.1-midnight-time-log-fix-source -D /tmp/i211
+          test -f /tmp/i211/ios/IGNIDOWake/TimeLogView.swift
+          rm -rf ios/IGNIDOWake
+          cp -R /tmp/i211/ios/IGNIDOWake ios/IGNIDOWake
+          cp /tmp/i211/ios/project.yml ios/project.yml
+      - name: Apply iOS 2.2.0 patch
+        run: |
+          cat tools/v220i_safe00 tools/v220i_safe01 > /tmp/v220-ios.patch
+          patch -p1 --fuzz=0 < /tmp/v220-ios.patch
+      - name: Validate 2.2.0 changes
+        run: |
+          grep -q '<string>2.2.0</string>' ios/IGNIDOWake/Info.plist
+          grep -q '<string>120</string>' ios/IGNIDOWake/Info.plist
+          grep -q 'fixedDate' ios/IGNIDOWake/AlarmModel.swift
+          grep -q 'Alarm.Schedule' ios/IGNIDOWake/AlarmStore.swift
+          grep -q 'useRelative' ios/IGNIDOWake/AlarmViews.swift
+          grep -q 'activeFolderID' ios/IGNIDOWake/TimeLogView.swift
+          grep -q 'trackingCard' ios/IGNIDOWake/TimeLogView.swift
+          grep -q '停止して登録' ios/IGNIDOWake/TimeLogView.swift
+      - name: Generate Xcode project
+        run: cd ios && xcodegen generate
+      - name: Build unsigned app
+        run: |
+          cd ios
+          xcodebuild -project IGNIDOWake.xcodeproj -scheme IGNIDOWake -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package and inspect IPA
+        run: |
+          cd ios
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          test -n "$APP"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '2.2.0'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '120'
+          rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
+          zip -qry IGNIDO-Wake-iOS-2.2.0-relative-alarm-time-log-stopwatch.ipa Payload
+          unzip -t IGNIDO-Wake-iOS-2.2.0-relative-alarm-time-log-stopwatch.ipa
+          shasum -a 256 IGNIDO-Wake-iOS-2.2.0-relative-alarm-time-log-stopwatch.ipa | tee IGNIDO-Wake-iOS-2.2.0-relative-alarm-time-log-stopwatch.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.2.0-relative-alarm-time-log-stopwatch-source
+          path: |
+            ios/IGNIDOWake/
+            ios/project.yml
+            tools/v220i_safe00
+            tools/v220i_safe01
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.2.0-relative-alarm-time-log-stopwatch
+          path: |
+            ios/IGNIDO-Wake-iOS-2.2.0-relative-alarm-time-log-stopwatch.ipa
+            ios/IGNIDO-Wake-iOS-2.2.0-relative-alarm-time-log-stopwatch.sha256
