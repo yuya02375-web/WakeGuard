@@ -1,0 +1,72 @@
+name: Build IGNIDO Wake iOS 2.2.1 Alarm Countdown Display
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/patch_ios_v221_alarm_countdown.py'
+      - '.github/workflows/build-ios-v221.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Restore exact iOS 2.2.0 source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf /tmp/i220 && mkdir -p /tmp/i220
+          gh run download 36193652272 -n IGNIDO-Wake-iOS-2.2.0-relative-alarm-time-log-stopwatch-source -D /tmp/i220
+          test -f /tmp/i220/ios/IGNIDOWake/AlarmViews.swift
+          rm -rf ios/IGNIDOWake
+          cp -R /tmp/i220/ios/IGNIDOWake ios/IGNIDOWake
+          cp /tmp/i220/ios/project.yml ios/project.yml
+      - name: Apply iOS 2.2.1 alarm countdown patch
+        run: python3 tools/patch_ios_v221_alarm_countdown.py
+      - name: Validate 2.2.1 changes
+        run: |
+          grep -q '<string>2.2.1</string>' ios/IGNIDOWake/Info.plist
+          grep -q '<string>121</string>' ios/IGNIDOWake/Info.plist
+          ! grep -q '○時間後' ios/IGNIDOWake/AlarmViews.swift
+          ! grep -q 'useRelative' ios/IGNIDOWake/AlarmViews.swift
+          grep -q 'TimelineView(.periodic' ios/IGNIDOWake/AlarmViews.swift
+          grep -q 'func remainingText(at now:' ios/IGNIDOWake/AlarmModel.swift
+          grep -q 'trackingCard' ios/IGNIDOWake/TimeLogView.swift
+          grep -q '停止して登録' ios/IGNIDOWake/TimeLogView.swift
+          grep -q 'fixedDate' ios/IGNIDOWake/AlarmStore.swift
+      - name: Generate Xcode project
+        run: cd ios && xcodegen generate
+      - name: Build unsigned app
+        run: |
+          cd ios
+          xcodebuild -project IGNIDOWake.xcodeproj -scheme IGNIDOWake -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package and inspect IPA
+        run: |
+          cd ios
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          test -n "$APP"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '2.2.1'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '121'
+          rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
+          zip -qry IGNIDO-Wake-iOS-2.2.1-alarm-countdown-display.ipa Payload
+          unzip -t IGNIDO-Wake-iOS-2.2.1-alarm-countdown-display.ipa
+          shasum -a 256 IGNIDO-Wake-iOS-2.2.1-alarm-countdown-display.ipa | tee IGNIDO-Wake-iOS-2.2.1-alarm-countdown-display.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.2.1-alarm-countdown-display-source
+          path: |
+            ios/IGNIDOWake/
+            ios/project.yml
+            tools/patch_ios_v221_alarm_countdown.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.2.1-alarm-countdown-display
+          path: |
+            ios/IGNIDO-Wake-iOS-2.2.1-alarm-countdown-display.ipa
+            ios/IGNIDO-Wake-iOS-2.2.1-alarm-countdown-display.sha256
