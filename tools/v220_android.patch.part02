@@ -1,0 +1,88 @@
+pectedAt,PendingIntent.FLAG_UPDATE_CURRENT);
++            Intent open=new Intent(c, primary?MainActivity.class:MultiAlarmActivity.class);open.setData(data(id,d,"open"));
++            PendingIntent showPi=activityPi(c,code(id,d,4),open,PendingIntent.FLAG_UPDATE_CURRENT);
++            am.setAlarmClock(new AlarmManager.AlarmClockInfo(expectedAt,showPi),fire);
++            PendingIntent show=showAlarmUiPi(c,id,d,expectedAt,PendingIntent.FLAG_UPDATE_CURRENT);
++            if(Build.VERSION.SDK_INT>=23)am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,expectedAt+900L,show); else am.setExact(AlarmManager.RTC_WAKEUP,expectedAt+900L,show);
++            PendingIntent backup=backupFirePi(c,id,d,expectedAt,PendingIntent.FLAG_UPDATE_CURRENT);
++            if(Build.VERSION.SDK_INT>=23)am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,expectedAt+1500L,backup); else am.setExact(AlarmManager.RTC_WAKEUP,expectedAt+1500L,backup);
++            if(preNotifyMin>0){long remindAt=Math.max(System.currentTimeMillis()+1500L,expectedAt-preNotifyMin*60000L);if(remindAt<expectedAt){PendingIntent reminder=reminderPi(c,id,d,expectedAt,PendingIntent.FLAG_UPDATE_CURRENT);if(Build.VERSION.SDK_INT>=23)am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,remindAt,reminder);else am.setExact(AlarmManager.RTC_WAKEUP,remindAt,reminder);}}
++            return 1;
++        }
+         int count=0;
+         for(int i=0;i<=120 && count<14;i++) {
+             LocalDate d=today.plusDays(i);
+@@ -154,6 +169,10 @@
+             }else{
+                 AlarmStore.Entry e=AlarmStore.find(c,alarmId);if(e==null)return -1L;
+                 hour=e.hour;minute=e.minute;mask=e.dayMask;enabled=e.enabled;
++                if(enabled&&mask==0&&e.fixedAt>0L){
++                    LocalDate fixedDate=Instant.ofEpochMilli(e.fixedAt).atZone(ZoneId.systemDefault()).toLocalDate();
++                    return fixedDate.equals(date)?e.fixedAt:-1L;
++                }
+             }
+             if(!enabled)return -1L;
+             if(mask!=0&&!selected(date,mask))return -1L;
+@@ -187,9 +206,9 @@
+             for(int i=-2;i<=120;i++) cancelPair(c,am,PRIMARY_ALARM_ID,today.plusDays(i));
+             for(long id:AlarmStore.knownIds(c)) for(int i=-2;i<=120;i++) cancelPair(c,am,id,today.plusDays(i));
+ 
+-            if(Prefs.primaryConfigured(c)) scheduleSpec(c,am,PRIMARY_ALARM_ID,Prefs.hour(c),Prefs.minute(c),Prefs.dayMask(c),Prefs.enabled(c),true,Prefs.preNotifyMin(c),zone,today,now);
++            if(Prefs.primaryConfigured(c)) scheduleSpec(c,am,PRIMARY_ALARM_ID,Prefs.hour(c),Prefs.minute(c),Prefs.dayMask(c),Prefs.enabled(c),true,Prefs.preNotifyMin(c),0L,zone,today,now);
+             for(AlarmStore.Entry e:AlarmStore.all(c))
+-                scheduleSpec(c,am,e.id,e.hour,e.minute,e.dayMask,e.enabled,false,e.preNotifyMin,zone,today,now);
++                scheduleSpec(c,am,e.id,e.hour,e.minute,e.dayMask,e.enabled,false,e.preNotifyMin,e.fixedAt,zone,today,now);
+         } catch(Throwable t) {
+             try{Prefs.lastAlarmError(c,"AlarmScheduler: "+t.getClass().getSimpleName()+(t.getMessage()==null?"":": "+t.getMessage()));}catch(Throwable ignored){}
+         }
+@@ -209,8 +228,9 @@
+         } catch(Throwable t) { try{Prefs.lastAlarmError(c,"RecoveryAlarm: "+t.getClass().getSimpleName());}catch(Throwable ignored){} }
+     }
+ 
+-    private static long nextFor(int h,int m,int mask,boolean enabled,ZoneId zone,LocalDate today,Instant now) {
++    private static long nextFor(int h,int m,int mask,boolean enabled,long fixedAt,ZoneId zone,LocalDate today,Instant now) {
+         if(!enabled)return -1L;
++        if(mask==0&&fixedAt>0L)return fixedAt>now.toEpochMilli()?fixedAt:-1L;
+         for(int i=0;i<=120;i++) {
+             LocalDate d=today.plusDays(i); if(mask!=0&&!selected(d,mask))continue;
+             Instant x=d.atTime(h,m).atZone(zone).toInstant(); if(x.isAfter(now))return x.toEpochMilli();
+@@ -221,9 +241,9 @@
+ 
+     public static long nextTriggerMillis(Context c) {
+         ZoneId zone=ZoneId.systemDefault(); LocalDate today=LocalDate.now(zone); Instant now=Instant.now(); long best=-1;
+-        if(Prefs.primaryConfigured(c)){long p=nextFor(Prefs.hour(c),Prefs.minute(c),Prefs.dayMask(c),Prefs.enabled(c),zone,today,now); if(p>0)best=p;}
++        if(Prefs.primaryConfigured(c)){long p=nextFor(Prefs.hour(c),Prefs.minute(c),Prefs.dayMask(c),Prefs.enabled(c),0L,zone,today,now); if(p>0)best=p;}
+         for(AlarmStore.Entry e:AlarmStore.all(c)) {
+-            long x=nextFor(e.hour,e.minute,e.dayMask,e.enabled,zone,today,now); if(x>0&&(best<0||x<best))best=x;
++            long x=nextFor(e.hour,e.minute,e.dayMask,e.enabled,e.fixedAt,zone,today,now); if(x>0&&(best<0||x<best))best=x;
+         }
+         return best;
+     }
+--- a/WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java
++++ b/WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmEditorActivity.java
+@@ -20,7 +20,7 @@
+     private static final String[] MISSION_KEYS={"NONE","STEPS","MATH","TAP","CODE","SHAKE","MEMORY","TYPE","HOLD","SWIPE","ORDER","REVERSE","RANDOM"};
+     private static final String[] MISSION_LABELS={"なし","歩数","計算","連打","コード入力","シェイク","記憶","文章入力","長押し","スワイプ","順番タップ","逆順入力","ランダム"};
+     private long alarmId; private AlarmStore.Entry draft;
+-    private EditText label,steps,missionCount; private Button time,sound,missionPicker,ringDuration,fullStopDuration,preNotify,snooze,preview; private CheckBox[] days=new CheckBox[7];
++    private EditText label,steps,missionCount; private Button time,afterButton,sound,missionPicker,ringDuration,fullStopDuration,preNotify,snooze,preview; private CheckBox[] days=new CheckBox[7];
+     private Switch enabled,ringAutoStop,fullAutoStop; private SeekBar volume; private TextView volumeText,soundStatus,stepsLabel,countLabel,missionNote;
+     private Spinner vibration; private String selectedMission="STEPS"; private MediaPlayer previewPlayer;
+ 
+@@ -35,7 +35,8 @@
+ 
+         ScrollView sv=new ScrollView(this);LinearLayout body=new LinearLayout(this);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(Ui.dp(this,22),Ui.dp(this,10),Ui.dp(this,22),Ui.dp(this,48));sv.addView(body);root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
+ 
+-        time=Ui.ghostButton(this,"07:00");time.setTextSize(52);time.setTypeface(Typeface.MONOSPACE,Typeface.NORMAL);time.setGravity(Gravity.CENTER);time.setOnClickListener(v->new TimePickerDialog(this,(x,h,m)->{draft.hour=h;draft.minute=m;time.setText(String.format(Locale.JAPAN,"%02d:%02d",h,m));},draft.hour,draft.minute,true).show());body.addView(time,new LinearLayout.LayoutParams(-1,Ui.dp(this,86)));
++        time=Ui.ghostButton(this,"07:00");time.setTextSize(52);time.setTypeface(Typeface.MONOSPACE,Typeface.NORMAL);time.setGravity(Gravity.CENTER);time.setOnClickListener(v->new TimePickerDialog(this,(x,h,m)->{draft.fixedAt=0L;draft.hour=h;draft.minute=m;time.setText(String.format(Locale.JAPAN,"%02d:%02d",h,m));renderAfterButton();},draft.hour,draft.minute,true).show());body.addView(time,new LinearLayout.LayoutParams(-1,Ui.dp(this,86)));
++        afterButton=Ui.button(this,"○時間後で設定",false);afterButton.setOnClickListener(v->showAfterDialog());if(alarmId==AlarmScheduler.PRIMARY_ALARM_ID)afterButton.setVisibility(View.GONE);LinearLayout.LayoutParams alp=new LinearLayout.LayoutParams(-1,Ui.dp(this,50));alp.setMargins(0,0,0,Ui.dp(this,6));body.addView(afterButton,alp);
+ 
+         enabled=new Switch(this);enabled.setText(I18n.tr(this,"アラームを有効にする"));enabled.setTextColor(Ui.TEXT);Ui.styleSwitch(enabled,this);body.addView(enabled,Ui.gapTop(this,8));
+         body.addView(Ui.divider(this),Ui.dividerTop(this,14));
+@@ -161,14 +162,32 @@
+         d.setContentView(box);d.show();android.view.Window w=d.getWindow();if(w!=null){w.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));w.setDimAmount(.65f);w.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND);w.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.92f),-2);}
+     }
+ 
+-    private void render(){enabled.setChecked(draft.enabled);label.setText(draft.label);time.setText(String.format(Locale.JAPAN,"%02d:%02d",draft.hour,draft.minute));for(int i=0;i<7;i++)days[i].setChecked((draft.dayMask&(1<<i))!=0);steps.setText(String.valueOf(draft.steps));missionCount.setText(String.valueOf(draft.missionCount));selectedMission=AlarmStore.normalizeMission(draft.missionType);missionPicker.setText(I18n.tr(this,AlarmProfiles.missionName(selectedMission))+"  ›");volume.setProgress(draft.volume);vibration.setSelection("OFF".equals(draft.vibration)?0:("STRONG".equals(draft.vibration)?2:1));renderSound();renderPreNotify();renderSnooze();renderAutoStop();refreshMissionFields();}
++    private void showAfterDialog(){
++        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(Ui.dp(this,22),Ui.dp(this,1
