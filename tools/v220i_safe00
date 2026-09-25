@@ -1,0 +1,222 @@
+--- a/ios/IGNIDOWake/AlarmModel.swift
++++ b/ios/IGNIDOWake/AlarmModel.swift
+@@ -73,6 +73,7 @@
+     var snoozeMinutes: Int
+     var ringDurationSec: Int
+     var fullStopDurationSec: Int
++    var fixedDate: Date?
+     var createdAt: Date
+ 
+     init(
+@@ -82,7 +83,7 @@
+         unlockSentence: String = AppText.localized("起きました"), soundName: String = "default",
+         mediaFileName: String? = nil, volume: Double = 1.0,
+         vibration: VibrationMode = .strong, preAlertMinutes: Int = 30,
+-        snoozeMinutes: Int = 5, ringDurationSec: Int = 0, fullStopDurationSec: Int = 0, createdAt: Date = Date()
++        snoozeMinutes: Int = 5, ringDurationSec: Int = 0, fullStopDurationSec: Int = 0, fixedDate: Date? = nil, createdAt: Date = Date()
+     ) {
+         self.id = id
+         self.hour = hour
+@@ -102,13 +103,14 @@
+         self.snoozeMinutes = max(1, min(60, snoozeMinutes))
+         self.ringDurationSec = max(0, min(86400, ringDurationSec))
+         self.fullStopDurationSec = max(0, min(86400, fullStopDurationSec))
++        self.fixedDate = fixedDate
+         self.createdAt = createdAt
+     }
+ 
+     enum CodingKeys: String, CodingKey {
+         case id, hour, minute, label, enabled, weekdays, mission, missionTarget, unlockCode,
+              unlockSentence, soundName, mediaFileName, volume, vibration, preAlertMinutes,
+-             snoozeMinutes, ringDurationSec, fullStopDurationSec, createdAt
++             snoozeMinutes, ringDurationSec, fullStopDurationSec, fixedDate, createdAt
+     }
+ 
+     init(from decoder: Decoder) throws {
+@@ -131,6 +133,7 @@
+         snoozeMinutes = max(1, min(60, try c.decodeIfPresent(Int.self, forKey: .snoozeMinutes) ?? 5))
+         ringDurationSec = max(0, min(86400, try c.decodeIfPresent(Int.self, forKey: .ringDurationSec) ?? 0))
+         fullStopDurationSec = max(0, min(86400, try c.decodeIfPresent(Int.self, forKey: .fullStopDurationSec) ?? 0))
++        fixedDate = try c.decodeIfPresent(Date.self, forKey: .fixedDate)
+         createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+     }
+ 
+@@ -150,6 +153,13 @@
+     var timeText: String { String(format: "%02d:%02d", hour, minute) }
+ 
+     var repeatText: String {
++        if weekdays.isEmpty, let fixedDate, fixedDate > Date() {
++            let minutes = max(1, Int(ceil(fixedDate.timeIntervalSinceNow / 60)))
++            let h = minutes / 60, m = minutes % 60
++            if h == 0 { return AppText.format("あと %d分", m) }
++            if m == 0 { return AppText.format("あと %d時間", h) }
++            return AppText.format("あと %d時間%d分", h, m)
++        }
+         guard !weekdays.isEmpty else { return AppText.localized("1回") }
+         let names = [1:"月", 2:"火", 3:"水", 4:"木", 5:"金", 6:"土", 7:"日"]
+         return weekdays.sorted().compactMap { names[$0].map(AppText.localized) }.joined(separator: " ")
+--- a/ios/IGNIDOWake/AlarmStore.swift
++++ b/ios/IGNIDOWake/AlarmStore.swift
+@@ -130,9 +130,15 @@
+         guard item.enabled else { return }
+         if authorizationState != .authorized { guard await requestAuthorization() else { return } }
+ 
+-        let time = Alarm.Schedule.Relative.Time(hour: item.hour, minute: item.minute)
+-        let recurrence: Alarm.Schedule.Relative.Recurrence = item.weekdays.isEmpty ? .never : .weekly(localeWeekdays(item.weekdays))
+-        let alarmSchedule: Alarm.Schedule = .relative(.init(time: time, repeats: recurrence))
++        let alarmSchedule: Alarm.Schedule
++        if item.weekdays.isEmpty, let fixedDate = item.fixedDate {
++            guard fixedDate > Date().addingTimeInterval(1) else { lastError = AppText.localized("指定した時間はすでに過ぎています"); return }
++            alarmSchedule = .fixed(fixedDate)
++        } else {
++            let time = Alarm.Schedule.Relative.Time(hour: item.hour, minute: item.minute)
++            let recurrence: Alarm.Schedule.Relative.Recurrence = item.weekdays.isEmpty ? .never : .weekly(localeWeekdays(item.weekdays))
++            alarmSchedule = .relative(.init(time: time, repeats: recurrence))
++        }
+ 
+         do {
+             if replacingExisting { try? AlarmManager.shared.cancel(id: item.id) }
+@@ -259,6 +265,10 @@
+     }
+ 
+     func isWithinExpectedAlertWindow(_ item: WakeAlarm, now: Date = Date(), maxLate: TimeInterval = 1800) -> Bool {
++        if item.weekdays.isEmpty, let fixedDate = item.fixedDate {
++            let delta = now.timeIntervalSince(fixedDate)
++            return delta >= -60 && delta <= maxLate
++        }
+         let c = Calendar.current
+         for dayOffset in [0, -1] {
+             guard let day = c.date(byAdding: .day, value: dayOffset, to: now),
+@@ -359,7 +369,9 @@
+         do {
+             _ = try await center.requestAuthorization(options: [.alert, .badge])
+             if item.weekdays.isEmpty {
+-                guard let alarmDate = nextAlarmDate(hour: item.hour, minute: item.minute) else { return }
++                let alarmDate: Date
++                if let fixedDate = item.fixedDate { alarmDate = fixedDate }
++                else { guard let next = nextAlarmDate(hour: item.hour, minute: item.minute) else { return }; alarmDate = next }
+                 let preDate = alarmDate.addingTimeInterval(TimeInterval(-item.preAlertMinutes * 60))
+                 guard preDate > Date() else { return }
+                 let content = preAlertContent(item: item, alarmDate: alarmDate)
+--- a/ios/IGNIDOWake/AlarmViews.swift
++++ b/ios/IGNIDOWake/AlarmViews.swift
+@@ -132,6 +132,9 @@
+     private let isNew: Bool
+     @State private var draft: WakeAlarm
+     @State private var time: Date
++    @State private var useRelative: Bool
++    @State private var relativeHours: Int
++    @State private var relativeMinutes: Int
+     @State private var importingMedia = false
+     @State private var showMissionTest = false
+     @State private var showMediaTest = false
+@@ -145,16 +148,30 @@
+         _draft = State(initialValue: alarm)
+         var c = DateComponents(); c.hour = alarm.hour; c.minute = alarm.minute
+         _time = State(initialValue: Calendar.current.date(from: c) ?? Date())
++        let remaining = max(60, Int((alarm.fixedDate?.timeIntervalSinceNow ?? 3600).rounded()))
++        _useRelative = State(initialValue: alarm.fixedDate != nil && (alarm.fixedDate ?? .distantPast) > Date())
++        _relativeHours = State(initialValue: min(168, remaining / 3600))
++        _relativeMinutes = State(initialValue: min(59, (remaining % 3600) / 60))
+     }
+ 
+     var body: some View {
+         Form {
+             Section {
+-                DatePicker("時刻", selection: $time, displayedComponents: .hourAndMinute)
+-                    .datePickerStyle(.wheel)
+-                    .labelsHidden()
+-                    .frame(maxWidth: .infinity)
+-                    .tint(IgnidoTheme.ember)
++                Picker("設定方法", selection: $useRelative) {
++                    Text("時刻指定").tag(false)
++                    Text("○時間後").tag(true)
++                }.pickerStyle(.segmented)
++                if useRelative {
++                    Stepper("\(relativeHours)時間後", value: $relativeHours, in: 0...168)
++                    Stepper("＋ \(relativeMinutes)分", value: $relativeMinutes, in: 0...59)
++                    Text(relativePreview).font(.caption).foregroundStyle(IgnidoTheme.secondaryText)
++                } else {
++                    DatePicker("時刻", selection: $time, displayedComponents: .hourAndMinute)
++                        .datePickerStyle(.wheel)
++                        .labelsHidden()
++                        .frame(maxWidth: .infinity)
++                        .tint(IgnidoTheme.ember)
++                }
+                 TextField("名前", text: $draft.label)
+             }
+ 
+@@ -167,7 +184,8 @@
+                         .buttonStyle(.bordered)
+                         .tint(draft.weekdays.contains(day) ? IgnidoTheme.ember : IgnidoTheme.secondaryText)
+                     }
+-                }
++                }.disabled(useRelative).opacity(useRelative ? 0.45 : 1)
++                if useRelative { Text("○時間後で設定したアラームは1回だけ鳴ります。").font(.caption).foregroundStyle(IgnidoTheme.secondaryText) }
+             }
+ 
+             Section("解除方法") {
+@@ -361,10 +379,25 @@
+         [.steps,.math,.taps,.shake,.hold,.swipe].contains(mission)
+     }
+ 
++    private var relativePreview: String {
++        let totalMinutes = max(1, relativeHours * 60 + relativeMinutes)
++        let date = Date().addingTimeInterval(TimeInterval(totalMinutes * 60))
++        return "鳴る予定: " + date.formatted(.dateTime.month().day().hour().minute())
++    }
++
+     private func save() {
+-        let c = Calendar.current.dateComponents([.hour,.minute], from: time)
+-        draft.hour = c.hour ?? 7
+-        draft.minute = c.minute ?? 0
++        if useRelative {
++            let totalMinutes = max(1, relativeHours * 60 + relativeMinutes)
++            let fire = Date().addingTimeInterval(TimeInterval(totalMinutes * 60))
++            draft.fixedDate = fire
++            let c = Calendar.current.dateComponents([.hour,.minute], from: fire)
++            draft.hour = c.hour ?? 7; draft.minute = c.minute ?? 0; draft.weekdays = []
++        } else {
++            draft.fixedDate = nil
++            let c = Calendar.current.dateComponents([.hour,.minute], from: time)
++            draft.hour = c.hour ?? 7
++            draft.minute = c.minute ?? 0
++        }
+         if draft.label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { draft.label = "" }
+         if draft.missionTarget <= 0 { draft.missionTarget = max(1, draft.mission.defaultTarget) }
+         Task {
+--- a/ios/IGNIDOWake/TimeLogView.swift
++++ b/ios/IGNIDOWake/TimeLogView.swift
+@@ -16,10 +16,14 @@
+ final class TimeLogStore: ObservableObject {
+     @Published var folders: [TimeLogFolder] = [] { didSet { save() } }
+     @Published var entries: [TimeLogEntry] = [] { didSet { save() } }
++    @Published private(set) var activeFolderID: UUID?
++    @Published private(set) var activeStart: Date?
+     private let key = "ignido.timeLog.v1"
++    private let activeFolderKey = "ignido.timeLog.activeFolder"
++    private let activeStartKey = "ignido.timeLog.activeStart"
+     private var loading = true
+ 
+-    init() { load(); loading = false }
++    init() { load(); loadActiveSession(); loading = false }
+ 
+     private struct Payload: Codable { var folders: [TimeLogFolder]; var entries: [TimeLogEntry] }
+     private func load() {
+@@ -33,8 +37,22 @@
+ 
+     func addFolder(_ name: String) { folders.append(TimeLogFolder(name: name)) }
+     func renameFolder(_ id: UUID, _ name: String) { guard let i = folders.firstIndex(where: { $0.id == id }) else { return }; folders[i].name = name }
+-    func deleteFolder(_ id: UUID) { folders.removeAll { $0.id == id }; entries.removeAll { $0.folderID == id } }
++    func deleteFolder(_ id: UUID) { if activeFolderID == id { cancelSession(id) }; folders.removeAll { $0.id == id }; entries.removeAll { $0.folderID == id } }
+     func addEntry(folderID: UUID, start: Date, end: Date) { entries.append(TimeLogEntry(folderID: folderID, start: start, end: end)) }
++    func startSession(_ folderID: UUID) -> Bool {
++        if let activeFolderID, activeFolderID != folderID { return false }
++        self.activeFolderID = folderID; self.activeStart = Date(); persistActiveSession(); return true
++    }
++    @discardableResult func stopSession(_ folderID: UUID) -> TimeLogEntry? {
++        guard activeFolderID == folderID, let start = activeStart else { return nil }
++        let end = Date(); activeFolderID = nil; activeStart = nil; persistActiveSession()
++        guard end > start else { return nil }
++        let e = TimeLogEntry(folderID: folderID, start: start, end: end); entries.append(e); return e
++    }
