@@ -49,7 +49,7 @@ jobs:
           grep -q 'new ColorDrawable(Color.TRANSPARENT)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/Ui.java
           grep -q 'あと "+relativeText(next-now)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/MainActivity.java
           grep -q 'Button del=Ui.ghostButton(this,"削除")' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimeLogActivity.java
-          grep -q 'ストップウォッチ計測' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimeLogActivity.java
+          grep -q 'TextView label=text("計測",12,Ui.MUTED)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimeLogActivity.java
           grep -q 'Ui.applySystemBarInsets' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimeLogActivity.java
           ! grep -q 'フォルダーごとに時間を記録・集計' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimeLogActivity.java
           grep -q 'isExpectedFire' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmScheduler.java
