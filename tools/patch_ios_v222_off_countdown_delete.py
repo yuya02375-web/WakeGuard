@@ -30,14 +30,17 @@ s=s.replace(old,new,1)
 write(p,s)
 
 p='IGNIDOWake/TimeLogView.swift'; s=read(p)
-s=s.replace('''    @State private var editEntry: EntryEditorState?
+old_state='''    @State private var editEntry: EntryEditorState?
+    @State private var rename = false
+    @State private var deleteFolderConfirm = false
+'''
+new_state='''    @State private var editEntry: EntryEditorState?
     @State private var rename = false
     @State private var deleteFolderConfirm = false
     @State private var deleteEntryConfirm: TimeLogEntry?
-''','''    @State private var deleteFolderConfirm = false
-    @State private var deleteEntryConfirm: TimeLogEntry?
-    @State private var editEntry: EntryEditorState?
-''',1)
+'''
+if old_state not in s: raise SystemExit('iOS delete state insertion point not found')
+s=s.replace(old_state,new_state,1)
 old='''                            ForEach(rows) { e in EntryRow(entry: e, day: day).onTapGesture { editEntry = EntryEditorState(entry: e) }.contextMenu { Button("編集") { editEntry = EntryEditorState(entry: e) }; Button("削除", role: .destructive) { store.deleteEntry(e.id) } } }'''
 new='''                            ForEach(rows) { e in
                                 HStack(spacing: 8) {
@@ -65,6 +68,6 @@ write(p,s)
 
 assert '<string>2.2.2</string>' in read('IGNIDOWake/Info.plist') and '<string>122</string>' in read('IGNIDOWake/Info.plist')
 assert 'if alarm.enabled {' not in read('IGNIDOWake/AlarmViews.swift').split('if let remaining = alarm.remainingText')[0][-250:]
-assert 'deleteEntryConfirm' in read('IGNIDOWake/TimeLogView.swift')
+assert '@State private var deleteEntryConfirm: TimeLogEntry?' in read('IGNIDOWake/TimeLogView.swift')
 assert 'Image(systemName: "trash")' in read('IGNIDOWake/TimeLogView.swift')
 print('iOS 2.2.2 OFF-countdown + visible time-record delete applied')
