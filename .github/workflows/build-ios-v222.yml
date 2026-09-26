@@ -1,0 +1,70 @@
+name: Build IGNIDO Wake iOS 2.2.2 OFF Countdown + Record Delete
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/patch_ios_v222_off_countdown_delete.py'
+      - '.github/workflows/build-ios-v222.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Restore exact iOS 2.2.1 source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf /tmp/i221 && mkdir -p /tmp/i221
+          gh run download 36197538164 -n IGNIDO-Wake-iOS-2.2.1-alarm-countdown-display-source -D /tmp/i221
+          test -f /tmp/i221/ios/IGNIDOWake/AlarmViews.swift
+          rm -rf ios/IGNIDOWake
+          cp -R /tmp/i221/ios/IGNIDOWake ios/IGNIDOWake
+          cp /tmp/i221/ios/project.yml ios/project.yml
+      - name: Apply iOS 2.2.2 patch
+        run: python3 tools/patch_ios_v222_off_countdown_delete.py
+      - name: Validate 2.2.2 changes
+        run: |
+          grep -q '<string>2.2.2</string>' ios/IGNIDOWake/Info.plist
+          grep -q '<string>122</string>' ios/IGNIDOWake/Info.plist
+          grep -q 'TimelineView(.periodic' ios/IGNIDOWake/AlarmViews.swift
+          grep -q 'alarm.enabled ? IgnidoTheme.ember : IgnidoTheme.secondaryText' ios/IGNIDOWake/AlarmViews.swift
+          grep -q 'deleteEntryConfirm' ios/IGNIDOWake/TimeLogView.swift
+          grep -q 'Image(systemName: "trash")' ios/IGNIDOWake/TimeLogView.swift
+          grep -q '停止して登録' ios/IGNIDOWake/TimeLogView.swift
+      - name: Generate Xcode project
+        run: cd ios && xcodegen generate
+      - name: Build unsigned app
+        run: |
+          cd ios
+          xcodebuild -project IGNIDOWake.xcodeproj -scheme IGNIDOWake -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package and inspect IPA
+        run: |
+          cd ios
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          test -n "$APP"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '2.2.2'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '122'
+          rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
+          zip -qry IGNIDO-Wake-iOS-2.2.2-off-countdown-record-delete.ipa Payload
+          unzip -t IGNIDO-Wake-iOS-2.2.2-off-countdown-record-delete.ipa
+          shasum -a 256 IGNIDO-Wake-iOS-2.2.2-off-countdown-record-delete.ipa | tee IGNIDO-Wake-iOS-2.2.2-off-countdown-record-delete.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.2.2-off-countdown-record-delete-source
+          path: |
+            ios/IGNIDOWake/
+            ios/project.yml
+            tools/patch_ios_v222_off_countdown_delete.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.2.2-off-countdown-record-delete
+          path: |
+            ios/IGNIDO-Wake-iOS-2.2.2-off-countdown-record-delete.ipa
+            ios/IGNIDO-Wake-iOS-2.2.2-off-countdown-record-delete.sha256
