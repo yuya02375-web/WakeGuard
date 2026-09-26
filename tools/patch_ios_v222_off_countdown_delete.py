@@ -53,9 +53,15 @@ if old not in s: raise SystemExit('iOS time-log row block not found')
 s=s.replace(old,new,1)
 old='''.confirmationDialog("フォルダーを削除しますか？", isPresented: $deleteFolderConfirm, titleVisibility: .visible) { Button("削除", role: .destructive) { store.deleteFolder(folderID); dismiss() } }'''
 new='''.confirmationDialog("フォルダーを削除しますか？", isPresented: $deleteFolderConfirm, titleVisibility: .visible) { Button("削除", role: .destructive) { store.deleteFolder(folderID); dismiss() } }
-        .confirmationDialog("この時間記録を削除しますか？", item: $deleteEntryConfirm, titleVisibility: .visible) { entry in
-            Button("削除", role: .destructive) { store.deleteEntry(entry.id) }
-            Button("キャンセル", role: .cancel) { }
+        .confirmationDialog("この時間記録を削除しますか？", isPresented: Binding(
+            get: { deleteEntryConfirm != nil },
+            set: { if !$0 { deleteEntryConfirm = nil } }
+        ), titleVisibility: .visible) {
+            Button("削除", role: .destructive) {
+                if let entry = deleteEntryConfirm { store.deleteEntry(entry.id) }
+                deleteEntryConfirm = nil
+            }
+            Button("キャンセル", role: .cancel) { deleteEntryConfirm = nil }
         }'''
 if old not in s: raise SystemExit('iOS confirmation insertion point not found')
 s=s.replace(old,new,1)
