@@ -1,0 +1,73 @@
+name: Build IGNIDO Wake iOS 2.3.0 Native UI Polish
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/patch_ios_v230_native_polish.py'
+      - '.github/workflows/build-ios-v230.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Restore exact iOS 2.2.2 source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf /tmp/i222 && mkdir -p /tmp/i222
+          gh run download 36224473082 -n IGNIDO-Wake-iOS-2.2.2-off-countdown-record-delete-source -D /tmp/i222
+          test -f /tmp/i222/ios/IGNIDOWake/DesignSystem.swift
+          rm -rf ios/IGNIDOWake
+          cp -R /tmp/i222/ios/IGNIDOWake ios/IGNIDOWake
+          cp /tmp/i222/ios/project.yml ios/project.yml
+      - name: Apply iOS 2.3.0 UI polish
+        run: python3 tools/patch_ios_v230_native_polish.py
+      - name: Validate 2.3.0 invariants
+        run: |
+          grep -q '<string>2.3.0</string>' ios/IGNIDOWake/Info.plist
+          grep -q '<string>130</string>' ios/IGNIDOWake/Info.plist
+          grep -q '.navigationTitle("アラーム")' ios/IGNIDOWake/AlarmViews.swift
+          grep -q '.listRowSeparator(.visible)' ios/IGNIDOWake/AlarmViews.swift
+          grep -q 'TimelineView(.periodic' ios/IGNIDOWake/AlarmViews.swift
+          grep -q 'Image(systemName: "trash")' ios/IGNIDOWake/TimeLogView.swift
+          grep -q '停止して登録' ios/IGNIDOWake/TimeLogView.swift
+          ! grep -q '各フォルダー内で開始・終了時刻' ios/IGNIDOWake/TimeLogView.swift
+          grep -q 'purgeLegacyEscapeGuards()' ios/IGNIDOWake/AlarmStore.swift
+          grep -q 'firstAlertingTimer' ios/IGNIDOWake/MultiTimer.swift
+      - name: Generate Xcode project
+        run: cd ios && xcodegen generate
+      - name: Build unsigned app
+        run: |
+          cd ios
+          xcodebuild -project IGNIDOWake.xcodeproj -scheme IGNIDOWake -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package and inspect IPA
+        run: |
+          cd ios
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          test -n "$APP"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '2.3.0'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '130'
+          rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
+          zip -qry IGNIDO-Wake-iOS-2.3.0-native-ui-polish.ipa Payload
+          unzip -t IGNIDO-Wake-iOS-2.3.0-native-ui-polish.ipa
+          shasum -a 256 IGNIDO-Wake-iOS-2.3.0-native-ui-polish.ipa | tee IGNIDO-Wake-iOS-2.3.0-native-ui-polish.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.3.0-native-ui-polish-source
+          path: |
+            ios/IGNIDOWake/
+            ios/project.yml
+            tools/patch_ios_v230_native_polish.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.3.0-native-ui-polish
+          path: |
+            ios/IGNIDO-Wake-iOS-2.3.0-native-ui-polish.ipa
+            ios/IGNIDO-Wake-iOS-2.3.0-native-ui-polish.sha256
