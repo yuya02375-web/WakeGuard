@@ -43,15 +43,10 @@ if old_state not in s: raise SystemExit('iOS delete state insertion point not fo
 s=s.replace(old_state,new_state,1)
 old='''                            ForEach(rows) { e in EntryRow(entry: e, day: day).onTapGesture { editEntry = EntryEditorState(entry: e) }.contextMenu { Button("編集") { editEntry = EntryEditorState(entry: e) }; Button("削除", role: .destructive) { store.deleteEntry(e.id) } } }'''
 new='''                            ForEach(rows) { e in
-                                HStack(spacing: 8) {
-                                    EntryRow(entry: e, day: day)
-                                        .onTapGesture { editEntry = EntryEditorState(entry: e) }
-                                    Button(role: .destructive) { deleteEntryConfirm = e } label: {
-                                        Image(systemName: "trash")
-                                            .frame(width: 36, height: 36)
-                                    }
-                                    .buttonStyle(.bordered)
-                                    .accessibilityLabel("時間記録を削除")
+                                TimeLogEntryActionRow(entry: e, day: day) {
+                                    editEntry = EntryEditorState(entry: e)
+                                } onDelete: {
+                                    deleteEntryConfirm = e
                                 }
                             }'''
 if old not in s: raise SystemExit('iOS time-log row block not found')
@@ -64,10 +59,37 @@ new='''.confirmationDialog("フォルダーを削除しますか？", isPresente
         }'''
 if old not in s: raise SystemExit('iOS confirmation insertion point not found')
 s=s.replace(old,new,1)
+row_marker='private struct EntryRow: View {'
+helper='''private struct TimeLogEntryActionRow: View {
+    let entry: TimeLogEntry
+    let day: Date
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            EntryRow(entry: entry, day: day)
+                .contentShape(Rectangle())
+                .onTapGesture(perform: onEdit)
+            Button(action: onDelete) {
+                Image(systemName: "trash")
+                    .frame(width: 36, height: 36)
+            }
+            .buttonStyle(.bordered)
+            .tint(.red)
+            .accessibilityLabel("時間記録を削除")
+        }
+    }
+}
+
+'''
+if row_marker not in s: raise SystemExit('iOS EntryRow marker not found')
+s=s.replace(row_marker,helper+row_marker,1)
 write(p,s)
 
 assert '<string>2.2.2</string>' in read('IGNIDOWake/Info.plist') and '<string>122</string>' in read('IGNIDOWake/Info.plist')
 assert 'if alarm.enabled {' not in read('IGNIDOWake/AlarmViews.swift').split('if let remaining = alarm.remainingText')[0][-250:]
 assert '@State private var deleteEntryConfirm: TimeLogEntry?' in read('IGNIDOWake/TimeLogView.swift')
+assert 'TimeLogEntryActionRow(entry: e, day: day)' in read('IGNIDOWake/TimeLogView.swift')
 assert 'Image(systemName: "trash")' in read('IGNIDOWake/TimeLogView.swift')
 print('iOS 2.2.2 OFF-countdown + visible time-record delete applied')
