@@ -1,0 +1,100 @@
+name: Build IGNIDO Wake Android 2.3.0 Native UI Polish
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/patch_v230_native_polish_android.py'
+      - '.github/workflows/build-v230-android.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Prepare Android SDK 36
+        run: |
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.5.0'
+      - name: Reconstruct project shell
+        run: |
+          cat .wakeguard-parts/*.b64 | base64 --decode > WakeGuard-v0.5.0-source-fixed.zip
+          unzip -t WakeGuard-v0.5.0-source-fixed.zip
+          unzip -q WakeGuard-v0.5.0-source-fixed.zip
+      - name: Restore exact Android 2.2.2 source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf /tmp/a222 && mkdir -p /tmp/a222
+          gh run download 36223927372 -n IGNIDO-Wake-Android-2.2.2-off-countdown-record-delete-source -D /tmp/a222
+          test -f /tmp/a222/WakeGuard/app/src/main/java/jp/wakeguard/alarm/Ui.java
+          rm -rf WakeGuard/app
+          cp -R /tmp/a222/WakeGuard/app WakeGuard/app
+      - name: Apply Android 2.3.0 UI polish
+        run: python3 tools/patch_v230_native_polish_android.py
+      - name: Validate 2.3.0 invariants
+        run: |
+          grep -q 'versionCode = 130' WakeGuard/app/build.gradle.kts
+          grep -q 'versionName = "2.3.0"' WakeGuard/app/build.gradle.kts
+          grep -q 'this.radius = 0f' WakeGuard/app/src/main/java/jp/wakeguard/alarm/Ui.java
+          grep -q 'new ColorDrawable(Color.TRANSPARENT)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/Ui.java
+          grep -q 'あと "+relativeText(next-now)' WakeGuard/app/src/main/java/jp/wakeguard/alarm/MainActivity.java
+          grep -q 'Button del=Ui.ghostButton(this,"削除")' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimeLogActivity.java
+          grep -q 'ストップウォッチ計測' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimeLogActivity.java
+          grep -q 'Ui.applySystemBarInsets' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimeLogActivity.java
+          ! grep -q 'フォルダーごとに時間を記録・集計' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimeLogActivity.java
+          grep -q 'isExpectedFire' WakeGuard/app/src/main/java/jp/wakeguard/alarm/AlarmScheduler.java
+          grep -q 'launchTimerVideo' WakeGuard/app/src/main/java/jp/wakeguard/alarm/TimerReceiver.java
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-Android-2.3.0-native-ui-polish-source
+          path: |
+            WakeGuard/app/
+            tools/patch_v230_native_polish_android.py
+      - name: Restore stable signing key
+        env:
+          WAKEGUARD_KEYSTORE_B64: ${{ secrets.WAKEGUARD_KEYSTORE_B64 }}
+          WAKEGUARD_KEYSTORE_PASSWORD: ${{ secrets.WAKEGUARD_KEYSTORE_PASSWORD }}
+          WAKEGUARD_KEY_ALIAS: ${{ secrets.WAKEGUARD_KEY_ALIAS }}
+          WAKEGUARD_KEY_PASSWORD: ${{ secrets.WAKEGUARD_KEY_PASSWORD }}
+        run: |
+          test -n "$WAKEGUARD_KEYSTORE_B64"
+          CLEANED="$(printf '%s' "$WAKEGUARD_KEYSTORE_B64" | tr -d '\r\n\t ')"
+          CLEANED="${CLEANED#WAKEGUARD_KEYSTORE_B64=}"
+          CLEANED="${CLEANED#\"}"
+          CLEANED="${CLEANED%\"}"
+          printf '%s' "$CLEANED" | base64 --decode > "$RUNNER_TEMP/wakeguard-release.p12"
+          test -s "$RUNNER_TEMP/wakeguard-release.p12"
+          chmod 600 "$RUNNER_TEMP/wakeguard-release.p12"
+      - name: Enable AndroidX
+        run: |
+          sed -i 's/^android.useAndroidX=.*/android.useAndroidX=true/' WakeGuard/gradle.properties
+          grep -q '^android.useAndroidX=true' WakeGuard/gradle.properties
+      - name: Build APK
+        working-directory: WakeGuard
+        run: gradle assembleDebug --stacktrace
+      - name: Sign and verify APK
+        env:
+          WAKEGUARD_KEYSTORE_PASSWORD: ${{ secrets.WAKEGUARD_KEYSTORE_PASSWORD }}
+          WAKEGUARD_KEY_ALIAS: ${{ secrets.WAKEGUARD_KEY_ALIAS }}
+          WAKEGUARD_KEY_PASSWORD: ${{ secrets.WAKEGUARD_KEY_PASSWORD }}
+        run: |
+          APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          "$APKSIGNER" sign             --ks "$RUNNER_TEMP/wakeguard-release.p12"             --ks-type PKCS12             --ks-key-alias "$WAKEGUARD_KEY_ALIAS"             --ks-pass env:WAKEGUARD_KEYSTORE_PASSWORD             --key-pass env:WAKEGUARD_KEY_PASSWORD             --v2-signing-enabled true             --v3-signing-enabled true             --out IGNIDO-Wake-Android-2.3.0-native-ui-polish.apk             WakeGuard/app/build/outputs/apk/debug/app-debug.apk
+          "$APKSIGNER" verify --verbose --print-certs IGNIDO-Wake-Android-2.3.0-native-ui-polish.apk
+          sha256sum IGNIDO-Wake-Android-2.3.0-native-ui-polish.apk | tee IGNIDO-Wake-Android-2.3.0-native-ui-polish.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-Android-2.3.0-native-ui-polish
+          path: |
+            IGNIDO-Wake-Android-2.3.0-native-ui-polish.apk
+            IGNIDO-Wake-Android-2.3.0-native-ui-polish.sha256
