@@ -10,6 +10,7 @@ s=s.replace('versionCode = 122','versionCode = 130',1).replace('versionName = "2
 write(p,s)
 
 p='src/main/java/jp/wakeguard/alarm/Ui.java'; s=read(p)
+if 'import android.graphics.Color;' not in s: s=s.replace('import android.graphics.Canvas;','import android.graphics.Canvas;\nimport android.graphics.Color;',1)
 repls={
 'public static final int BG = 0xFF080706;':'public static final int BG = 0xFF0B0C0E;',
 'public static final int BG_2 = 0xFF0D0B09;':'public static final int BG_2 = 0xFF101114;',
