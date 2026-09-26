@@ -30,8 +30,10 @@ s=s.replace(old,new,1)
 write(p,s)
 
 p='IGNIDOWake/TimeLogView.swift'; s=read(p)
-s=s.replace('''    @State private var deleteFolderConfirm = false
-    @State private var editEntry: EntryEditorState?
+s=s.replace('''    @State private var editEntry: EntryEditorState?
+    @State private var rename = false
+    @State private var deleteFolderConfirm = false
+    @State private var deleteEntryConfirm: TimeLogEntry?
 ''','''    @State private var deleteFolderConfirm = false
     @State private var deleteEntryConfirm: TimeLogEntry?
     @State private var editEntry: EntryEditorState?
@@ -41,10 +43,6 @@ new='''                            ForEach(rows) { e in
                                 HStack(spacing: 8) {
                                     EntryRow(entry: e, day: day)
                                         .onTapGesture { editEntry = EntryEditorState(entry: e) }
-                                        .contextMenu {
-                                            Button("編集") { editEntry = EntryEditorState(entry: e) }
-                                            Button("削除", role: .destructive) { deleteEntryConfirm = e }
-                                        }
                                     Button(role: .destructive) { deleteEntryConfirm = e } label: {
                                         Image(systemName: "trash")
                                             .frame(width: 36, height: 36)
