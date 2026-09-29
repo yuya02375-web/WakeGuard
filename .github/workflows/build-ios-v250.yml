@@ -1,0 +1,55 @@
+name: Build IGNIDO Wake iOS 2.5.0 Visible Dragon
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/patch_ios_v250_visible_dragon.py'
+      - '.github/workflows/build-ios-v250.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+      - run: brew install xcodegen
+      - name: Restore exact iOS 2.4.2 source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf /tmp/i242 && mkdir -p /tmp/i242
+          gh run download 36545119360 -n IGNIDO-Wake-iOS-2.4.2-big-flame-ui-source -D /tmp/i242
+          rm -rf ios/IGNIDOWake
+          cp -R /tmp/i242/ios/IGNIDOWake ios/IGNIDOWake
+          cp /tmp/i242/ios/project.yml ios/project.yml
+      - run: python3 tools/patch_ios_v250_visible_dragon.py
+      - name: Validate
+        run: |
+          grep -q '<string>2.5.0</string>' ios/IGNIDOWake/Info.plist
+          grep -q 'IgnidoDragonShape(dragon: dragon, wings: wings)' ios/IGNIDOWake/StreakParity.swift
+      - run: cd ios && xcodegen generate
+      - name: Build unsigned app
+        run: |
+          cd ios
+          xcodebuild -project IGNIDOWake.xcodeproj -scheme IGNIDOWake -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package IPA
+        run: |
+          cd ios
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
+          zip -qry IGNIDO-Wake-iOS-2.5.0-visible-dragon.ipa Payload
+          shasum -a 256 IGNIDO-Wake-iOS-2.5.0-visible-dragon.ipa | tee IGNIDO-Wake-iOS-2.5.0-visible-dragon.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.5.0-visible-dragon-source
+          path: |
+            ios/IGNIDOWake/
+            ios/project.yml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.5.0-visible-dragon
+          path: |
+            ios/IGNIDO-Wake-iOS-2.5.0-visible-dragon.ipa
+            ios/IGNIDO-Wake-iOS-2.5.0-visible-dragon.sha256
