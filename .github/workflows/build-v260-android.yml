@@ -36,9 +36,9 @@ jobs:
           rm -rf /tmp/a250 && mkdir -p /tmp/a250
           gh api -H "Accept: application/vnd.github+json" /repos/yuya02375-web/WakeGuard/actions/artifacts/11023432045/zip > /tmp/a250.zip
           unzip -q /tmp/a250.zip -d /tmp/a250
-          test -f /tmp/a250/WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakCompanionView.java
+          test -f /tmp/a250/src/main/java/jp/wakeguard/alarm/StreakCompanionView.java
           rm -rf WakeGuard/app
-          cp -R /tmp/a250/WakeGuard/app WakeGuard/app
+          mkdir -p WakeGuard/app\n          cp -R /tmp/a250/. WakeGuard/app/
       - name: Apply realistic dragon renderer
         run: python3 tools/patch_v260_realistic_dragon_android.py
       - name: Validate renderer and preserved features
