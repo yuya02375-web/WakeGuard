@@ -20,7 +20,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           rm -rf /tmp/i250 && mkdir -p /tmp/i250
-          gh run download 36547893564 -n IGNIDO-Wake-iOS-2.5.0-visible-dragon-source -D /tmp/i250
+          gh api -H "Accept: application/vnd.github+json" /repos/yuya02375-web/WakeGuard/actions/artifacts/11022804672/zip > /tmp/i250.zip
+          unzip -q /tmp/i250.zip -d /tmp/i250
           test -f /tmp/i250/ios/IGNIDOWake/StreakParity.swift
           rm -rf ios/IGNIDOWake
           cp -R /tmp/i250/ios/IGNIDOWake ios/IGNIDOWake
