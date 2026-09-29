@@ -22,10 +22,10 @@ jobs:
           rm -rf /tmp/i250 && mkdir -p /tmp/i250
           gh api -H "Accept: application/vnd.github+json" /repos/yuya02375-web/WakeGuard/actions/artifacts/11022804672/zip > /tmp/i250.zip
           unzip -q /tmp/i250.zip -d /tmp/i250
-          test -f /tmp/i250/ios/IGNIDOWake/StreakParity.swift
+          test -f /tmp/i250/IGNIDOWake/StreakParity.swift
           rm -rf ios/IGNIDOWake
-          cp -R /tmp/i250/ios/IGNIDOWake ios/IGNIDOWake
-          cp /tmp/i250/ios/project.yml ios/project.yml
+          cp -R /tmp/i250/IGNIDOWake ios/IGNIDOWake
+          cp /tmp/i250/project.yml ios/project.yml
       - run: python3 tools/patch_ios_v260_realistic_dragon.py
       - name: Validate renderer and preserved features
         run: |
