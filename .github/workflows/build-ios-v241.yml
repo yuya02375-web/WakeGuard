@@ -1,0 +1,63 @@
+name: Build IGNIDO Wake iOS 2.4.1 Streak Visible Fix
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/patch_ios_v241_streak_visible_fix.py'
+      - '.github/workflows/build-ios-v241.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+      - run: brew install xcodegen
+      - name: Restore exact iOS 2.4.0 source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf /tmp/i240 && mkdir -p /tmp/i240
+          gh run download 36513095107 -n IGNIDO-Wake-iOS-2.4.0-streak-stopwatch-import-source -D /tmp/i240
+          test -f /tmp/i240/ios/IGNIDOWake/StreakParity.swift
+          rm -rf ios/IGNIDOWake
+          cp -R /tmp/i240/ios/IGNIDOWake ios/IGNIDOWake
+          cp /tmp/i240/ios/project.yml ios/project.yml
+      - run: python3 tools/patch_ios_v241_streak_visible_fix.py
+      - name: Validate
+        run: |
+          grep -q '<string>2.4.1</string>' ios/IGNIDOWake/Info.plist
+          grep -q '<string>141</string>' ios/IGNIDOWake/Info.plist
+          grep -q '.frame(width:104,height:132)' ios/IGNIDOWake/StreakParity.swift
+          ! grep -q '.frame(width:150,height:190)' ios/IGNIDOWake/StreakParity.swift
+          grep -q '停止時間を時間記録へ' ios/IGNIDOWake/ClockViews.swift
+          grep -q 'TimeLogImportSheet(request:' ios/IGNIDOWake/ClockViews.swift
+      - run: cd ios && xcodegen generate
+      - name: Build unsigned app
+        run: |
+          cd ios
+          xcodebuild -project IGNIDOWake.xcodeproj -scheme IGNIDOWake -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package IPA
+        run: |
+          cd ios
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '2.4.1'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '141'
+          rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
+          zip -qry IGNIDO-Wake-iOS-2.4.1-streak-visible-fix.ipa Payload
+          shasum -a 256 IGNIDO-Wake-iOS-2.4.1-streak-visible-fix.ipa | tee IGNIDO-Wake-iOS-2.4.1-streak-visible-fix.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.4.1-streak-visible-fix-source
+          path: |
+            ios/IGNIDOWake/
+            ios/project.yml
+            tools/patch_ios_v241_streak_visible_fix.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.4.1-streak-visible-fix
+          path: |
+            ios/IGNIDO-Wake-iOS-2.4.1-streak-visible-fix.ipa
+            ios/IGNIDO-Wake-iOS-2.4.1-streak-visible-fix.sha256
