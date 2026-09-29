@@ -34,7 +34,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           rm -rf /tmp/a250 && mkdir -p /tmp/a250
-          gh run download 36548303323 -n IGNIDO-Wake-Android-2.5.0-visible-dragon-source -D /tmp/a250
+          gh api -H "Accept: application/vnd.github+json" /repos/yuya02375-web/WakeGuard/actions/artifacts/11023432045/zip > /tmp/a250.zip
+          unzip -q /tmp/a250.zip -d /tmp/a250
           test -f /tmp/a250/WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakCompanionView.java
           rm -rf WakeGuard/app
           cp -R /tmp/a250/WakeGuard/app WakeGuard/app
