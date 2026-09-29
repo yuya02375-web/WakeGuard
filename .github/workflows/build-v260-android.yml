@@ -38,7 +38,8 @@ jobs:
           unzip -q /tmp/a250.zip -d /tmp/a250
           test -f /tmp/a250/src/main/java/jp/wakeguard/alarm/StreakCompanionView.java
           rm -rf WakeGuard/app
-          mkdir -p WakeGuard/app\n          cp -R /tmp/a250/. WakeGuard/app/
+          mkdir -p WakeGuard/app
+          cp -R /tmp/a250/. WakeGuard/app/
       - name: Apply realistic dragon renderer
         run: python3 tools/patch_v260_realistic_dragon_android.py
       - name: Validate renderer and preserved features
