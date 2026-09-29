@@ -1,0 +1,72 @@
+name: Build IGNIDO Wake iOS 2.4.0 Streak + Stopwatch Import
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/patch_ios_v240_streak_stopwatch_import.py'
+      - '.github/workflows/build-ios-v240.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Restore exact iOS 2.3.0 source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf /tmp/i230 && mkdir -p /tmp/i230
+          gh run download 36226760293 -n IGNIDO-Wake-iOS-2.3.0-native-ui-polish-source -D /tmp/i230
+          test -f /tmp/i230/ios/IGNIDOWake/StreakParity.swift
+          rm -rf ios/IGNIDOWake
+          cp -R /tmp/i230/ios/IGNIDOWake ios/IGNIDOWake
+          cp /tmp/i230/ios/project.yml ios/project.yml
+      - name: Apply iOS 2.4.0 patch
+        run: python3 tools/patch_ios_v240_streak_stopwatch_import.py
+      - name: Validate 2.4.0 features
+        run: |
+          grep -q '<string>2.4.0</string>' ios/IGNIDOWake/Info.plist
+          grep -q '<string>140</string>' ios/IGNIDOWake/Info.plist
+          grep -q 'var capturedAt: Date? = nil' ios/IGNIDOWake/AlarmModel.swift
+          grep -q 'TimeLogImportSheet(request:' ios/IGNIDOWake/ClockViews.swift
+          grep -q 'このラップを時間記録に追加' ios/IGNIDOWake/ClockViews.swift
+          grep -q 'struct TimeLogImportSheet' ios/IGNIDOWake/TimeLogView.swift
+          grep -q '.frame(width:150,height:190)' ios/IGNIDOWake/StreakParity.swift
+          grep -q 'TimelineView(.periodic' ios/IGNIDOWake/AlarmViews.swift
+          grep -q 'Image(systemName: "trash")' ios/IGNIDOWake/TimeLogView.swift
+      - name: Generate Xcode project
+        run: cd ios && xcodegen generate
+      - name: Build unsigned app
+        run: |
+          cd ios
+          xcodebuild -project IGNIDOWake.xcodeproj -scheme IGNIDOWake -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package and inspect IPA
+        run: |
+          cd ios
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          test -n "$APP"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '2.4.0'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '140'
+          rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
+          zip -qry IGNIDO-Wake-iOS-2.4.0-streak-stopwatch-import.ipa Payload
+          unzip -t IGNIDO-Wake-iOS-2.4.0-streak-stopwatch-import.ipa
+          shasum -a 256 IGNIDO-Wake-iOS-2.4.0-streak-stopwatch-import.ipa | tee IGNIDO-Wake-iOS-2.4.0-streak-stopwatch-import.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.4.0-streak-stopwatch-import-source
+          path: |
+            ios/IGNIDOWake/
+            ios/project.yml
+            tools/patch_ios_v240_streak_stopwatch_import.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.4.0-streak-stopwatch-import
+          path: |
+            ios/IGNIDO-Wake-iOS-2.4.0-streak-stopwatch-import.ipa
+            ios/IGNIDO-Wake-iOS-2.4.0-streak-stopwatch-import.sha256
