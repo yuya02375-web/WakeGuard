@@ -10,6 +10,7 @@ dst.write_text(text)
 p=root/"build.gradle.kts"
 s=p.read_text()
 s=s.replace('versionCode = 160','versionCode = 170',1).replace('versionName = "2.6.0"','versionName = "2.7.0"',1)
+s=s.replace('compileSdk = 36','compileSdk = 37',1)
 needle='implementation("androidx.browser:browser:1.10.0")'
 deps='''implementation("androidx.browser:browser:1.10.0")
     implementation("com.google.android.filament:filament-android:1.77.1")
