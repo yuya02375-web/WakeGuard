@@ -1,0 +1,63 @@
+name: Build IGNIDO Wake iOS 2.6.0 Realistic Dragon
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/patch_ios_v260_realistic_dragon.py'
+      - '.github/workflows/build-ios-v260.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+      - run: brew install xcodegen
+      - name: Restore exact iOS 2.5.0 source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf /tmp/i250 && mkdir -p /tmp/i250
+          gh run download 36547893564 -n IGNIDO-Wake-iOS-2.5.0-visible-dragon-source -D /tmp/i250
+          test -f /tmp/i250/ios/IGNIDOWake/StreakParity.swift
+          rm -rf ios/IGNIDOWake
+          cp -R /tmp/i250/ios/IGNIDOWake ios/IGNIDOWake
+          cp /tmp/i250/ios/project.yml ios/project.yml
+      - run: python3 tools/patch_ios_v260_realistic_dragon.py
+      - name: Validate renderer and preserved features
+        run: |
+          grep -q '<string>2.6.0</string>' ios/IGNIDOWake/Info.plist
+          grep -q '<string>160</string>' ios/IGNIDOWake/Info.plist
+          grep -q 'RealisticDragonBodyShape' ios/IGNIDOWake/StreakParity.swift
+          grep -q 'DragonScaleTexture' ios/IGNIDOWake/StreakParity.swift
+          grep -q 'DragonFissureTexture' ios/IGNIDOWake/StreakParity.swift
+          grep -q 'TimeLogImportSheet(request:' ios/IGNIDOWake/ClockViews.swift
+          grep -q 'このラップを時間記録に追加' ios/IGNIDOWake/ClockViews.swift
+      - run: cd ios && xcodegen generate
+      - name: Build unsigned app
+        run: |
+          cd ios
+          xcodebuild -project IGNIDOWake.xcodeproj -scheme IGNIDOWake -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package IPA
+        run: |
+          cd ios
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '2.6.0'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '160'
+          rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
+          zip -qry IGNIDO-Wake-iOS-2.6.0-realistic-dragon.ipa Payload
+          shasum -a 256 IGNIDO-Wake-iOS-2.6.0-realistic-dragon.ipa | tee IGNIDO-Wake-iOS-2.6.0-realistic-dragon.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.6.0-realistic-dragon-source
+          path: |
+            ios/IGNIDOWake/
+            ios/project.yml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.6.0-realistic-dragon
+          path: |
+            ios/IGNIDO-Wake-iOS-2.6.0-realistic-dragon.ipa
+            ios/IGNIDO-Wake-iOS-2.6.0-realistic-dragon.sha256
