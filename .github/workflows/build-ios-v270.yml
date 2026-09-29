@@ -1,0 +1,88 @@
+name: Build IGNIDO Wake iOS 2.7.0 Real 3D Dragon
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/patch_ios_v270_3d_dragon.py'
+      - '.github/workflows/build-ios-v270.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+      - name: Install build tools
+        run: |
+          brew install xcodegen
+          brew install assimp
+      - name: Restore exact iOS 2.6.0 source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf /tmp/i260 && mkdir -p /tmp/i260
+          gh api -H "Accept: application/vnd.github+json" /repos/yuya02375-web/WakeGuard/actions/artifacts/11024357546/zip > /tmp/i260.zip
+          unzip -q /tmp/i260.zip -d /tmp/i260
+          test -f /tmp/i260/IGNIDOWake/StreakParity.swift
+          rm -rf ios/IGNIDOWake
+          cp -R /tmp/i260/IGNIDOWake ios/IGNIDOWake
+          cp /tmp/i260/project.yml ios/project.yml
+      - name: Apply iOS 2.7.0 3D patch
+        run: python3 tools/patch_ios_v270_3d_dragon.py
+      - name: Add licensed 3D dragon asset
+        run: |
+          curl -L --fail --retry 3             https://raw.githubusercontent.com/N8python/caustics/fa4890cbe16f1e3dc1be5dfefbd01f6932b2ea88/dragon.glb             -o /tmp/dragon_realistic.glb
+          curl -L --fail --retry 3             https://raw.githubusercontent.com/N8python/caustics/fa4890cbe16f1e3dc1be5dfefbd01f6932b2ea88/LICENSE             -o ios/IGNIDOWake/THIRD_PARTY_DRAGON_LICENSE.txt
+          assimp export /tmp/dragon_realistic.glb ios/IGNIDOWake/dragon_realistic.dae -f collada
+          cat > ios/IGNIDOWake/THIRD_PARTY_DRAGON_SOURCE.txt <<'EOF'
+          IGNIDO Wake 3D dragon asset
+          Source: https://github.com/N8python/caustics
+          Pinned commit: fa4890cbe16f1e3dc1be5dfefbd01f6932b2ea88
+          Original asset: dragon.glb
+          iOS bundle conversion: Collada DAE via Assimp at build time
+          License: CC0 1.0 Universal (see THIRD_PARTY_DRAGON_LICENSE.txt)
+          EOF
+          test -s ios/IGNIDOWake/dragon_realistic.dae
+      - name: Validate 2.7.0
+        run: |
+          grep -q '<string>2.7.0</string>' ios/IGNIDOWake/Info.plist
+          grep -q '<string>170</string>' ios/IGNIDOWake/Info.plist
+          grep -q 'import SceneKit' ios/IGNIDOWake/StreakParity.swift
+          grep -q 'SCNView' ios/IGNIDOWake/StreakParity.swift
+          grep -q 'dragon_realistic' ios/IGNIDOWake/StreakParity.swift
+          grep -q 'TimeLogImportSheet(request:' ios/IGNIDOWake/ClockViews.swift
+          grep -q 'このラップを時間記録に追加' ios/IGNIDOWake/ClockViews.swift
+      - name: Generate Xcode project
+        run: cd ios && xcodegen generate
+      - name: Build unsigned app
+        run: |
+          cd ios
+          xcodebuild -project IGNIDOWake.xcodeproj -scheme IGNIDOWake -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package IPA
+        run: |
+          cd ios
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          test -n "$APP"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '2.7.0'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '170'
+          test -s "$APP/dragon_realistic.dae"
+          rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
+          zip -qry IGNIDO-Wake-iOS-2.7.0-real-3d-dragon.ipa Payload
+          unzip -t IGNIDO-Wake-iOS-2.7.0-real-3d-dragon.ipa
+          shasum -a 256 IGNIDO-Wake-iOS-2.7.0-real-3d-dragon.ipa | tee IGNIDO-Wake-iOS-2.7.0-real-3d-dragon.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.7.0-real-3d-dragon-source
+          path: |
+            ios/IGNIDOWake/
+            ios/project.yml
+            tools/patch_ios_v270_3d_dragon.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.7.0-real-3d-dragon
+          path: |
+            ios/IGNIDO-Wake-iOS-2.7.0-real-3d-dragon.ipa
+            ios/IGNIDO-Wake-iOS-2.7.0-real-3d-dragon.sha256
