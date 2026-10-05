@@ -1,0 +1,76 @@
+name: Build IGNIDO Wake iOS 2.8.0 Backup + Snooze Cancel
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/patch_ios_v280_backup_snooze.py'
+      - '.github/workflows/build-ios-v280.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Restore exact iOS 2.7.0 source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf /tmp/i270 && mkdir -p /tmp/i270
+          curl -L --fail --retry 3             -H "Authorization: Bearer $GH_TOKEN"             -H "Accept: application/vnd.github+json"             https://api.github.com/repos/yuya02375-web/WakeGuard/actions/artifacts/11026237010/zip             -o /tmp/i270.zip
+          unzip -q /tmp/i270.zip -d /tmp/i270
+          test -f /tmp/i270/ios/IGNIDOWake/AlarmStore.swift
+          rm -rf ios/IGNIDOWake
+          cp -R /tmp/i270/ios/IGNIDOWake ios/IGNIDOWake
+          cp /tmp/i270/ios/project.yml ios/project.yml
+      - name: Apply iOS 2.8.0 patch
+        run: python3 tools/patch_ios_v280_backup_snooze.py
+      - name: Validate backup and snooze features
+        run: |
+          grep -q '<string>2.8.0</string>' ios/IGNIDOWake/Info.plist
+          grep -q '<string>180</string>' ios/IGNIDOWake/Info.plist
+          grep -q 'SecItemCopyMatching' ios/IGNIDOWake/BackupVault.swift
+          grep -q 'NSUbiquitousKeyValueStore.default' ios/IGNIDOWake/BackupVault.swift
+          grep -q 'IgnidoBackupVault.restoreIfNeeded()' ios/IGNIDOWake/IGNIDOWakeApp.swift
+          grep -q 'cancelAllSnoozes' ios/IGNIDOWake/AlarmStore.swift
+          grep -q 'isSystemAlarmSnoozing' ios/IGNIDOWake/AlarmStore.swift
+          grep -q 'すべて取消' ios/IGNIDOWake/AlarmViews.swift
+          grep -q 'バックアップを書き出す' ios/IGNIDOWake/AppSettingsView.swift
+          grep -q 'TimeLogImportSheet(request:' ios/IGNIDOWake/ClockViews.swift
+          test -s ios/IGNIDOWake/dragon_realistic.dae
+      - name: Generate Xcode project
+        run: cd ios && xcodegen generate
+      - name: Build unsigned app
+        run: |
+          cd ios
+          xcodebuild -project IGNIDOWake.xcodeproj -scheme IGNIDOWake -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package IPA
+        run: |
+          cd ios
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          test -n "$APP"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '2.8.0'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '180'
+          test -s "$APP/dragon_realistic.dae"
+          rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
+          zip -qry IGNIDO-Wake-iOS-2.8.0-backup-snooze.ipa Payload
+          unzip -t IGNIDO-Wake-iOS-2.8.0-backup-snooze.ipa
+          shasum -a 256 IGNIDO-Wake-iOS-2.8.0-backup-snooze.ipa | tee IGNIDO-Wake-iOS-2.8.0-backup-snooze.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.8.0-backup-snooze-source
+          path: |
+            ios/IGNIDOWake/
+            ios/project.yml
+            tools/patch_ios_v280_backup_snooze.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.8.0-backup-snooze
+          path: |
+            ios/IGNIDO-Wake-iOS-2.8.0-backup-snooze.ipa
+            ios/IGNIDO-Wake-iOS-2.8.0-backup-snooze.sha256
