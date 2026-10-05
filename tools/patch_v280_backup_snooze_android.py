@@ -554,7 +554,7 @@ s=s.replace(old,new,1); write(p,s)
 
 # Settings: manual export/import fallback that survives uninstall because user chooses external storage.
 p="src/main/java/jp/wakeguard/alarm/SystemSettingsActivity.java"; s=read(p)
-s=s.replace('import android.widget.*;','import android.widget.*;\\nimport java.io.InputStream;\\nimport java.io.OutputStream;',1)
+s=s.replace('import android.widget.*;','import android.widget.*;\nimport java.io.InputStream;\nimport java.io.OutputStream;',1)
 old='''        TextView device=Ui.title(this,"端末設定",19);body.addView(device,Ui.gapTop(this,28));TextView note=Ui.text(this,"ロック画面でアラーム画面・動画を確実に表示するために必要な端末側の設定です。",13,Ui.MUTED);body.addView(note,Ui.gapTop(this,8));
 '''
 new='''        TextView backup=Ui.title(this,"バックアップ",19);body.addView(backup,Ui.gapTop(this,28));
