@@ -1,0 +1,30 @@
+name: Render IGNIDO 3D Dragon PNG
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/render_dragon_v281.py'
+      - '.github/workflows/render-dragon-v281.yml'
+permissions:
+  contents: read
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+      - name: Download pinned CC0 dragon
+        run: |
+          curl -L --fail --retry 3 \
+            https://raw.githubusercontent.com/N8python/caustics/fa4890cbe16f1e3dc1be5dfefbd01f6932b2ea88/dragon.glb \
+            -o /tmp/dragon.glb
+          test $(stat -c%s /tmp/dragon.glb) -gt 1000000
+      - name: Render
+        run: blender -b --python tools/render_dragon_v281.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-dragon-realistic-render-v281
+          path: /tmp/dragon_realistic_render.png
