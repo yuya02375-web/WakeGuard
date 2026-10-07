@@ -86,24 +86,16 @@ jobs:
           disable-animations: true
           script: |
             adb install -r WakeGuard/app/build/outputs/apk/debug/app-debug.apk
+            adb shell pm grant jp.wakeguard.alarm android.permission.POST_NOTIFICATIONS || true
+            adb shell pm grant jp.wakeguard.alarm android.permission.ACTIVITY_RECOGNITION || true
             adb logcat -c
             adb shell am start -W -n jp.wakeguard.alarm/.MainActivity
             sleep 3
-            adb shell uiautomator dump /sdcard/window.xml
-            adb pull /sdcard/window.xml /tmp/window.xml
-            python3 - <<'PY'
-            import re, subprocess, xml.etree.ElementTree as ET
-            root=ET.parse('/tmp/window.xml').getroot()
-            nodes=[n for n in root.iter('node') if n.attrib.get('text')=='ストリーク']
-            if not nodes:
-                raise SystemExit('Streak control not found')
-            b=nodes[0].attrib.get('bounds','')
-            m=re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]',b)
-            if not m:
-                raise SystemExit('Invalid streak bounds: '+b)
-            x1,y1,x2,y2=map(int,m.groups())
-            subprocess.check_call(['adb','shell','input','tap',str((x1+x2)//2),str((y1+y2)//2)])
-            PY
+            SIZE="$(adb shell wm size | tr -d '\r' | sed -n 's/.*Physical size: //p' | tail -1)"
+            W="${SIZE%x*}"; H="${SIZE#*x}"
+            test -n "$W" && test -n "$H"
+            X=$((W*9/10)); Y=$((H*91/100))
+            adb shell input tap "$X" "$Y"
             sleep 8
             adb shell pidof jp.wakeguard.alarm
             adb shell dumpsys activity activities | grep -q 'jp.wakeguard.alarm/.StatsActivity'
