@@ -1,0 +1,34 @@
+name: Render IGNIDO Dragon v2.8.4
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/render_dragon_v284.py'
+      - '.github/workflows/render-dragon-v284.yml'
+permissions:
+  contents: read
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+      - name: Download CC0 Quaternius dragon
+        run: |
+          curl -L --fail --retry 3 \
+            https://raw.githubusercontent.com/euuuuuuan/cairnfall-public/main/assets/vendor/quaternius_monsters/Dragon.glb \
+            -o /tmp/Dragon.glb
+          test $(stat -c%s /tmp/Dragon.glb) -gt 250000
+      - name: Render transparent hero dragon
+        run: blender -b --python tools/render_dragon_v284.py
+      - name: Validate PNG
+        run: |
+          file /tmp/ignido_dragon_v284.png
+          test $(stat -c%s /tmp/ignido_dragon_v284.png) -gt 200000
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-dragon-v284
+          path: /tmp/ignido_dragon_v284.png
