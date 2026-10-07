@@ -97,19 +97,11 @@ jobs:
             adb logcat -c
             adb shell am start -W -n jp.wakeguard.alarm/.MainActivity
             sleep 3
-            SIZE="$(adb shell wm size | tr -d '\r' | grep -oE '[0-9]+x[0-9]+' | tail -1)"
-            echo "wm size => $SIZE"
-            W="${SIZE%x*}"; H="${SIZE#*x}"
-            case "$W:$H" in *[!0-9:]*|:*) echo "invalid screen size: $SIZE"; exit 1;; esac
-            X=$((W*9/10)); Y=$((H*91/100))
-            adb shell input tap "$X" "$Y"
+            SIZE="$(adb shell wm size | tr -d '\r' | grep -oE '[0-9]+x[0-9]+' | tail -1)"; W="${SIZE%x*}"; H="${SIZE#*x}"; X=$((W*9/10)); Y=$((H*91/100)); echo "wm size=$SIZE tap=$X,$Y"; adb shell input tap "$X" "$Y"
             sleep 8
             adb shell pidof jp.wakeguard.alarm
             adb shell dumpsys activity activities | grep -q 'jp.wakeguard.alarm/.StatsActivity'
-            if adb logcat -d -v brief | grep -E 'FATAL EXCEPTION|Process: jp\.wakeguard\.alarm.*died|Fatal signal.*jp\.wakeguard\.alarm'; then
-              echo "Streak screen crashed"
-              exit 1
-            fi
+            if adb logcat -d -v brief | grep -E 'FATAL EXCEPTION|Process: jp\.wakeguard\.alarm.*died|Fatal signal.*jp\.wakeguard\.alarm'; then echo "Streak screen crashed"; exit 1; fi
       - name: Restore stable signing key
         env:
           WAKEGUARD_KEYSTORE_B64: ${{ secrets.WAKEGUARD_KEYSTORE_B64 }}
