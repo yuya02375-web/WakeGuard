@@ -33,8 +33,8 @@ import java.util.Random;
 /**
  * 2.8.3: zero-GL streak companion.
  *
- * Deliberately uses only Canvas drawing. No Filament, EGL, GLSurfaceView,
- * native model loader, JNI renderer, or GPU context is created when the
+ * Deliberately uses only Canvas drawing. No GPU surface or EGL context,
+ * native model loader, JNI renderer, or 3D context is created when the
  * streak screen opens. This keeps the streak screen usable even on devices
  * where the previous 3D renderer crashed during initialization.
  */
