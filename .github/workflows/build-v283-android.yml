@@ -1,4 +1,4 @@
-name: Build IGNIDO Wake Android 2.8.3 Zero-GL Streak Fix
+name: Build IGNIDO Wake Android 2.8.3 Zero-GL Streak Fix\n# retry after zero-GL validation correction
 on:
   workflow_dispatch:
   push:
