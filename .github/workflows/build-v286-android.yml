@@ -45,7 +45,7 @@ jobs:
           mkdir -p WakeGuard/app/src/main/res/drawable-nodpi
           curl -L --fail --retry 3 'https://sdmntprkoreacentral.oaiusercontent.com/files/00000000-62a8-8206-bd93-e83c71cac4d1/raw?se=2026-10-07T23%3A49%3A25Z&sp=r&sv=2026-02-06&sr=b&scid=51c031b0-e499-5383-abd0-d8b3e3314414&skoid=3e273c3d-5ea1-4088-9e18-79685531b184&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-10-07T21%3A11%3A41Z&ske=2026-10-08T21%3A11%3A41Z&sks=b&skv=2026-02-06&sig=VYu6qtbuXVHX5Fq0weK1yx4xYsyzC46Rc/Ib2GEjcSA%3D' -o WakeGuard/app/src/main/res/drawable-nodpi/ignido_dragon_v286.webp
           test $(stat -c%s WakeGuard/app/src/main/res/drawable-nodpi/ignido_dragon_v286.webp) -gt 1000000
-          identify WakeGuard/app/src/main/res/drawable-nodpi/ignido_dragon_v286.webp | grep -q '\[11\]'
+          test "$(grep -ao 'ANMF' WakeGuard/app/src/main/res/drawable-nodpi/ignido_dragon_v286.webp | wc -l)" -ge 12
       - name: Apply 2.8.6 animated dragon patch
         run: python3 tools/patch_v286_animated_dragon_android.py
       - name: Validate real frame animation
