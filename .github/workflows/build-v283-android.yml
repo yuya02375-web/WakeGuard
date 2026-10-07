@@ -97,11 +97,8 @@ jobs:
             sleep 8
             adb shell pidof jp.wakeguard.alarm
             adb shell dumpsys activity activities | grep -q 'jp.wakeguard.alarm/.StatsActivity'
-            if adb logcat -d -v brief | grep -E 'FATAL EXCEPTION|Process: jp\.wakeguard\.alarm.*died|Fatal signal.*jp\.wakeguard\.alarm'; then
-              echo "Streak screen crashed"
-              adb logcat -d -v brief | tail -300
-              exit 1
-            fi
+            adb logcat -d -v brief > /tmp/streak-logcat.txt
+            ! grep -Eq 'FATAL EXCEPTION|Process: jp\.wakeguard\.alarm.*died|Fatal signal.*jp\.wakeguard\.alarm' /tmp/streak-logcat.txt
       - name: Restore stable signing key
         env:
           WAKEGUARD_KEYSTORE_B64: ${{ secrets.WAKEGUARD_KEYSTORE_B64 }}
