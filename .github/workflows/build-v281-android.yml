@@ -80,9 +80,9 @@ jobs:
       - name: Emulator smoke test streak screen
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
+          api-level: 34
           arch: x86_64
-          profile: pixel_6
+          profile: pixel_5
           disable-animations: true
           script: |
             adb install -r WakeGuard/app/build/outputs/apk/debug/app-debug.apk
