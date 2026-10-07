@@ -50,6 +50,7 @@ jobs:
           cat assets/dragon-v284/part*.b64 | tr -d '\r\n' | base64 --decode > WakeGuard/app/src/main/res/drawable-nodpi/ignido_dragon_v284.webp
           file WakeGuard/app/src/main/res/drawable-nodpi/ignido_dragon_v284.webp
           test $(stat -c%s WakeGuard/app/src/main/res/drawable-nodpi/ignido_dragon_v284.webp) -gt 80000
+          echo "7faa2041db72afe2f4b6d7767977c36614aaf07f0f957d6f598d2f6457a5ae19  WakeGuard/app/src/main/res/drawable-nodpi/ignido_dragon_v284.webp" | sha256sum -c -
       - name: Apply 2.8.4 hero dragon patch
         run: python3 tools/patch_v284_prerendered_dragon_android.py
       - name: Validate
