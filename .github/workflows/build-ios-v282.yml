@@ -1,0 +1,71 @@
+name: Build IGNIDO Wake iOS 2.8.2 Streak Crash Fix
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/patch_ios_v282_streak_crash.py'
+      - '.github/workflows/build-ios-v282.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Restore exact iOS 2.8.1 visible-3D source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf /tmp/i281 && mkdir -p /tmp/i281
+          curl -L --fail --retry 3             -H "Authorization: Bearer $GH_TOKEN"             -H "Accept: application/vnd.github+json"             https://api.github.com/repos/yuya02375-web/WakeGuard/actions/artifacts/11348658473/zip             -o /tmp/i281.zip
+          unzip -q /tmp/i281.zip -d /tmp/i281
+          test -f /tmp/i281/ios/IGNIDOWake/StreakParity.swift
+          rm -rf ios/IGNIDOWake
+          cp -R /tmp/i281/ios/IGNIDOWake ios/IGNIDOWake
+          cp /tmp/i281/ios/project.yml ios/project.yml
+      - name: Apply iOS 2.8.2 patch
+        run: python3 tools/patch_ios_v282_streak_crash.py
+      - name: Validate
+        run: |
+          grep -q '<string>2.8.2</string>' ios/IGNIDOWake/Info.plist
+          grep -q '<string>182</string>' ios/IGNIDOWake/Info.plist
+          grep -q 'maxDimension.isFinite' ios/IGNIDOWake/StreakParity.swift
+          grep -q 'IgnidoBackupVault.restoreIfNeeded()' ios/IGNIDOWake/IGNIDOWakeApp.swift
+          grep -q 'cancelAllSnoozes' ios/IGNIDOWake/AlarmStore.swift
+          test -s ios/IGNIDOWake/dragon_realistic.dae
+      - name: Generate Xcode project
+        run: cd ios && xcodegen generate
+      - name: Build unsigned app
+        run: |
+          cd ios
+          xcodebuild -project IGNIDOWake.xcodeproj -scheme IGNIDOWake -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package IPA
+        run: |
+          cd ios
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          test -n "$APP"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist" | grep -qx '2.8.2'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist" | grep -qx '182'
+          test -s "$APP/dragon_realistic.dae"
+          rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
+          zip -qry IGNIDO-Wake-iOS-2.8.2-streak-crash-fix.ipa Payload
+          unzip -t IGNIDO-Wake-iOS-2.8.2-streak-crash-fix.ipa
+          shasum -a 256 IGNIDO-Wake-iOS-2.8.2-streak-crash-fix.ipa | tee IGNIDO-Wake-iOS-2.8.2-streak-crash-fix.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.8.2-streak-crash-fix-source
+          path: |
+            ios/IGNIDOWake/
+            ios/project.yml
+            tools/patch_ios_v282_streak_crash.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-iOS-2.8.2-streak-crash-fix
+          path: |
+            ios/IGNIDO-Wake-iOS-2.8.2-streak-crash-fix.ipa
+            ios/IGNIDO-Wake-iOS-2.8.2-streak-crash-fix.sha256
