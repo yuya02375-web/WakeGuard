@@ -97,9 +97,10 @@ jobs:
             adb logcat -c
             adb shell am start -W -n jp.wakeguard.alarm/.MainActivity
             sleep 3
-            SIZE="$(adb shell wm size | tr -d '\r' | sed -n 's/.*Physical size: //p' | tail -1)"
+            SIZE="$(adb shell wm size | tr -d '\r' | grep -oE '[0-9]+x[0-9]+' | tail -1)"
+            echo "wm size => $SIZE"
             W="${SIZE%x*}"; H="${SIZE#*x}"
-            test -n "$W" && test -n "$H"
+            case "$W:$H" in *[!0-9:]*|:*) echo "invalid screen size: $SIZE"; exit 1;; esac
             X=$((W*9/10)); Y=$((H*91/100))
             adb shell input tap "$X" "$Y"
             sleep 8
