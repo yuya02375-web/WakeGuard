@@ -89,9 +89,11 @@ jobs:
             adb shell pm grant jp.wakeguard.alarm android.permission.POST_NOTIFICATIONS || true
             adb shell pm grant jp.wakeguard.alarm android.permission.ACTIVITY_RECOGNITION || true
             adb logcat -c
+            adb root
+            adb wait-for-device
             adb shell am start -W -n jp.wakeguard.alarm/.MainActivity
             sleep 3
-            adb shell run-as jp.wakeguard.alarm am start -W -n jp.wakeguard.alarm/.StatsActivity
+            adb shell am start -W -n jp.wakeguard.alarm/.StatsActivity
             sleep 8
             adb shell pidof jp.wakeguard.alarm
             adb shell dumpsys activity activities | grep -q 'jp.wakeguard.alarm/.StatsActivity'
