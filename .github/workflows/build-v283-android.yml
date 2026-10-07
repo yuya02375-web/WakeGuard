@@ -91,7 +91,7 @@ jobs:
             adb logcat -c
             adb shell am start -W -n jp.wakeguard.alarm/.MainActivity
             sleep 3
-            adb shell input tap 972 2260
+            adb shell run-as jp.wakeguard.alarm am start -W -n jp.wakeguard.alarm/.StatsActivity
             sleep 8
             adb shell pidof jp.wakeguard.alarm
             adb shell dumpsys activity activities | grep -q 'jp.wakeguard.alarm/.StatsActivity'
