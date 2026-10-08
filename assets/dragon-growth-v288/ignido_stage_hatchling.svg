@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+ <defs>
+  <linearGradient id="fire" x1=".3" y1="1" x2=".7" y2="0"><stop offset="0" stop-color="#c0392d"/><stop offset=".45" stop-color="#f27436"/><stop offset="1" stop-color="#ffc974"/></linearGradient>
+  <linearGradient id="coal" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#494957"/><stop offset=".52" stop-color="#292d3b"/><stop offset="1" stop-color="#171a25"/></linearGradient>
+ </defs>
+ 
+<!-- self-contained small dark dragon, right facing; clear profile, bat wing and curled tail -->
+<!-- tail behind body -->
+<path d="M218 337 C135 372 110 304 143 280 C169 257 193 280 179 305 C167 321 150 319 144 305 C151 330 187 330 201 302 L238 295Z" fill="#323543" stroke="#10151f" stroke-width="11" stroke-linejoin="round"/>
+<path d="M132 280 L119 263 L140 266 L149 246 L157 268" fill="#e55b38" stroke="#11151e" stroke-width="7"/>
+<!-- back wing spans up and left, orange membrane with three intentional spars -->
+<path d="M213 286 C190 224 164 187 126 170 L146 247 L102 231 L159 300 L199 327Z" fill="#b94a3c" stroke="#10151e" stroke-width="12" stroke-linejoin="round"/>
+<path d="M204 284 L130 179 M201 285 L148 244 M199 289 L115 236" stroke="#652c35" stroke-width="9" stroke-linecap="round"/>
+<path d="M184 280 L141 215 L154 278Z" fill="#ed7850"/>
+<!-- legs silhouette -->
+<path d="M223 355 L190 406 L196 428 L241 433 L252 411 L251 364Z" fill="#2c3140" stroke="#11141e" stroke-width="11"/>
+<path d="M287 360 L283 402 L311 421 L344 407 L333 383Z" fill="#252b3b" stroke="#11141e" stroke-width="11"/>
+<!-- body rounded-but-angular -->
+<path d="M199 321 C205 264 229 251 270 266 L310 306 C337 340 318 386 281 394 C234 412 195 376 199 321Z" fill="#313747" stroke="#11141e" stroke-width="12"/>
+<path d="M244 286 C246 318 264 356 296 372 C317 350 299 323 285 299Z" fill="#a54a3a"/>
+<path d="M255 303 C258 324 271 345 289 356" fill="none" stroke="#f18b50" stroke-width="10" stroke-linecap="round"/>
+<!-- neck and head -->
+<path d="M269 311 C260 275 267 252 294 226 L307 203 L346 180 L373 202 L392 223 L417 227 L426 245 L410 265 L366 269 L341 258 C332 286 323 320 310 337Z" fill="#303745" stroke="#11151e" stroke-width="12" stroke-linejoin="round"/>
+<!-- stylized two crown horns -->
+<path d="M337 192 L324 153 L360 178 L368 159 L386 200" fill="#4c4855" stroke="#11141e" stroke-width="10" stroke-linejoin="round"/>
+<!-- cheek + jaw plate -->
+<path d="M353 253 L404 254 L390 268 L371 271Z" fill="#5b4a4c" stroke="#11141e" stroke-width="6"/>
+<!-- facial expression -->
+<path d="M369 215 L397 220 L387 239 L372 233Z" fill="#f6a84f" stroke="#11151d" stroke-width="6" stroke-linejoin="round"/>
+<path d="M383 220 L383 235" stroke="#11151d" stroke-width="5" stroke-linecap="round"/>
+<circle cx="415" cy="246" r="3" fill="#11141f"/>
+<!-- upper back spikes -->
+<path d="M218 280 L214 258 L235 272 L237 246 L257 271 L265 253 L277 276" fill="#d45538" stroke="#11141e" stroke-width="7" stroke-linejoin="round"/>
+<!-- foreleg -->
+<path d="M296 327 L334 353 L352 402 L371 410 L365 423 L341 421 L331 382 L296 360Z" fill="#343947" stroke="#10141e" stroke-width="11" stroke-linejoin="round"/>
+<!-- claws -->
+<path d="M194 427 L185 435 L199 441 L212 432 M215 428 L212 441 L230 438 M347 418 L348 431 L361 430 M361 415 L376 421 L365 431" fill="#d0a476" stroke="#10141e" stroke-width="5" stroke-linejoin="round"/>
+<!-- warm spine highlights few and controlled -->
+<path d="M283 284 L297 302 L315 320" fill="none" stroke="#7a5960" stroke-width="6" stroke-linecap="round"/>
+
+ </svg>
