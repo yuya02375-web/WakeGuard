@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+ <defs>
+  <linearGradient id="fire" x1=".3" y1="1" x2=".7" y2="0"><stop offset="0" stop-color="#c0392d"/><stop offset=".45" stop-color="#f27436"/><stop offset="1" stop-color="#ffc974"/></linearGradient>
+  <linearGradient id="coal" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#494957"/><stop offset=".52" stop-color="#292d3b"/><stop offset="1" stop-color="#171a25"/></linearGradient>
+ </defs>
+ 
+<!-- flame silhouette: no floating sparks or volumetric hazes -->
+<path d="M245 378 C163 337 176 270 211 221 C212 257 223 267 231 263 C231 235 209 208 223 170 C238 131 266 120 273 101 C284 145 258 158 270 186 C298 170 306 156 300 126 C355 177 340 235 312 272 C342 262 362 246 366 212 C402 309 358 378 273 391 Z" fill="#be402f" stroke="#10141e" stroke-width="13" stroke-linejoin="round"/>
+<path d="M238 370 C204 331 231 283 258 263 C250 290 261 302 273 302 C282 285 277 257 284 227 C334 284 319 348 287 375 Z" fill="#f27737"/>
+<path d="M258 373 C239 347 253 323 269 310 C267 328 276 336 284 326 C298 354 288 370 273 379Z" fill="#ffd378"/>
+<path d="M213 228 C229 207 229 181 241 169" fill="none" stroke="#f16b36" stroke-width="10" stroke-linecap="round"/>
+<path d="M294 185 C317 203 315 244 301 257" fill="none" stroke="#ff9d4d" stroke-width="9" stroke-linecap="round"/>
+<path d="M158 386 L185 355 L216 363 L226 400 L201 425 L165 417Z" fill="#343747" stroke="#11151d" stroke-width="11" stroke-linejoin="round"/>
+<path d="M211 394 L238 365 L284 373 L304 422 L257 438 L222 426Z" fill="#262b37" stroke="#11151d" stroke-width="11" stroke-linejoin="round"/>
+<path d="M299 381 L328 355 L367 378 L367 409 L341 423 L303 414Z" fill="#363847" stroke="#11151d" stroke-width="11" stroke-linejoin="round"/>
+<path d="M225 416 L248 396 L271 404" fill="none" stroke="#f88e44" stroke-width="7" stroke-linecap="round"/>
+
+ </svg>
