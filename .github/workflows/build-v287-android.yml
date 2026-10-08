@@ -1,0 +1,130 @@
+name: Build IGNIDO Wake Android 2.8.7 Growth Stages
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/patch_v287_growth_stages_android.py'
+      - '.github/workflows/build-v287-android.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Prepare Android SDK 36
+        run: |
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.5.0'
+      - name: Reconstruct project shell
+        run: |
+          cat .wakeguard-parts/*.b64 | base64 --decode > WakeGuard-v0.5.0-source-fixed.zip
+          unzip -q WakeGuard-v0.5.0-source-fixed.zip
+      - name: Restore complete Android 2.8.6 source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf /tmp/a286 && mkdir -p /tmp/a286
+          curl -L --fail --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" https://api.github.com/repos/yuya02375-web/WakeGuard/actions/artifacts/11518584468/zip -o /tmp/a286.zip
+          unzip -q /tmp/a286.zip -d /tmp/a286
+          test -s /tmp/a286/IGNIDO-Wake-Android-2.8.6-animated-dragon-source.zip
+          rm -rf WakeGuard/app
+          unzip -q /tmp/a286/IGNIDO-Wake-Android-2.8.6-animated-dragon-source.zip 'app/*' -d WakeGuard
+          test -s WakeGuard/app/src/main/res/drawable-nodpi/ignido_dragon_v286.webp
+      - name: Restore dedicated early evolution sprites
+        run: |
+          mkdir -p WakeGuard/app/src/main/res/drawable-nodpi
+          for stage in ember flame egg hatchling; do
+            base64 --decode "assets/dragon-growth-v287/${stage}.webp.b64" > "WakeGuard/app/src/main/res/drawable-nodpi/ignido_stage_${stage}.webp"
+            test $(stat -c%s "WakeGuard/app/src/main/res/drawable-nodpi/ignido_stage_${stage}.webp") -gt 50000
+          done
+          echo '6ab727ba57c08dba2ac6d6228a174e1ebe2843bee5f0d4d3213bfe35f35254a5  WakeGuard/app/src/main/res/drawable-nodpi/ignido_stage_ember.webp' | sha256sum -c -
+          echo '8d6508d1d1f0a8307f174c3dc0629f00506cad3143b2d2fe1eb3372e7c702dbc  WakeGuard/app/src/main/res/drawable-nodpi/ignido_stage_flame.webp' | sha256sum -c -
+          echo '64c91afa931697a3538a27a7b571c886f17b73cfb2e82592f7f9be05a2bd1a1b  WakeGuard/app/src/main/res/drawable-nodpi/ignido_stage_egg.webp' | sha256sum -c -
+          echo '6d735eaff59a089bbc6adf3890cdaa5bec05596ae4eee81ec4500c4da465cac4  WakeGuard/app/src/main/res/drawable-nodpi/ignido_stage_hatchling.webp' | sha256sum -c -
+      - name: Apply correct appearance by streak day
+        run: python3 tools/patch_v287_growth_stages_android.py
+      - name: Verify day-three dragon is an ember
+        run: |
+          grep -q 'versionCode = 187' WakeGuard/app/build.gradle.kts
+          grep -q 'versionName = "2.8.7"' WakeGuard/app/build.gradle.kts
+          grep -q 'Math.min(Math.max(1L,permanentLevel),Math.max(1L,(long)currentStreak))' WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakGrowth.java
+          grep -q 'displayLevel<4L ? 0' WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakCompanionView.java
+          grep -q 'displayLevel<80L ? 3' WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakCompanionView.java
+          grep -q 'growthForm.setText(StreakGrowth.appearanceDescriptor(this,lv,streak))' WakeGuard/app/src/main/java/jp/wakeguard/alarm/StatsActivity.java
+          ! grep -q 'android.opengl' WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakCompanionView.java
+      - name: Enable AndroidX
+        run: |
+          if grep -q '^android.useAndroidX=' WakeGuard/gradle.properties; then
+            sed -i 's/^android.useAndroidX=.*/android.useAndroidX=true/' WakeGuard/gradle.properties
+          else
+            echo 'android.useAndroidX=true' >> WakeGuard/gradle.properties
+          fi
+      - name: Build debug APK
+        working-directory: WakeGuard
+        run: gradle assembleDebug --stacktrace
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm || true
+      - name: Emulator smoke test streak screen
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          profile: pixel_5
+          disable-animations: true
+          script: |
+            adb install -r WakeGuard/app/build/outputs/apk/debug/app-debug.apk
+            adb logcat -c
+            adb root
+            adb wait-for-device
+            adb shell am start -W -n jp.wakeguard.alarm/.MainActivity
+            sleep 3
+            adb shell am start -W -n jp.wakeguard.alarm/.StatsActivity
+            sleep 10
+            adb shell pidof jp.wakeguard.alarm
+            adb shell dumpsys activity activities | grep -q 'jp.wakeguard.alarm/.StatsActivity'
+            adb logcat -d -v brief > /tmp/streak-logcat.txt
+            ! grep -Eq 'FATAL EXCEPTION|Process: jp\.wakeguard\.alarm.*died|Fatal signal.*jp\.wakeguard\.alarm' /tmp/streak-logcat.txt
+      - name: Restore stable signing key
+        env:
+          WAKEGUARD_KEYSTORE_B64: ${{ secrets.WAKEGUARD_KEYSTORE_B64 }}
+        run: |
+          CLEANED="$(printf '%s' "$WAKEGUARD_KEYSTORE_B64" | tr -d '\r\n\t ')"
+          CLEANED="${CLEANED#WAKEGUARD_KEYSTORE_B64=}"
+          CLEANED="${CLEANED#\"}"
+          CLEANED="${CLEANED%\"}"
+          printf '%s' "$CLEANED" | base64 --decode > "$RUNNER_TEMP/wakeguard-release.p12"
+          test -s "$RUNNER_TEMP/wakeguard-release.p12"
+      - name: Sign and verify APK
+        env:
+          WAKEGUARD_KEYSTORE_PASSWORD: ${{ secrets.WAKEGUARD_KEYSTORE_PASSWORD }}
+          WAKEGUARD_KEY_ALIAS: ${{ secrets.WAKEGUARD_KEY_ALIAS }}
+          WAKEGUARD_KEY_PASSWORD: ${{ secrets.WAKEGUARD_KEY_PASSWORD }}
+        run: |
+          APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          "$APKSIGNER" sign --ks "$RUNNER_TEMP/wakeguard-release.p12" --ks-type PKCS12 --ks-key-alias "$WAKEGUARD_KEY_ALIAS" --ks-pass env:WAKEGUARD_KEYSTORE_PASSWORD --key-pass env:WAKEGUARD_KEY_PASSWORD --v2-signing-enabled true --v3-signing-enabled true --out IGNIDO-Wake-Android-2.8.7-growth-stages.apk WakeGuard/app/build/outputs/apk/debug/app-debug.apk
+          "$APKSIGNER" verify --verbose --print-certs IGNIDO-Wake-Android-2.8.7-growth-stages.apk
+          sha256sum IGNIDO-Wake-Android-2.8.7-growth-stages.apk | tee IGNIDO-Wake-Android-2.8.7-growth-stages.sha256
+      - name: Package source
+        run: |
+          cp tools/patch_v287_growth_stages_android.py WakeGuard/
+          (cd WakeGuard && zip -qr ../IGNIDO-Wake-Android-2.8.7-growth-stages-source.zip app patch_v287_growth_stages_android.py)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-Android-2.8.7-growth-stages
+          path: |
+            IGNIDO-Wake-Android-2.8.7-growth-stages.apk
+            IGNIDO-Wake-Android-2.8.7-growth-stages.sha256
+            IGNIDO-Wake-Android-2.8.7-growth-stages-source.zip
