@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+ <defs>
+  <linearGradient id="fire" x1=".3" y1="1" x2=".7" y2="0"><stop offset="0" stop-color="#c0392d"/><stop offset=".45" stop-color="#f27436"/><stop offset="1" stop-color="#ffc974"/></linearGradient>
+  <linearGradient id="coal" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#494957"/><stop offset=".52" stop-color="#292d3b"/><stop offset="1" stop-color="#171a25"/></linearGradient>
+ </defs>
+ 
+<!-- Flame has a deliberate almost-imperfect asymmetric contour -->
+<path d="M241 291 C190 258 211 216 220 192 C227 226 244 225 241 181 C269 199 277 221 271 243 C292 226 291 201 289 190 C342 235 314 292 277 307 Z" fill="#b63c2d" stroke="#10151e" stroke-width="10" stroke-linejoin="round"/>
+<path d="M241 287 C227 262 241 236 250 227 C250 249 259 248 264 230 C286 254 273 285 259 294 Z" fill="#f88c45"/>
+<path d="M246 289 C244 268 255 263 259 250 C271 271 263 292 256 296Z" fill="#ffe1a1"/>
+<!-- Six intentionally irregular charcoal pieces with clear hand-cut facets -->
+<path d="M145 332 L173 304 L220 310 L234 350 L193 379 L150 369Z" fill="url(#coal)" stroke="#10131d" stroke-width="12" stroke-linejoin="round"/>
+<path d="M195 340 L225 312 L269 318 L288 365 L257 401 L207 390 Z" fill="#242937" stroke="#10131d" stroke-width="12" stroke-linejoin="round"/>
+<path d="M260 318 L298 301 L335 320 L354 362 L311 384 L274 365Z" fill="#343644" stroke="#10131d" stroke-width="12" stroke-linejoin="round"/>
+<path d="M145 333 L174 314 L202 324" fill="none" stroke="#55515b" stroke-width="8" stroke-linecap="round"/>
+<path d="M204 355 L239 340 L262 344" fill="none" stroke="#6a5b55" stroke-width="7" stroke-linecap="round"/>
+<path d="M291 333 L312 321 L333 334" fill="none" stroke="#55525e" stroke-width="7" stroke-linecap="round"/>
+<path d="M215 391 L227 368 L241 373 L249 352" fill="none" stroke="#ef7640" stroke-width="8" stroke-linecap="round"/>
+<path d="M300 360 L311 354" stroke="#f78542" stroke-width="7" stroke-linecap="round"/>
+
+ </svg>
