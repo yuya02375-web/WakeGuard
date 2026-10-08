@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+ <defs>
+  <linearGradient id="fire" x1=".3" y1="1" x2=".7" y2="0"><stop offset="0" stop-color="#c0392d"/><stop offset=".45" stop-color="#f27436"/><stop offset="1" stop-color="#ffc974"/></linearGradient>
+  <linearGradient id="coal" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#494957"/><stop offset=".52" stop-color="#292d3b"/><stop offset="1" stop-color="#171a25"/></linearGradient>
+ </defs>
+ 
+<!-- egg silhouette with graphic, angular facets rather than photoreal scale texture -->
+<path d="M256 74 C191 79 148 183 143 285 C139 381 189 424 258 429 C328 427 376 380 370 281 C365 172 326 80 256 74 Z" fill="url(#coal)" stroke="#11141f" stroke-width="14" stroke-linejoin="round"/>
+<path d="M256 88 C213 94 186 147 174 213 L203 193 L228 152 L259 135 L277 101Z" fill="#56515d" opacity=".8"/>
+<path d="M319 123 C349 180 355 237 349 279 L323 258 L307 199 L282 155Z" fill="#222635"/>
+<path d="M163 296 L202 271 L234 302 L227 357 L187 383Z" fill="#414251"/>
+<path d="M283 307 L327 276 L355 304 L340 362 L307 388Z" fill="#262a38"/>
+<!-- crisp branching lava fissures with controlled variation -->
+<path d="M261 115 L255 171 L276 215 L255 252 L271 295 L243 330 L255 381" fill="none" stroke="#11141d" stroke-width="24" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M261 115 L255 171 L276 215 L255 252 L271 295 L243 330 L255 381" fill="none" stroke="#f47c40" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M255 172 L217 193 L204 236 M271 295 L314 280 L339 301 M243 330 L205 348 L190 375" fill="none" stroke="#11141d" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M255 172 L217 193 L204 236 M271 295 L314 280 L339 301 M243 330 L205 348 L190 375" fill="none" stroke="#ea613a" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M254 179 L268 214 L253 254 L268 294" fill="none" stroke="#ffcd77" stroke-width="3" stroke-linecap="round"/>
+<path d="M151 398 L184 386 L196 417 L162 429 Z M316 417 L337 389 L368 414 L351 433Z" fill="#383b49" stroke="#0f131e" stroke-width="9" stroke-linejoin="round"/>
+
+ </svg>
