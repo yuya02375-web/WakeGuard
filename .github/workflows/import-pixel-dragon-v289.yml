@@ -1,0 +1,24 @@
+name: Import CC0 pixel dragon sprite
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/import-pixel-dragon-v289.yml
+permissions:
+  contents: read
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch artist-made CC0 dragon
+        run: |
+          curl --fail -L --retry 3 --max-time 120 'https://opengameart.org/sites/default/files/smoku.zip' -o smoku.zip
+          file smoku.zip
+          unzip -l smoku.zip | head -60
+          unzip -q smoku.zip -d sprite
+          find sprite -type f -maxdepth 5 | head -60
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CC0-kotnaszynce-dragon-original
+          path: |
+            smoku.zip
