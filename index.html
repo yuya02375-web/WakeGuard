@@ -12,7 +12,14 @@
 <h1>ChatGPT・Claude 週間利用枠計算機</h1>
 <p class="sub">画面の数字を見ながら<strong>使用済み率とリセット日時をそのまま入力</strong>。週間枠の今日の目標を計算します。ChatGPTとClaudeは独立設定です。</p>
 <section class="panel" aria-label="サービス切り替え"><h2>サービス</h2><div class="toggle"><button id="gpt" aria-pressed="true" type="button">ChatGPT<small>使用済み%で入力</small></button><button id="claude" aria-pressed="false" type="button">Claude<small>使用済み0% → 100%</small></button></div></section>
-<section class="panel"><h2>週間枠の使用状況</h2><div class="fields"><div class="field"><label for="amount" id="amountLabel">週間枠：使用済み（%）</label><input type="number" inputmode="decimal" min="0" max="100" step="0.01" id="amount" value="0"/><input type="range" id="amountRange" min="0" max="100" step="0.01" value="0"/><p class="help" id="amountHelp">画面の「週間枠：使用29%」なら29と入力してください。残量71%は自動換算します。</p></div><div id="gptResetFields" hidden>
+<section class="panel"><h2>週間枠の使用状況</h2>
+<div id="gptUsageMode" hidden>
+<p class="help" style="margin:0 0 8px">入力する数値の種類を選択</p>
+<div class="switch" role="group" aria-label="ChatGPTの利用枠表示方法">
+<button type="button" id="remainingMode" aria-pressed="true"><b>残り利用枠</b>100% → 0%（以前の方式）</button>
+<button type="button" id="usedMode" aria-pressed="false"><b>使用済み利用枠</b>0% → 100%（ログ表示の方式）</button>
+</div><p id="gptUsageBoth" class="help" aria-live="polite">残り100% ／ 使用済み0%</p><div class="line"></div></div>
+<div class="fields"><div class="field"><label for="amount" id="amountLabel">週間枠：使用済み（%）</label><input type="number" inputmode="decimal" min="0" max="100" step="0.01" id="amount" value="0"/><input type="range" id="amountRange" min="0" max="100" step="0.01" value="0"/><p class="help" id="amountHelp">画面の「週間枠：使用29%」なら29と入力してください。残量71%は自動換算します。</p></div><div id="gptResetFields" hidden>
 <div class="field"><label for="gptResetAt">週間枠のリセット日時（日本時間）</label><input id="gptResetAt" type="datetime-local" step="60"/></div>
 <p class="help">ChatGPT側に表示されている日時を設定します。毎週土曜4時とは仮定しません。</p>
 </div><div id="claudeResetFields" hidden><p class="help" style="margin:0 0 8px">Claudeの毎週のリセット時刻（日本時間）</p>
@@ -37,7 +44,7 @@
 const $=id=>document.getElementById(id),DAY=864e5,WEEK=7*DAY,HOUR=36e5,ZONE=9*HOUR,KEY='weekly-budget-app-v3';
 const clip=v=>Math.min(100,Math.max(0,Number.isFinite(v)?v:0));
 const show=n=>{let s=(Math.round((clip(n)+Number.EPSILON)*100)/100).toFixed(2);return s.replace(/\.00$/,'').replace(/(\.\d)0$/,'$1')+'%'};
-const initial=p=>({value:0,valueType:'used',weekday:6,time:'04:00',resetAt:null,fiveUsed:null,fiveResetAt:null,mode:'regular',base:null});
+const initial=p=>({value:0,valueType:'used',displayMode:'remaining',weekday:6,time:'04:00',resetAt:null,fiveUsed:null,fiveResetAt:null,mode:'regular',base:null});
 let saved={gpt:initial('gpt'),claude:initial('claude')},provider='gpt';
 try{const obj=JSON.parse(localStorage.getItem(KEY)||'null');if(obj&&obj.gpt&&obj.claude){for(const p of ['gpt','claude']){const o=obj[p];saved[p]={...initial(p),...o};if(p==='gpt'&&saved[p].valueType!=='used'){saved[p].value=100-clip(Number(saved[p].value));saved[p].valueType='used';}}if(['gpt','claude'].includes(obj.provider))provider=obj.provider;}}catch{}
 const s=()=>saved[provider];
@@ -56,10 +63,16 @@ function render(){const st=s(),now=Date.now(),info=resetInfo(now,st),used=usedNo
  $('gpt').setAttribute('aria-pressed',provider==='gpt');$('claude').setAttribute('aria-pressed',provider==='claude');
  $('gptResetFields').hidden=provider!=='gpt';$('claudeResetFields').hidden=provider!=='claude';
  $('fiveHourPanel').hidden=provider!=='gpt';
+ $('gptUsageMode').hidden=provider!=='gpt';
  if(provider==='gpt')renderFiveHour(now,st);
- $('amountLabel').textContent=provider==='gpt'?'週間枠：使用済み（%）':'現在の使用済み利用枠（%）';
- $('amountHelp').textContent=provider==='gpt'?'「週間枠：使用29%」なら29と入力。残り71%は自動計算します。':'Claudeの「使用済み%」を入力。使うほど増えます。';
- if(document.activeElement!==$('amount'))$('amount').value=String(clip(Number(st.value)));$('amountRange').value=String(clip(Number(st.value)));
+ const isRemaining=provider==='gpt'&&st.displayMode!=='used';
+ const displayAmount=isRemaining?100-used:used;
+ $('remainingMode').setAttribute('aria-pressed',isRemaining);
+ $('usedMode').setAttribute('aria-pressed',provider==='gpt'&&!isRemaining);
+ $('gptUsageBoth').textContent='残り '+show(100-used)+' ／ 使用済み '+show(used)+'（入力方式を切り替えても使用状況は同じ）';
+ $('amountLabel').textContent=provider==='gpt'?(isRemaining?'週間枠：残り利用枠（%）':'週間枠：使用済み利用枠（%）'):'現在の使用済み利用枠（%）';
+ $('amountHelp').textContent=provider==='gpt'?(isRemaining?'以前の方式：100%から0%へ減ります。残量71%なら71と入力。':'ログ表示の方式：0%から100%へ増えます。「使用29%」なら29と入力。'):'Claudeの「使用済み%」を入力。使うほど増えます。';
+ if(document.activeElement!==$('amount'))$('amount').value=String(clip(displayAmount));$('amountRange').value=String(clip(displayAmount));
  $('weekday').value=String(st.weekday);$('clock').value=st.time;
  if(document.activeElement!==$('gptResetAt'))$('gptResetAt').value=provider==='gpt'?jstInput(st.resetAt):'';
  $('regular').setAttribute('aria-pressed',regular);$('redistribute').setAttribute('aria-pressed',!regular);
@@ -101,7 +114,9 @@ function renderFiveHour(now,st){const fu=st.fiveUsed===null||st.fiveUsed===''?nu
 function parseJstDateTime(d){const m=/^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)$/.exec(d);if(!m)return NaN;const t=Date.parse(d+':00+09:00');return Number.isFinite(t)&&new Date(t+ZONE).toISOString().slice(0,16)===d?t:NaN;}
 function changeProvider(p){provider=p;render();}
 $('gpt').onclick=()=>changeProvider('gpt');$('claude').onclick=()=>changeProvider('claude');
-function changeValue(v){let n=parseFloat(v);if(!Number.isFinite(n))return;s().value=clip(n);render();}
+function changeValue(v){let n=parseFloat(v);if(!Number.isFinite(n))return;const entered=clip(n);s().value=provider==='gpt'&&s().displayMode!=='used'?clip(100-entered):entered;render();}
+$('remainingMode').onclick=()=>{saved.gpt.displayMode='remaining';render();};
+$('usedMode').onclick=()=>{saved.gpt.displayMode='used';render();};
 $('amount').addEventListener('input',()=>changeValue($('amount').value));$('amount').addEventListener('change',()=>changeValue($('amount').value));
 $('amountRange').addEventListener('input',()=>changeValue($('amountRange').value));
 $('fiveUsed').addEventListener('input',()=>{const v=$('fiveUsed').value;const n=Number(v);s().fiveUsed=v===''?null:Number.isFinite(n)?clip(n):null;render();});
