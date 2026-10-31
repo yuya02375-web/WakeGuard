@@ -1,0 +1,74 @@
+name: Review IGNIDO Android 2.9.1 Japanese UI
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/review-v291-japanese-ui.yml
+permissions:
+  contents: read
+  actions: read
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download signed 2.9.1 build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/app291
+          curl -L --fail --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" https://api.github.com/repos/yuya02375-web/WakeGuard/actions/artifacts/13031567719/zip -o /tmp/app291.zip
+          unzip -q /tmp/app291.zip -d /tmp/app291
+          test -s /tmp/app291/IGNIDO-Wake-Android-2.9.1-ui-redesign.apk
+          mkdir -p ui-review-ja
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm || true
+      - name: Japanese full screen review
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          profile: pixel_5
+          disable-animations: true
+          script: |
+            adb install -r /tmp/app291/IGNIDO-Wake-Android-2.9.1-ui-redesign.apk
+            adb shell pm grant jp.wakeguard.alarm android.permission.POST_NOTIFICATIONS
+            adb shell pm grant jp.wakeguard.alarm android.permission.ACTIVITY_RECOGNITION
+            adb shell cmd locale set-app-locales jp.wakeguard.alarm --locales ja-JP
+            adb shell cmd locale get-app-locales jp.wakeguard.alarm
+            adb shell am start -W -n jp.wakeguard.alarm/.MainActivity
+            sleep 4
+            adb shell screencap -p /sdcard/alarms.png
+            adb pull /sdcard/alarms.png ui-review-ja/alarms.png
+            adb shell am start -W -n jp.wakeguard.alarm/.ClockActivity --es mode world
+            sleep 3
+            adb shell screencap -p /sdcard/world-clock.png
+            adb pull /sdcard/world-clock.png ui-review-ja/world-clock.png
+            adb shell am start -W -n jp.wakeguard.alarm/.ClockActivity --es mode timer
+            sleep 2
+            adb shell screencap -p /sdcard/timer.png
+            adb pull /sdcard/timer.png ui-review-ja/timer.png
+            adb shell am start -W -n jp.wakeguard.alarm/.ClockActivity --es mode stopwatch
+            sleep 2
+            adb shell screencap -p /sdcard/stopwatch.png
+            adb pull /sdcard/stopwatch.png ui-review-ja/stopwatch.png
+            adb shell am start -W -n jp.wakeguard.alarm/.StatsActivity
+            sleep 3
+            adb shell screencap -p /sdcard/streak.png
+            adb pull /sdcard/streak.png ui-review-ja/streak.png
+            adb shell am start -W -n jp.wakeguard.alarm/.AlarmEditorActivity --el alarmId -1
+            sleep 2
+            adb shell screencap -p /sdcard/alarm-editor.png
+            adb pull /sdcard/alarm-editor.png ui-review-ja/alarm-editor.png
+            adb shell pidof jp.wakeguard.alarm
+      - name: Package Japanese screenshots
+        run: |
+          test $(find ui-review-ja -maxdepth 1 -name '*.png' | wc -l) -eq 6
+          (cd ui-review-ja && zip -q ../IGNIDO-Wake-2.9.1-Japanese-UI-preview.zip *.png)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IGNIDO-Wake-2.9.1-Japanese-UI-preview
+          path: IGNIDO-Wake-2.9.1-Japanese-UI-preview.zip
