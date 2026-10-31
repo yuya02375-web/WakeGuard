@@ -10,23 +10,14 @@
 </head><body><main>
 <div class="eyebrow">WEEKLY USAGE PLANNER · JAPAN TIME</div>
 <h1>ChatGPT・Claude 週間利用枠計算機</h1>
-<p class="sub">今週の使用ペースから、<strong>それぞれの実際のリセット日時</strong>に合わせて「今日は何%まで使えるか」を計算します。ChatGPTとClaudeのリセット設定は独立しています。</p>
-<section class="panel" aria-label="サービス切り替え"><h2>サービス</h2><div class="toggle"><button id="gpt" aria-pressed="true" type="button">ChatGPT<small>残り%・使用済み%に対応</small></button><button id="claude" aria-pressed="false" type="button">Claude<small>使用済み0% → 100%</small></button></div></section>
-<section class="panel" id="gptPastePanel" hidden><h2>ChatGPTの使用状況をテキストから取り込む</h2>
-<p class="help">「Log in ChatGPT」などの表示をコピーして貼り付けると、週間枠と5時間枠を別々に読み取れます。画像そのものの読み取りには対応していません。</p>
-<textarea id="usagePaste" class="paste" placeholder="プラン: plus
-5時間枠: 使用 2%(リセット 2026-10-31 18:29)
-週間枠: 使用 29%(リセット 2026-11-04 16:04)"></textarea>
-<button type="button" id="applyPaste" class="softButton">使用率とリセット日時を反映</button><p class="help" id="pasteStatus" aria-live="polite"></p></section>
-<section class="panel"><h2>現在の利用状況とリセット時刻</h2><div class="fields"><div class="field"><label for="amount" id="amountLabel">現在の残り利用枠（%）</label><div id="gptValueTypeField" class="field"><label for="gptValueType">ChatGPTの数値の種類</label><select id="gptValueType"><option value="remaining">残り利用枠（%）</option><option value="used">使用済み利用枠（%）</option></select></div><input type="number" inputmode="decimal" min="0" max="100" step="0.01" id="amount" value="100"/><input type="range" id="amountRange" min="0" max="100" step="0.01" value="100"/><p class="help" id="amountHelp">ChatGPTの表示にある「残り%」を入力します。自動取得はしません。</p></div><div id="gptResetFields" hidden>
-<div class="field"><label for="gptResetAt">ChatGPT 次回リセット日時（日本時間）</label><input id="gptResetAt" type="datetime-local" step="60"/></div>
+<p class="sub">画面の数字を見ながら<strong>使用済み率とリセット日時をそのまま入力</strong>。週間枠の今日の目標を計算します。ChatGPTとClaudeは独立設定です。</p>
+<section class="panel" aria-label="サービス切り替え"><h2>サービス</h2><div class="toggle"><button id="gpt" aria-pressed="true" type="button">ChatGPT<small>使用済み%で入力</small></button><button id="claude" aria-pressed="false" type="button">Claude<small>使用済み0% → 100%</small></button></div></section>
+<section class="panel"><h2>週間枠の使用状況</h2><div class="fields"><div class="field"><label for="amount" id="amountLabel">週間枠：使用済み（%）</label><input type="number" inputmode="decimal" min="0" max="100" step="0.01" id="amount" value="0"/><input type="range" id="amountRange" min="0" max="100" step="0.01" value="0"/><p class="help" id="amountHelp">画面の「週間枠：使用29%」なら29と入力してください。残量71%は自動換算します。</p></div><div id="gptResetFields" hidden>
+<div class="field"><label for="gptResetAt">週間枠のリセット日時（日本時間）</label><input id="gptResetAt" type="datetime-local" step="60"/></div>
 <p class="help">ChatGPT側に表示されている日時を設定します。毎週土曜4時とは仮定しません。</p>
-<div class="when"><div class="field"><label for="gptDays">残り日数</label><input id="gptDays" type="number" min="0" max="7" step="1" value="4"/></div><div class="field"><label for="gptHours">残り時間</label><input id="gptHours" type="number" min="0" max="23" step="1" value="1"/></div></div>
-<button type="button" id="setGptRemaining" class="softButton">この残り時間で日時を設定</button>
-<p class="help">ChatGPTに「残り4日1時間」と表示されていたら、4と1を入力してボタンを押します。残り時間は設定時点で固定され、以降は自動カウントダウンします。</p>
 </div><div id="claudeResetFields" hidden><p class="help" style="margin:0 0 8px">Claudeの毎週のリセット時刻（日本時間）</p>
-<div class="when"><div class="field"><label for="weekday">曜日</label><select id="weekday"><option value="0">日曜日</option><option value="1">月曜日</option><option value="2">火曜日</option><option value="3">水曜日</option><option value="4">木曜日</option><option value="5">金曜日</option><option value="6" selected>土曜日</option></select></div><div class="field"><label for="clock">時刻</label><input type="time" id="clock" value="04:00"/></div></div></div></div></div><div class="timeblock"><div>次回リセット：<strong id="nextReset">計算中</strong></div><p id="countdown">残り時間を計算中</p><p id="nowLine">日本時間を使用</p></div><p class="help">ChatGPTの日時は表示に合わせて一度設定してください。Claudeの土曜4:00は今回の指定に基づく初期値で、必要なら変更できます。</p><button id="manualReset" class="softButton" type="button">新しい週として入力値をリセット</button></section>
-<section class="panel" id="fiveHourPanel" hidden><h2>ChatGPTの5時間枠（週間枠とは別）</h2>
+<div class="when"><div class="field"><label for="weekday">曜日</label><select id="weekday"><option value="0">日曜日</option><option value="1">月曜日</option><option value="2">火曜日</option><option value="3">水曜日</option><option value="4">木曜日</option><option value="5">金曜日</option><option value="6" selected>土曜日</option></select></div><div class="field"><label for="clock">時刻</label><input type="time" id="clock" value="04:00"/></div></div></div></div></div><div class="timeblock"><div>次回リセット：<strong id="nextReset">計算中</strong></div><p id="countdown">残り時間を計算中</p><p id="nowLine">日本時間を使用</p></div><p class="help">ChatGPTは画面にある週間枠の使用済み率とリセット日時を直接入力します。Claudeの土曜4:00は今回の指定に基づく初期値で、必要なら変更できます。</p><button id="manualReset" class="softButton" type="button">新しい週として入力値をリセット</button></section>
+<section class="panel" id="fiveHourPanel" hidden><h2>5時間枠の使用状況（週間枠とは別）</h2>
 <div class="fivegrid"><div class="field"><label for="fiveUsed">5時間枠の使用済み率（%）</label><input id="fiveUsed" type="number" inputmode="decimal" min="0" max="100" step="0.01" placeholder="例：2"/></div><div class="field"><label for="fiveResetAt">5時間枠のリセット日時（日本時間）</label><input id="fiveResetAt" type="datetime-local" step="60"/></div></div>
 <div class="timeblock"><div class="when"><div><span class="help">使用済み</span><div class="smallnum" id="fiveUsedDisplay">未設定</div></div><div><span class="help">利用可能な残量</span><div class="smallnum" id="fiveRemainingDisplay">—</div></div></div><p id="fiveCountdown">5時間枠の情報を入力してください。</p></div>
 <p class="help">5時間枠と週間枠は別々の制限です。実際に利用できるには両方に残量が必要です。枠がリセットされた場合は新しい表示を入力してください。</p></section>
@@ -46,9 +37,9 @@
 const $=id=>document.getElementById(id),DAY=864e5,WEEK=7*DAY,HOUR=36e5,ZONE=9*HOUR,KEY='weekly-budget-app-v3';
 const clip=v=>Math.min(100,Math.max(0,Number.isFinite(v)?v:0));
 const show=n=>{let s=(Math.round((clip(n)+Number.EPSILON)*100)/100).toFixed(2);return s.replace(/\.00$/,'').replace(/(\.\d)0$/,'$1')+'%'};
-const initial=p=>({value:p==='claude'?0:100,valueType:'remaining',weekday:6,time:'04:00',resetAt:null,fiveUsed:null,fiveResetAt:null,mode:'regular',base:null});
+const initial=p=>({value:0,valueType:'used',weekday:6,time:'04:00',resetAt:null,fiveUsed:null,fiveResetAt:null,mode:'regular',base:null});
 let saved={gpt:initial('gpt'),claude:initial('claude')},provider='gpt';
-try{const obj=JSON.parse(localStorage.getItem(KEY)||'null');if(obj&&obj.gpt&&obj.claude){for(const p of ['gpt','claude']){const o=obj[p];saved[p]={...initial(p),...o};}if(['gpt','claude'].includes(obj.provider))provider=obj.provider;}}catch{}
+try{const obj=JSON.parse(localStorage.getItem(KEY)||'null');if(obj&&obj.gpt&&obj.claude){for(const p of ['gpt','claude']){const o=obj[p];saved[p]={...initial(p),...o};if(p==='gpt'&&saved[p].valueType!=='used'){saved[p].value=100-clip(Number(saved[p].value));saved[p].valueType='used';}}if(['gpt','claude'].includes(obj.provider))provider=obj.provider;}}catch{}
 const s=()=>saved[provider];
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify({...saved,provider}));}catch{}};
 const jstDate=ms=>new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(ms));
@@ -58,17 +49,16 @@ function clock(now,st){const j=now+ZONE,dt=new Date(j),inside=dt.getUTCDay()*DAY
 function resetInfo(now,st){if(provider==='claude')return clock(now,st);const end=Number(st.resetAt);if(!Number.isFinite(end)||end<=now||end-now>WEEK)return null;const start=end-WEEK,elapsed=now-start,index=Math.min(6,Math.max(0,Math.floor(elapsed/DAY)));return {start,end,index,todayEnd:start+(index+1)*DAY,elapsed,remaining:end-now};}
 const jstInput=ms=>Number.isFinite(Number(ms))&&Number(ms)>1?new Date(Number(ms)+ZONE).toISOString().slice(0,16):'';
 function refreshReference(index){for(const id of ['ref1','ref2'])$(id).replaceChildren();const remainDays=index===null?null:7-index;for(let n=7;n>=1;n--)row('ref1',[n+'日',show(100/n)],n===remainDays);for(let n=7;n>=0;n--)row('ref2',[n+'日',show(100*(7-n)/7),show(100*n/7)],n===remainDays);}
-function usedNow(){const x=clip(Number(s().value));return provider==='gpt'&&s().valueType!=='used'?100-x:x;}
-function inputFromUsed(x){return provider==='gpt'&&s().valueType!=='used'?100-x:x;}
+function usedNow(){return clip(Number(s().value));}
 function row(id,values,active=false){const tr=document.createElement('tr');if(active)tr.className='current';for(const v of values){const td=document.createElement('td');td.textContent=v;tr.append(td);}$(id).append(tr);}
 function resetBase(now,info,used){s().base={start:now,cycle:info.start,day:info.index,used};}
 function render(){const st=s(),now=Date.now(),info=resetInfo(now,st),used=usedNow(),regular=st.mode==='regular';
  $('gpt').setAttribute('aria-pressed',provider==='gpt');$('claude').setAttribute('aria-pressed',provider==='claude');
  $('gptResetFields').hidden=provider!=='gpt';$('claudeResetFields').hidden=provider!=='claude';
- $('gptPastePanel').hidden=provider!=='gpt';$('fiveHourPanel').hidden=provider!=='gpt';$('gptValueTypeField').hidden=provider!=='gpt';$('gptValueType').value=st.valueType==='used'?'used':'remaining';
+ $('fiveHourPanel').hidden=provider!=='gpt';
  if(provider==='gpt')renderFiveHour(now,st);
- $('amountLabel').textContent=provider==='gpt'?(st.valueType==='used'?'週間枠：現在の使用済み利用枠（%）':'週間枠：現在の残り利用枠（%）'):'現在の使用済み利用枠（%）';
- $('amountHelp').textContent=provider==='gpt'?(st.valueType==='used'?'「週間枠：使用 29%」なら29を入力。使うほど増えます。':'ChatGPTの「残り70%」なら70を入力。使うほど減ります。'):'Claudeの「使用済み%」を入力。使うほど増えます。';
+ $('amountLabel').textContent=provider==='gpt'?'週間枠：使用済み（%）':'現在の使用済み利用枠（%）';
+ $('amountHelp').textContent=provider==='gpt'?'「週間枠：使用29%」なら29と入力。残り71%は自動計算します。':'Claudeの「使用済み%」を入力。使うほど増えます。';
  if(document.activeElement!==$('amount'))$('amount').value=String(clip(Number(st.value)));$('amountRange').value=String(clip(Number(st.value)));
  $('weekday').value=String(st.weekday);$('clock').value=st.time;
  if(document.activeElement!==$('gptResetAt'))$('gptResetAt').value=provider==='gpt'?jstInput(st.resetAt):'';
@@ -109,24 +99,20 @@ function renderFiveHour(now,st){const fu=st.fiveUsed===null||st.fiveUsed===''?nu
  $('fiveCountdown').textContent=Number.isFinite(ft)&&ft>now?'5時間枠のリセット：'+jstDate(ft)+' ／ あと'+countText(ft-now):Number.isFinite(ft)&&ft<=now?'設定された5時間枠のリセット時刻を過ぎました。最新の表示で更新してください。':'リセット日時を入力してください。';
 }
 function parseJstDateTime(d){const m=/^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)$/.exec(d);if(!m)return NaN;const t=Date.parse(d+':00+09:00');return Number.isFinite(t)&&new Date(t+ZONE).toISOString().slice(0,16)===d?t:NaN;}
-function parseUsageText(raw){const normalized=raw.normalize('NFKC').replace(/\r/g,'').replace(/(5\s*時間\s*枠|週間\s*枠|1\s*週間の利用上限)/g,'\n$1');const out={};for(const line of normalized.split('\n')){const type=/5\s*時間\s*枠/.test(line)?'five':/(?:週間\s*枠|1\s*週間の利用上限)/.test(line)?'week':null;if(!type)continue;const u=line.match(/使用(?:済み)?\s*[:：]?\s*(\d+(?:\.\d+)?)\s*%/);const m=line.match(/リセット\s*[:：]?\s*(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})\s+(\d{1,2}):(\d{2})/);if(!u||!m)continue;const used=Number(u[1]);const fmt=v=>String(Number(v)).padStart(2,'0');const time=parseJstDateTime(m[1]+'-'+fmt(m[2])+'-'+fmt(m[3])+'T'+fmt(m[4])+':'+fmt(m[5]));if(used>=0&&used<=100&&Number.isFinite(time))out[type]={used,resetAt:time};}return out;}
 function changeProvider(p){provider=p;render();}
 $('gpt').onclick=()=>changeProvider('gpt');$('claude').onclick=()=>changeProvider('claude');
 function changeValue(v){let n=parseFloat(v);if(!Number.isFinite(n))return;s().value=clip(n);render();}
 $('amount').addEventListener('input',()=>changeValue($('amount').value));$('amount').addEventListener('change',()=>changeValue($('amount').value));
 $('amountRange').addEventListener('input',()=>changeValue($('amountRange').value));
-$('gptValueType').addEventListener('change',()=>{const used=usedNow();s().valueType=$('gptValueType').value;s().value=inputFromUsed(used);render();});
 $('fiveUsed').addEventListener('input',()=>{const v=$('fiveUsed').value;const n=Number(v);s().fiveUsed=v===''?null:Number.isFinite(n)?clip(n):null;render();});
 $('fiveResetAt').addEventListener('change',()=>{const t=parseJstDateTime($('fiveResetAt').value);if(Number.isFinite(t)){saved.gpt.fiveResetAt=t;render();}});
-$('applyPaste').onclick=()=>{const p=parseUsageText($('usagePaste').value),parts=[];if(p.week){const st=saved.gpt;if(st.resetAt!==p.week.resetAt)st.base=null;st.valueType='used';st.value=p.week.used;st.resetAt=p.week.resetAt;parts.push('週間枠 '+show(p.week.used)+'（'+stamp(p.week.resetAt)+'リセット）');}if(p.five){saved.gpt.fiveUsed=p.five.used;saved.gpt.fiveResetAt=p.five.resetAt;parts.push('5時間枠 '+show(p.five.used)+'（'+stamp(p.five.resetAt)+'リセット）');}const m=$('pasteStatus');m.className='help '+(parts.length?'good':'bad');m.textContent=parts.length?'読み取り成功：'+parts.join(' ／ '):'読み取れませんでした。各行に「使用 29%」「リセット 2026-11-04 16:04」の両方が必要です。';render();};
 $('weekday').addEventListener('change',()=>{s().weekday=Number($('weekday').value);s().base=null;render();});
 $('clock').addEventListener('change',()=>{s().time=$('clock').value;s().base=null;render();});
 $('regular').onclick=()=>{s().mode='regular';render();};
 $('redistribute').onclick=()=>{const info=resetInfo(Date.now(),s());if(s().mode!=='redistribute'&&info)resetBase(Date.now(),info,usedNow());s().mode='redistribute';render();};
 $('setBaseline').onclick=()=>{const info=resetInfo(Date.now(),s());if(info)resetBase(Date.now(),info,usedNow());render();};
 $('gptResetAt').addEventListener('change',()=>{const t=parseJstDateTime($('gptResetAt').value);if(Number.isFinite(t)){if(saved.gpt.resetAt!==t)saved.gpt.base=null;saved.gpt.resetAt=t;render();}});
-$('setGptRemaining').onclick=()=>{const d=Number($('gptDays').value),h=Number($('gptHours').value);if(!Number.isInteger(d)||!Number.isInteger(h)||d<0||d>7||h<0||h>23||d*24+h<=0||d*24+h>168){alert('残り時間は1〜168時間で入力してください。');return;}saved.gpt.resetAt=Date.now()+d*DAY+h*HOUR;saved.gpt.base=null;render();};
-$('manualReset').onclick=()=>{if(confirm('入力値を新しい週の値（ChatGPT 100%、Claude 0%）に戻しますか？')){s().value=provider==='gpt'?100:0;s().base=null;render();}};
+$('manualReset').onclick=()=>{if(confirm('入力値を新しい週の値（使用済み0%）に戻しますか？')){s().value=0;s().base=null;render();}};
 render();setInterval(render,30e3);
 })();
 </script></body></html>
