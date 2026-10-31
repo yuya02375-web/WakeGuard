@@ -55,7 +55,7 @@ jobs:
           import xml.etree.ElementTree as E
           from pathlib import Path
           base=Path('WakeGuard/app/src/main/res')
-          for name in ['ic_ignido_v295_foreground.xml','ic_ignido_v294_mono.xml','ic_ignido_notification.xml']:
+          for name in ['ic_ignido_v294_fg.xml','ic_ignido_v294_mono.xml','ic_ignido_notification.xml']:
               E.parse(base/'drawable'/name)
           for f in base.glob('mipmap-anydpi-v*/ic_launcher*.xml'):
               E.parse(f)
