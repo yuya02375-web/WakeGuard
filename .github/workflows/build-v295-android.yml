@@ -34,9 +34,9 @@ jobs:
           mkdir -p /tmp/base294
           curl -L --fail --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" https://api.github.com/repos/yuya02375-web/WakeGuard/actions/artifacts/13043453541/zip -o /tmp/base294.zip
           unzip -q /tmp/base294.zip -d /tmp/base294
-          test -s /tmp/base294/IGNIDO-Wake-Android-2.9.4-original-icon-natural-ui-source.zip
+          test -s /tmp/base294/IGNIDO-Wake-Android-2.9.4-clean-clock-icon-source.zip
           rm -rf WakeGuard/app
-          unzip -q /tmp/base294/IGNIDO-Wake-Android-2.9.4-original-icon-natural-ui-source.zip 'app/*' -d WakeGuard
+          unzip -q /tmp/base294/IGNIDO-Wake-Android-2.9.4-clean-clock-icon-source.zip 'app/*' -d WakeGuard
           test -f WakeGuard/app/src/main/java/jp/wakeguard/alarm/StreakCompanionView.java
       - name: Restore original foreground artwork and refine app UI
         working-directory: WakeGuard
