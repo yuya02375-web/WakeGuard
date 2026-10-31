@@ -35,6 +35,8 @@ jobs:
           disable-animations: true
           script: |
             adb install -r /tmp/app291/IGNIDO-Wake-Android-2.9.1-ui-redesign.apk
+            adb root
+            adb wait-for-device
             adb shell pm grant jp.wakeguard.alarm android.permission.POST_NOTIFICATIONS
             adb shell pm grant jp.wakeguard.alarm android.permission.ACTIVITY_RECOGNITION
             adb shell cmd locale set-app-locales jp.wakeguard.alarm --locales ja-JP
@@ -47,10 +49,12 @@ jobs:
             sleep 3
             adb shell screencap -p /sdcard/world-clock.png
             adb pull /sdcard/world-clock.png ui-review-ja/world-clock.png
+            adb shell am force-stop jp.wakeguard.alarm
             adb shell am start -W -n jp.wakeguard.alarm/.ClockActivity --es mode timer
             sleep 2
             adb shell screencap -p /sdcard/timer.png
             adb pull /sdcard/timer.png ui-review-ja/timer.png
+            adb shell am force-stop jp.wakeguard.alarm
             adb shell am start -W -n jp.wakeguard.alarm/.ClockActivity --es mode stopwatch
             sleep 2
             adb shell screencap -p /sdcard/stopwatch.png
