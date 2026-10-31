@@ -111,7 +111,7 @@ s=s.replace('private LinearLayout list;','private LinearLayout list, nextCard;')
 s=s.replace('''        LinearLayout nextCard=Ui.card(this);''','''        nextCard=Ui.card(this);''')
 old='''if(ms<=0){nextText.setText(I18n.tr(this,"次のアラームはありません"));return;}'''
 assert old in s
-s=s.replace(old,'''if(ms<=0){nextCard.setVisibility(View.GONE);nextText.setText(I18n.tr(this,"次のアラームはありません"));return;}nextCard.setVisibility(View.VISIBLE);''')
+s=s.replace(old,'''if(ms<=0){nextCard.setVisibility(android.view.View.GONE);nextText.setText(I18n.tr(this,"次のアラームはありません"));return;}nextCard.setVisibility(android.view.View.VISIBLE);''')
 s=s.replace('''        root.addView(statsRow);
         root.addView(Ui.divider(this));''','''        root.addView(statsRow);''')
 # Remove last separator between content and nav, the nav should be a unified surface
