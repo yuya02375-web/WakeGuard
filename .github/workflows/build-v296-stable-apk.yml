@@ -68,7 +68,7 @@ jobs:
           unzip -q "$RUNNER_TEMP/wakeguard-v295-artifact.zip" -d "$RUNNER_TEMP/wakeguard-v295-artifact"
           SOURCE_ZIP="$(find "$RUNNER_TEMP/wakeguard-v295-artifact" -type f -name '*source.zip' -print -quit)"
           test -n "$SOURCE_ZIP"
-          unzip -q "$SOURCE_ZIP" 'app/*' -d WakeGuard
+          unzip -oq "$SOURCE_ZIP" 'app/*' -d WakeGuard
           unzip -oq WakeGuard-2.9.6-app-overlay.zip -d WakeGuard
           grep -Fq 'versionCode = 196' WakeGuard/app/build.gradle.kts
           grep -Fq 'versionName = "2.9.6"' WakeGuard/app/build.gradle.kts
