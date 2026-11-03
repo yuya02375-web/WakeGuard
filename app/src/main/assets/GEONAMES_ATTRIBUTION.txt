@@ -1,0 +1,6 @@
+WakeGuard world-city timezone catalog
+
+City names, alternate names, country codes and IANA timezone IDs are derived from GeoNames Gazetteer data (cities15000 snapshot used at build time).
+GeoNames: https://www.geonames.org/
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+https://creativecommons.org/licenses/by/4.0/

@@ -1,0 +1,8 @@
+.gradle/
+**/build/
+local.properties
+.codex-work/
+dist/
+*.jks
+*.keystore
+*.p12

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/timer_notification_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingLeft="18dp"
+    android:paddingTop="14dp"
+    android:paddingRight="18dp"
+    android:paddingBottom="14dp"
+    android:background="#FFF3E0">
+    <TextView
+        android:id="@+id/timer_notification_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="タイマー"
+        android:textColor="#5D4037"
+        android:textStyle="bold"
+        android:textSize="15sp" />
+    <Chronometer
+        android:id="@+id/timer_notification_chronometer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:fontFamily="monospace"
+        android:textColor="#111111"
+        android:textStyle="bold"
+        android:textSize="48sp" />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:text="残り時間"
+        android:textColor="#6D4C41"
+        android:textStyle="bold"
+        android:textSize="13sp" />
+</LinearLayout>

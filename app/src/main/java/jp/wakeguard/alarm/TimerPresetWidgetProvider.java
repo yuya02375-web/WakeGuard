@@ -1,0 +1,4 @@
+package jp.wakeguard.alarm;
+import android.appwidget.*;import android.content.*;import android.widget.RemoteViews;
+public class TimerPresetWidgetProvider extends AppWidgetProvider{
+ static void update(Context c,AppWidgetManager m,int id){RemoteViews r=new RemoteViews(c.getPackageName(),R.layout.widget_timer_presets);int[] ids={R.id.p1,R.id.p5,R.id.p10,R.id.p15,R.id.p25,R.id.p30,R.id.p45,R.id.p60};long[] min={1,5,10,15,25,30,45,60};for(int i=0;i<ids.length;i++)r.setOnClickPendingIntent(ids[i],WidgetSuite.action(c,WidgetActionReceiver.TIMER_PRESET,min[i]*60000L,26000+id*10+i));r.setOnClickPendingIntent(R.id.widget_root,WidgetSuite.open(c,ClockActivity.class,"mode","timer",26900+id));m.updateAppWidget(id,r);}public void onUpdate(Context c,AppWidgetManager m,int[] ids){for(int id:ids)update(c,m,id);}public void onAppWidgetOptionsChanged(Context c,AppWidgetManager m,int id,android.os.Bundle b){update(c,m,id);}}

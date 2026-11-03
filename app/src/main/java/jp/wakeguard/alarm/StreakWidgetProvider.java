@@ -1,0 +1,4 @@
+package jp.wakeguard.alarm;
+import android.appwidget.*;import android.content.*;import android.widget.RemoteViews;
+public class StreakWidgetProvider extends AppWidgetProvider{
+ static void update(Context c,AppWidgetManager m,int id){RemoteViews r=new RemoteViews(c.getPackageName(),R.layout.widget_streak);int s=StreakTracker.displayCurrent(c);r.setTextViewText(R.id.streak_value,"🔥 "+s+I18n.tr(c,"日"));r.setTextViewText(R.id.streak_detail,I18n.tr(c,"最高")+" "+Prefs.bestStreak(c)+I18n.tr(c,"日")+"  ·  "+I18n.tr(c,"成功")+" "+Prefs.totalWakeups(c)+I18n.tr(c,"回"));r.setTextViewText(R.id.streak_level,I18n.tr(c,"成長")+" Lv."+StreakGrowth.level(c));r.setOnClickPendingIntent(R.id.widget_root,WidgetSuite.open(c,StatsActivity.class,null,null,28000+id));m.updateAppWidget(id,r);}public void onUpdate(Context c,AppWidgetManager m,int[] ids){for(int id:ids)update(c,m,id);}public void onAppWidgetOptionsChanged(Context c,AppWidgetManager m,int id,android.os.Bundle b){update(c,m,id);}}

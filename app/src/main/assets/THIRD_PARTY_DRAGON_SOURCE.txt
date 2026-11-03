@@ -1,0 +1,5 @@
+IGNIDO Wake 3D dragon asset
+Source: https://github.com/N8python/caustics
+Pinned commit: fa4890cbe16f1e3dc1be5dfefbd01f6932b2ea88
+Asset: dragon.glb
+License: CC0 1.0 Universal (see THIRD_PARTY_DRAGON_LICENSE.txt)

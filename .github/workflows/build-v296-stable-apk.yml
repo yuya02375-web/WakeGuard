@@ -1,0 +1,154 @@
+name: Build IGNIDO Wake 2.9.6 Stable APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - codex/restore-v295
+    paths:
+      - '.github/workflows/build-v296-stable-apk.yml'
+      - 'WakeGuard-2.9.6-app-overlay.zip'
+      - '.wakeguard-parts/**'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK 36
+        shell: bash
+        run: |
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$SDKMANAGER" ]]; then
+            SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -maxdepth 3 -type f -name sdkmanager -print -quit)"
+          fi
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --licenses >/dev/null || true
+          "$SDKMANAGER" --sdk_root="$SDK_ROOT" "platforms;android-36" "build-tools;36.0.0"
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
+          echo "$SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.5.0'
+
+      - name: Restore Gradle project skeleton
+        shell: bash
+        run: |
+          cat .wakeguard-parts/*.b64 | base64 --decode > "$RUNNER_TEMP/WakeGuard-root.zip"
+          unzip -q "$RUNNER_TEMP/WakeGuard-root.zip" -d .
+          test -f WakeGuard/settings.gradle.kts
+          test -f WakeGuard/gradle.properties
+
+      - name: Restore verified 2.9.5 app sources and apply 2.9.6 changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          ARTIFACT_ID=13046393849
+          curl -L --fail --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID/zip" \
+            -o "$RUNNER_TEMP/wakeguard-v295-artifact.zip"
+          mkdir -p "$RUNNER_TEMP/wakeguard-v295-artifact"
+          unzip -q "$RUNNER_TEMP/wakeguard-v295-artifact.zip" -d "$RUNNER_TEMP/wakeguard-v295-artifact"
+          SOURCE_ZIP="$(find "$RUNNER_TEMP/wakeguard-v295-artifact" -type f -name '*source.zip' -print -quit)"
+          test -n "$SOURCE_ZIP"
+          unzip -q "$SOURCE_ZIP" 'app/*' -d WakeGuard
+          unzip -oq WakeGuard-2.9.6-app-overlay.zip -d WakeGuard
+          grep -Fq 'versionCode = 196' WakeGuard/app/build.gradle.kts
+          grep -Fq 'versionName = "2.9.6"' WakeGuard/app/build.gradle.kts
+          grep -Fq 'ic_ignido_v296_sunrise' WakeGuard/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+
+      - name: Enable AndroidX
+        working-directory: WakeGuard
+        shell: bash
+        run: |
+          if grep -q '^android.useAndroidX=' gradle.properties; then
+            sed -i 's/^android.useAndroidX=.*/android.useAndroidX=true/' gradle.properties
+          else
+            echo 'android.useAndroidX=true' >> gradle.properties
+          fi
+
+      - name: Check app version and signing secrets
+        env:
+          WAKEGUARD_KEYSTORE_B64: ${{ secrets.WAKEGUARD_KEYSTORE_B64 }}
+          WAKEGUARD_KEYSTORE_PASSWORD: ${{ secrets.WAKEGUARD_KEYSTORE_PASSWORD }}
+          WAKEGUARD_KEY_ALIAS: ${{ secrets.WAKEGUARD_KEY_ALIAS }}
+          WAKEGUARD_KEY_PASSWORD: ${{ secrets.WAKEGUARD_KEY_PASSWORD }}
+        working-directory: WakeGuard
+        shell: bash
+        run: |
+          grep -Fq 'applicationId = "jp.wakeguard.alarm"' app/build.gradle.kts
+          grep -Fq 'versionCode = 196' app/build.gradle.kts
+          grep -Fq 'versionName = "2.9.6"' app/build.gradle.kts
+          test -n "$WAKEGUARD_KEYSTORE_B64"
+          test -n "$WAKEGUARD_KEYSTORE_PASSWORD"
+          test -n "$WAKEGUARD_KEY_ALIAS"
+          test -n "$WAKEGUARD_KEY_PASSWORD"
+
+      - name: Build release APK
+        working-directory: WakeGuard
+        run: gradle :app:assembleRelease --stacktrace
+
+      - name: Restore stable signing key
+        env:
+          WAKEGUARD_KEYSTORE_B64: ${{ secrets.WAKEGUARD_KEYSTORE_B64 }}
+        shell: bash
+        run: |
+          CLEANED="$(printf '%s' "$WAKEGUARD_KEYSTORE_B64" | tr -d '\r\n\t ')"
+          CLEANED="${CLEANED#WAKEGUARD_KEYSTORE_B64=}"
+          CLEANED="${CLEANED#\"}"
+          CLEANED="${CLEANED%\"}"
+          printf '%s' "$CLEANED" | base64 --decode > "$RUNNER_TEMP/wakeguard-release.p12"
+          test -s "$RUNNER_TEMP/wakeguard-release.p12"
+          chmod 600 "$RUNNER_TEMP/wakeguard-release.p12"
+
+      - name: Sign and verify stable APK
+        env:
+          WAKEGUARD_KEYSTORE_PASSWORD: ${{ secrets.WAKEGUARD_KEYSTORE_PASSWORD }}
+          WAKEGUARD_KEY_ALIAS: ${{ secrets.WAKEGUARD_KEY_ALIAS }}
+          WAKEGUARD_KEY_PASSWORD: ${{ secrets.WAKEGUARD_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
+          INPUT="WakeGuard/app/build/outputs/apk/release/app-release-unsigned.apk"
+          OUTPUT="WakeGuard-2.9.6-stable.apk"
+          "$APKSIGNER" sign \
+            --ks "$RUNNER_TEMP/wakeguard-release.p12" \
+            --ks-type PKCS12 \
+            --ks-key-alias "$WAKEGUARD_KEY_ALIAS" \
+            --ks-pass env:WAKEGUARD_KEYSTORE_PASSWORD \
+            --key-pass env:WAKEGUARD_KEY_PASSWORD \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            --out "$OUTPUT" \
+            "$INPUT"
+          "$APKSIGNER" verify --verbose --print-certs "$OUTPUT" | tee "$RUNNER_TEMP/apk-signature.txt"
+          ACTUAL="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/apk-signature.txt" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+          EXPECTED="DB95A00E32A6B4C3F54D43B91CF67155DCA7057C2C0EE145F5FB98178F311C2E"
+          test "$ACTUAL" = "$EXPECTED"
+          "$AAPT" dump badging "$OUTPUT" | grep -F "package: name='jp.wakeguard.alarm' versionCode='196' versionName='2.9.6'"
+          sha256sum "$OUTPUT" > "$OUTPUT.sha256"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WakeGuard-2.9.6-stable
+          path: |
+            WakeGuard-2.9.6-stable.apk
+            WakeGuard-2.9.6-stable.apk.sha256

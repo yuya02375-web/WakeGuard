@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 432 432" role="img" aria-labelledby="title">
+  <title id="title">夜明けの時刻</title>
+  <rect width="432" height="432" rx="96" fill="#11151d"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M116 286a100 100 0 0 1 200 0" stroke="#f3e9db" stroke-width="13"/>
+    <path d="M216 170v16M137 230l14 8m144-8-14 8" stroke="#f3e9db" stroke-width="10"/>
+    <path d="M156 286a60 60 0 0 1 120 0z" fill="#ffb36b" stroke="none"/>
+    <path d="M156 286h120" stroke="#f3e9db" stroke-width="14"/>
+    <path d="M216 250v-31m0 31 25-15" stroke="#fff1dd" stroke-width="9"/>
+    <circle cx="216" cy="250" r="7" fill="#fff1dd" stroke="none"/>
+  </g>
+</svg>

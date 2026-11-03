@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IGNIDO Wake — アイコン案 2.9.6</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0b1018; --surface:#171e28; --line:#303a47; --text:#f3eee6; --muted:#aab2bd; --accent:#ffb36b; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:radial-gradient(ellipse at 50% -20%,#263342 0,var(--bg) 62%); color:var(--text); font:16px/1.6 system-ui,"Yu Gothic UI",sans-serif; }
+    main { width:min(980px,100%); margin:auto; padding:54px 24px 72px; }
+    .eyebrow { color:var(--accent); letter-spacing:.16em; font-size:12px; font-weight:700; }
+    h1 { margin:8px 0 12px; font-size:clamp(28px,5vw,42px); line-height:1.2; letter-spacing:-.04em; }
+    .intro { max-width:650px; color:var(--muted); margin:0 0 30px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; }
+    article { background:linear-gradient(160deg,#1d2632,var(--surface)); border:1px solid var(--line); border-radius:24px; padding:20px; }
+    article.selected { border-color:#d7975d; box-shadow:0 0 0 1px #d7975d33,0 18px 50px #0004; }
+    .preview { display:grid; place-items:center; aspect-ratio:1; border-radius:18px; background:#0f141c; }
+    img { width:72%; height:72%; filter:drop-shadow(0 16px 24px #0007); }
+    .badge { display:inline-block; color:#201910; background:var(--accent); border-radius:999px; padding:3px 10px; font-size:11px; font-weight:800; letter-spacing:.04em; }
+    h2 { margin:17px 0 6px; font-size:19px; }
+    p { margin:0; color:var(--muted); font-size:14px; }
+    .note { margin-top:25px; border-top:1px solid var(--line); padding-top:16px; color:var(--muted); font-size:13px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">IGNIDO WAKE · ICON STUDY 2.9.6</div>
+    <h1>朝の習慣をひと目で伝える、新しいシンボル。</h1>
+    <p class="intro">3案とも既存アイコンをなぞらず、暗いホーム画面でも形が残る単純な輪郭から設計しました。第1案をアプリに適用し、残る2案も比較用に残しています。</p>
+    <section class="grid" aria-label="アイコン候補">
+      <article class="selected">
+        <div class="preview"><img src="01-sunrise-clock.svg" alt="弧の中から朝日が昇る時計のアイコン"></div>
+        <span class="badge">アプリに適用</span>
+        <h2>01 · 夜明けの時刻</h2>
+        <p>時計の弧と昇る太陽をひとつの輪郭にまとめた案。起床の目的が伝わり、縮小しても判読しやすい構成です。</p>
+      </article>
+      <article>
+        <div class="preview"><img src="02-wake-signal.svg" alt="起床シグナルを添えた時計のアイコン"></div>
+        <h2>02 · 起床シグナル</h2>
+        <p>均整の取れた文字盤に短いシグナルを添えた案。アラーム機能を直接的に表します。</p>
+      </article>
+      <article>
+        <div class="preview"><img src="03-orbit-flame.svg" alt="軌道に包まれた火種のアイコン"></div>
+        <h2>03 · 火種の軌道</h2>
+        <p>成長システムの火種を軌道で包む案。文字盤に頼らず、習慣の積み重ねを象徴します。</p>
+      </article>
+    </section>
+    <p class="note">選定した第1案はAndroidのアダプティブ前景とテーマ用単色レイヤーに展開しています。背景はランチャー側のマスクに任せます。</p>
+  </main>
+</body>
+</html>

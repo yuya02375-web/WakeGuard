@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 432 432" role="img" aria-labelledby="title">
+  <title id="title">火種の軌道</title>
+  <rect width="432" height="432" rx="96" fill="#11151d"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M133 241c14-76 80-121 151-101 66 19 83 91 45 140-40 52-122 61-174 22-17-13-26-34-22-61z" stroke="#c9dbe0" stroke-width="11"/>
+    <circle cx="133" cy="241" r="9" fill="#ffb36b" stroke="none"/>
+    <circle cx="329" cy="280" r="9" fill="#ff9a74" stroke="none"/>
+    <path d="M216 136c-18 34-42 58-40 96 2 36 20 61 40 68 24-9 40-34 40-62 0-21-9-41-24-56-1 24-12 38-21 43-2-31 18-55 5-89z" fill="#ff9a74" stroke="none"/>
+    <path d="M216 222c-15 17-20 31-15 47 3 11 9 18 15 21 9-5 15-14 15-27 0-15-6-30-15-41z" fill="#ffd28d" stroke="none"/>
+  </g>
+</svg>

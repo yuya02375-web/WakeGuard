@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Exact alarms are the core purpose of this app. Android 13+ uses USE_EXACT_ALARM;
+         Android 12/12L use the user-granted SCHEDULE_EXACT_ALARM capability. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- INTERNET intentionally omitted: core world-clock search stays local. Optional online place
+         resolution is delegated to Android's Geocoder service and never replaces local search. -->
+
+    <application
+        android:name=".WakeGuardApp"
+        android:allowBackup="true"
+        android:backupAgent=".IgnidoBackupAgent"
+        android:fullBackupOnly="false"
+        android:restoreAnyVersion="true"
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:localeConfig="@xml/locales_config"
+        android:theme="@style/WakeGuardThemeNoFlash">
+
+        <activity
+            android:name=".AlarmActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true" />
+
+        <activity
+            android:name=".ClockActivity"
+            android:exported="true"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".MultiAlarmActivity" android:exported="false" />
+        <activity android:name=".AlarmEditorActivity" android:exported="false" />
+        <activity android:name=".SystemSettingsActivity" android:exported="false" />
+        <activity android:name=".StatsActivity" android:exported="false" />
+        <activity android:name=".ClockFaceActivity" android:exported="false" android:showWhenLocked="true" />
+        <activity android:name=".ClockSettingsActivity" android:exported="false" />
+        <activity android:name=".TimeLogActivity" android:exported="false" />
+        <activity android:name=".WorldClockWidgetConfigActivity" android:exported="true" android:excludeFromRecents="true">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" /></intent-filter>
+        </activity>
+        <activity
+            android:name=".TimerVideoActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <receiver android:name=".WorldClockWidgetProvider" android:exported="true" android:label="世界時計 2×2">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/world_clock_widget_info" />
+        </receiver>
+        <receiver android:name=".NextAlarmWidgetProvider" android:exported="true" android:label="次のアラーム 2×1">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/next_alarm_widget_info" />
+        </receiver>
+        <receiver android:name=".LocalClockWidgetProvider" android:exported="true" android:label="時計 2×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/local_clock_widget_info" /></receiver>
+        <receiver android:name=".MultiWorldClockWidgetProvider" android:exported="true" android:label="世界時計 4都市 4×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/multi_world_clock_widget_info" /></receiver>
+        <receiver android:name=".AlarmListWidgetProvider" android:exported="true" android:label="アラーム一覧 4×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/alarm_list_widget_info" /></receiver>
+        <receiver android:name=".AlarmCountdownWidgetProvider" android:exported="true" android:label="次のアラームまで 2×1"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/alarm_countdown_widget_info" /></receiver>
+        <receiver android:name=".TimerWidgetProvider" android:exported="true" android:label="タイマー操作 3×1"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/timer_widget_info" /></receiver>
+        <receiver android:name=".TimerPresetWidgetProvider" android:exported="true" android:label="タイマープリセット 4×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/timer_preset_widget_info" /></receiver>
+        <receiver android:name=".StopwatchWidgetProvider" android:exported="true" android:label="ストップウォッチ 3×1"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/stopwatch_widget_info" /></receiver>
+        <receiver android:name=".StreakWidgetProvider" android:exported="true" android:label="ストリーク 2×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/streak_widget_info" /></receiver>
+        <receiver android:name=".WakeStatsWidgetProvider" android:exported="true" android:label="起床成績 4×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/wake_stats_widget_info" /></receiver>
+        <receiver android:name=".QuickToolsWidgetProvider" android:exported="true" android:label="時計ツール 4×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/quick_tools_widget_info" /></receiver>
+        <receiver android:name=".TodayWidgetProvider" android:exported="true" android:label="今日 4×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/today_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$WorldClockCompactWidgetProvider" android:exported="true" android:label="世界時計 2×1"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/world_compact_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$WorldClockWideWidgetProvider" android:exported="true" android:label="世界時計 4×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/world_wide_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$WorldClockTallWidgetProvider" android:exported="true" android:label="世界時計 2×3"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/world_tall_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$LocalClockCompactWidgetProvider" android:exported="true" android:label="時計 2×1"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/local_compact_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$LocalClockWideWidgetProvider" android:exported="true" android:label="時計 4×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/local_wide_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$LocalClockTallWidgetProvider" android:exported="true" android:label="時計 2×3"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/local_tall_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$MultiWorldClockCompactWidgetProvider" android:exported="true" android:label="世界時計 4都市 3×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/multi_compact_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$MultiWorldClockTallWidgetProvider" android:exported="true" android:label="世界時計 4都市 3×3"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/multi_tall_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$MultiWorldClockLargeWidgetProvider" android:exported="true" android:label="世界時計 4都市 4×3"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/multi_large_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$NextAlarmSquareWidgetProvider" android:exported="true" android:label="次のアラーム 2×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/next_square_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$NextAlarmWideWidgetProvider" android:exported="true" android:label="次のアラーム 4×1"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/next_wide_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$NextAlarmTallWidgetProvider" android:exported="true" android:label="次のアラーム 2×3"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/next_tall_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$AlarmCountdownSquareWidgetProvider" android:exported="true" android:label="次のアラームまで 2×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/countdown_square_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$AlarmCountdownWideWidgetProvider" android:exported="true" android:label="次のアラームまで 4×1"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/countdown_wide_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$AlarmCountdownTallWidgetProvider" android:exported="true" android:label="次のアラームまで 2×3"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/countdown_tall_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$AlarmListCompactWidgetProvider" android:exported="true" android:label="アラーム一覧 3×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/alarmlist_compact_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$AlarmListTallWidgetProvider" android:exported="true" android:label="アラーム一覧 3×3"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/alarmlist_tall_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$AlarmListLargeWidgetProvider" android:exported="true" android:label="アラーム一覧 4×3"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/alarmlist_large_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$TimerCompactWidgetProvider" android:exported="true" android:label="タイマー操作 2×1"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/timer_compact_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$TimerSquareWidgetProvider" android:exported="true" android:label="タイマー操作 2×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/timer_square_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$TimerWideWidgetProvider" android:exported="true" android:label="タイマー操作 4×1"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/timer_wide_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$TimerPresetCompactWidgetProvider" android:exported="true" android:label="タイマープリセット 3×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/preset_compact_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$TimerPresetTallWidgetProvider" android:exported="true" android:label="タイマープリセット 3×3"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/preset_tall_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$TimerPresetLargeWidgetProvider" android:exported="true" android:label="タイマープリセット 4×3"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/preset_large_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$StopwatchCompactWidgetProvider" android:exported="true" android:label="ストップウォッチ 2×1"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/stopwatch_compact_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$StopwatchSquareWidgetProvider" android:exported="true" android:label="ストップウォッチ 2×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/stopwatch_square_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$StopwatchWideWidgetProvider" android:exported="true" android:label="ストップウォッチ 4×1"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/stopwatch_wide_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$StreakCompactWidgetProvider" android:exported="true" android:label="ストリーク 2×1"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/streak_compact_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$StreakWideWidgetProvider" android:exported="true" android:label="ストリーク 4×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/streak_wide_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$StreakTallWidgetProvider" android:exported="true" android:label="ストリーク 2×3"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/streak_tall_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$WakeStatsCompactWidgetProvider" android:exported="true" android:label="起床成績 3×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/stats_compact_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$WakeStatsTallWidgetProvider" android:exported="true" android:label="起床成績 3×3"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/stats_tall_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$WakeStatsLargeWidgetProvider" android:exported="true" android:label="起床成績 4×3"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/stats_large_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$QuickToolsCompactWidgetProvider" android:exported="true" android:label="時計ツール 3×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/tools_compact_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$QuickToolsTallWidgetProvider" android:exported="true" android:label="時計ツール 3×3"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/tools_tall_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$QuickToolsLargeWidgetProvider" android:exported="true" android:label="時計ツール 4×3"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/tools_large_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$TodayCompactWidgetProvider" android:exported="true" android:label="今日 3×2"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/today_compact_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$TodayTallWidgetProvider" android:exported="true" android:label="今日 3×3"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/today_tall_widget_info" /></receiver>
+        <receiver android:name=".WidgetVariantProviders$TodayLargeWidgetProvider" android:exported="true" android:label="今日 4×3"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/today_large_widget_info" /></receiver>
+        <receiver android:name=".WidgetPinResultReceiver" android:exported="false" />
+        <receiver android:name=".WidgetActionReceiver" android:exported="false" />
+
+        <receiver android:name=".AlarmReceiver" android:exported="false" />
+        <receiver android:name=".SnoozeReceiver" android:exported="false" />
+        <receiver android:name=".AlarmReminderReceiver" android:exported="false" />
+        <receiver android:name=".TimerReceiver" android:exported="false" />
+
+        <receiver
+            android:name=".RescheduleReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name=".AlarmService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback"
+            android:stopWithTask="false" />
+
+        <service
+            android:name=".TimerRingService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback"
+            android:stopWithTask="false" />
+    </application>
+</manifest>

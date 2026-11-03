@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">IGNIDO Wake</string>
+    <string name="alarm_channel">起床アラーム</string>
+    <string name="alarm_channel_desc">設定時刻に鳴るアラーム</string>
+</resources>
