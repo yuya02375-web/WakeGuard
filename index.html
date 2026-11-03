@@ -1,4 +1,4 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#080b13"/><meta name="description" content="ChatGPTとClaudeの週間利用枠を見やすく管理できるパーソナルダッシュボード"/><title>QUOTA.STUDIO | AI週間利用枠ダッシュボード</title><style>
+<!doctype html><html lang="ja"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#080b13"/><meta name="description" content="ChatGPTとClaudeの週間利用枠を見やすく管理できるパーソナルダッシュボード"/><title>利用枠の管理 | ChatGPT・Claude</title><style>
 :root{color-scheme:dark;--bg:#080b13;--surface:#121826;--surface2:#172032;--field:#0c1422;--line:rgba(174,197,235,.14);--text:#f2f5ff;--muted:#b1bed2;--subtle:#8d9cb5;--accent:#a99aff;--accentRgb:169,154,255;--accent2:#65e4ed;--okay:#65e3bd;--warn:#ffce80;--ringTrack:#2a3349;--radius:21px;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;font-synthesis:none}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -142,13 +142,119 @@ tbody tr:not(.current):hover{background:rgba(151,168,201,.035)}
 @media (max-width:640px){.app-shell{padding:0 14px 38px}.topbar{min-height:73px}.live-date{display:none}.brand-title{font-size:14px}.brand-overline{font-size:9px}.intro{padding:32px 2px 22px}.intro h1{font-size:clamp(31px,7.5vw,42px)}.sub{font-size:12px}.service-card{display:block;padding:13px}.service-label{padding:0 0 10px 3px;display:block}.toggle{max-width:none}.toggle button{padding:11px 12px}.overview{padding:24px 22px;grid-template-columns:1fr;gap:23px}.huge{font-size:clamp(60px,15vw,82px)}.ring-side{display:grid;grid-template-columns:126px 1fr;justify-content:start;gap:14px;align-items:center}.ring-gauge{width:126px;height:126px}.ring-core{inset:12px}.ring-core strong{font-size:23px}.ring-caption{font-size:12px}.metrics{gap:9px}.metric{min-height:0;padding:15px}.metric:before{left:15px;width:28px}.metric .name{font-size:11px}.metric .num{font-size:25px}.metric .help{font-size:10px}.panel{padding:19px;border-radius:18px}.quota-panel{padding:20px}.fields,.fivegrid{grid-template-columns:1fr}.fields>div>.field+.field{margin-top:0}.fields > div + div{margin-top:7px}.switch button{padding:10px 11px;font-size:11px}.switch button b{font-size:12px}}
 @media (max-width:390px){.metrics{grid-template-columns:1fr 1fr}.metrics .metric:first-child{grid-column:span 2}.service-label{font-size:12px}.private-badge{font-size:10px;padding:8px}.panel-head{align-items:flex-start}h2{font-size:16px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+/* QUIET PRODUCT UI · editorial / utility first */
+:root{color-scheme:light;--bg:#f5f5f2;--surface:#fff;--surface2:#fbfcfa;--field:#fff;--line:#e4e6e1;--text:#202924;--muted:#626e68;--subtle:#7c8983;--accent:#2f5b4a;--accentRgb:47,91,74;--accent2:#2f5b4a;--okay:#4c886e;--warn:#ab6140;--ringTrack:#e2e7e1;--radius:14px;font-family:ui-sans-serif,system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif}
+body[data-provider=claude]{--accent:#9c563b;--accentRgb:156,86,59;--accent2:#9c563b}
+body{background:#f5f5f2;color:var(--text)}
+body:before,body:after{display:none!important}
+.app-shell{max-width:1100px;padding-bottom:45px}
+.topbar{min-height:72px;border-bottom:1px solid var(--line)}
+.brand-mark{width:34px;height:34px;border:1px solid #e0e6dd;border-radius:8px;background:#eaf0eb;box-shadow:none}
+.brand-mark svg{width:23px;height:23px;stroke:var(--accent)}
+.brand-title{font-size:16px;letter-spacing:-.035em;color:var(--text)}
+.brand-overline{font-size:9px;letter-spacing:.12em;color:var(--subtle)}
+.live-date,.private-badge{color:var(--muted);background:none;border:0;padding:6px 0}
+.private-badge:before{background:#61826c;box-shadow:none}
+.intro{padding:37px 0 24px}
+.eyebrow{color:var(--accent);letter-spacing:.14em;font-size:10px}
+.intro h1{font-size:clamp(29px,3.7vw,42px);font-weight:800;letter-spacing:-.05em;margin:10px 0}
+.gradient-text{background:none!important;color:var(--text)!important}
+.sub{color:var(--muted);font-size:13px;line-height:1.85;max-width:670px}
+.panel{background:#fff;border:1px solid var(--line);box-shadow:none;border-radius:14px;padding:23px}
+.panel h2,.panel h3{color:var(--text)}
+.panel-head{margin-bottom:18px}
+.section-tag{font-size:10px;letter-spacing:.03em;color:var(--subtle)}
+.section-number{border:0;border-radius:5px;background:#edf2ed;color:var(--accent);vertical-align:1px}
+.service-card{background:#fff;box-shadow:none;border:1px solid var(--line);margin-bottom:16px;border-radius:12px;padding:12px 17px}
+.service-label{color:var(--muted);font-size:12px}
+.toggle{background:#f1f3f0;border:0;border-radius:10px;padding:4px}
+.toggle button{color:var(--muted);border:0;border-radius:8px;transition:background .14s;color-scheme:light}
+.toggle button strong{font-size:14px}
+.toggle button small{color:#7a867e}
+.toggle button[aria-pressed=true]{background:#fff;color:var(--text);border:0;box-shadow:0 1px 4px rgba(15,30,20,.09)}
+.toggle button[aria-pressed=true] small{color:var(--muted)}
+.overview{min-height:258px;padding:30px 35px;border:1px solid #e2e6e0;border-radius:14px;background:#fff;grid-template-columns:minmax(0,1fr) 190px;gap:14px;overflow:visible}
+.overview:before{display:none}
+.pill{background:#edf3ee;border:1px solid #dbe9df;color:#305f4d;border-radius:6px;letter-spacing:0;font-size:11px;font-weight:750;padding:6px 10px;margin-bottom:15px}
+.pill .pulse{background:#528469;box-shadow:none;width:6px;height:6px}
+.pill[data-state=over]{background:#fff1e8;color:#9b4c31;border-color:#f1d4bf}
+.pill[data-state=over] .pulse{background:#a95b3a;box-shadow:none}
+.kicker{color:var(--muted);font-size:12px;letter-spacing:.02em;text-transform:none}
+.huge{color:#202924;font-size:clamp(57px,7vw,78px);letter-spacing:-.065em;margin:7px 0 12px;font-weight:800}
+.explain{color:#4e5b55;font-size:14px;line-height:1.75}
+.alert{color:#a44c33;font-size:12px}
+.overview-rule{background:#e8eae6;margin:18px 0 12px}
+.overview-foot{color:var(--subtle);letter-spacing:0;font-size:11px}
+.ring-side{gap:11px}
+.ring-gauge{width:155px;height:155px;background:conic-gradient(from -90deg,var(--accent) 0 var(--progress),#e8ebe6 var(--progress) 100%);box-shadow:none}
+.ring-core{inset:13px;background:#fff;box-shadow:none;border:0}
+.ring-core span{color:var(--subtle);font-size:10px;letter-spacing:.03em}
+.ring-core strong{color:var(--text);font-size:30px;letter-spacing:-.055em}
+.ring-caption{color:var(--muted);font-size:11px;text-align:center}
+.metrics{gap:12px;margin:12px 0}
+.metric{min-height:114px;padding:18px 20px}
+.metric:before{background:#aab8af!important;height:2px;width:32px}
+.metric:first-child:before{background:var(--accent)!important}
+.metric .name{font-size:12px;color:var(--muted)}
+.metric .num{color:var(--text);font-size:34px;margin:8px 0 2px}
+.metric .help{color:var(--subtle);font-size:11px}
+.quota-panel{padding:23px 26px;margin-bottom:15px}
+.quota-head small{color:var(--subtle);letter-spacing:0}
+.bar{height:11px;background:#f0f2ee;margin:20px 0 14px}
+.bar .used{background:#acb4ad}
+.bar .free{background:var(--accent)}
+.bar .reserve{background:#e3e9e2}
+.legend{color:var(--muted);font-size:11px}
+.week-rail{border-top:1px solid var(--line);margin-top:20px;padding-top:18px}
+.week-rail-top{color:var(--muted)}
+.week-rail-top strong{color:var(--text)}
+.day-ticks i{background:#e7eae5;height:6px;box-shadow:none}
+.day-ticks i.complete{background:#9cb6a6}
+.day-ticks i.active{background:var(--accent);box-shadow:none}
+.field label{color:var(--text);font-size:12px}
+.field input:not([type=range]),.field select{color:var(--text);background:#fff;border:1px solid #d5dcd5;border-radius:9px;font-size:16px;outline:none}
+.field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(var(--accentRgb),.12)}
+.field input[type=range]{background:#e3eae3;accent-color:var(--accent)}
+.field input[type=range]::-webkit-slider-thumb{background:#fff;border-color:var(--accent);box-shadow:none}
+.help{color:var(--muted)}
+.line{background:var(--line)}
+.timeblock{background:#f8faf7;border:1px solid #e6ebe5;border-radius:10px;color:var(--text)}
+.timeblock strong{color:var(--text)}
+.timeblock p{color:var(--muted)}
+#countdown{color:var(--accent)}
+.switch button{background:#fff;border:1px solid #dfe4dc;color:#65726a;border-radius:10px}
+.switch button b{color:var(--text)}
+.switch button[aria-pressed=true]{background:#f0f5f1;border:1px solid #88a795;color:var(--accent)}
+.switch button[aria-pressed=true] b{color:var(--accent)}
+#gptUsageBoth{color:var(--accent)}
+.softButton,.baseline button{background:#f1f6f1;border:1px solid #c9d9cc;color:var(--accent);border-radius:8px}
+.softButton:hover,.baseline button:hover{background:#e7efe8}
+.baseline{border-color:#cddbd1}
+.baselineInfo{color:var(--text)}
+.smallnum{color:var(--text)}
+.tables{background:#fff;border:1px solid #e5eae4;border-radius:9px}
+thead{background:#f8faf7}
+th{color:#69766e}
+td{color:#2d3b34}
+th,td{border-bottom:1px solid #e9ece7}
+tbody tr.current{background:#edf4ef;color:var(--text)}
+tbody tr.current td:first-child{color:#275c44}
+tbody tr:not(.current):hover{background:#f7f9f6}
+.refGrid .panel{background:#fff}
+.disclaimer{background:#f8faf7;border-color:#e5e9e3;color:var(--muted)}
+.footer{color:var(--subtle)}
+.footer strong{color:var(--text)}
+@media(max-width:940px){.overview{grid-template-columns:minmax(0,1fr) 170px}.ring-gauge{width:145px;height:145px}}
+@media(max-width:640px){.overview{grid-template-columns:1fr;padding:23px 22px;gap:15px}.ring-side{display:flex;flex-direction:row;gap:15px;justify-content:flex-start}.ring-gauge{width:100px;height:100px;flex-shrink:0}.ring-core{inset:10px}.ring-core strong{font-size:20px}.ring-core span{font-size:8px}.ring-caption{font-size:11px}.huge{font-size:clamp(52px,14vw,72px)}.metric{padding:15px}.metric .num{font-size:27px}.intro{padding:25px 2px 22px}.intro h1{font-size:31px}.app-shell{padding-left:13px;padding-right:13px}.topbar{min-height:64px}}
+@media(max-width:390px){.ring-side{gap:12px}.ring-gauge{width:84px;height:84px}.metric .num{font-size:24px}}
 </style></head>
 <body data-provider="gpt"><main class="app-shell">
 <header class="topbar">
- <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M7 17.5 13.2 8l5.6 8.1-5.6 8.3"/><path d="m17.5 7.7 7.6 8.3-7.6 8.4"/><path d="M8 24.5 24 8"/></svg></span><div><div class="brand-title">QUOTA<span style="color:var(--accent)">.</span>STUDIO</div><span class="brand-overline">AI USAGE INTELLIGENCE</span></div></div>
- <div class="top-right"><span class="live-date" id="headerNow">JST · —</span><span class="private-badge">PRIVATE DASHBOARD</span></div>
+ <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M7 17.5 13.2 8l5.6 8.1-5.6 8.3"/><path d="m17.5 7.7 7.6 8.3-7.6 8.4"/><path d="M8 24.5 24 8"/></svg></span><div><div class="brand-title">利用枠の管理</div><span class="brand-overline">WEEKLY USAGE</span></div></div>
+ <div class="top-right"><span class="live-date" id="headerNow">JST · —</span><span class="private-badge">この端末に保存</span></div>
 </header>
-<section class="intro"><div class="eyebrow">YOUR WEEKLY USAGE, UNDER CONTROL</div><h1><span class="gradient-text">AIの利用枠を、</span><br>ひと目で管理。</h1><p class="sub">ChatGPT・Claudeの週間上限を見やすく可視化。残り利用枠と使用済み率の切り替え、次回リセット、今日の目標を一画面で確認できます。</p></section>
+<section class="intro"><div class="eyebrow">CHATGPT / CLAUDE</div><h1>使える量を、把握する。</h1><p class="sub">使いすぎを防ぐための、シンプルな週間利用枠の計算機。使用率とリセット時刻を入力すると、今日の目標を確認できます。</p></section>
 
 <section class="panel service-card" aria-label="サービス切り替え">
  <span class="service-label">サービスを選択</span>
@@ -156,11 +262,11 @@ tbody tr:not(.current):hover{background:rgba(151,168,201,.035)}
 </section>
 
 <section class="panel overview primary" aria-live="polite">
- <div class="overview-copy"><div id="quotaStatus" class="pill" data-state="ready"><span class="pulse"></span><span id="statusText">USAGE STATUS</span></div>
+ <div class="overview-copy"><div id="quotaStatus" class="pill" data-state="ready"><span class="pulse"></span><span id="statusText">利用状況</span></div>
  <div class="kicker" id="targetLabel">今日の終了までに残す最低ライン</div><div class="huge" id="target">—</div>
  <div class="explain" id="direction">リセット日時を設定すると、今日の目標が表示されます。</div><div class="alert" id="alert" hidden></div>
- <div class="overview-rule"></div><div class="overview-foot" id="heroFoot">WEEKLY PLANNING · JST</div></div>
- <div class="ring-side"><div class="ring-gauge" id="usageRing" role="img" aria-label="週間枠の使用状況"><div class="ring-core"><span>WEEK USED</span><strong id="ringValue">0%</strong></div></div><div class="ring-caption" id="ringCaption">週間利用枠の使用済み率</div></div>
+ <div class="overview-rule"></div><div class="overview-foot" id="heroFoot">日本時間を基準に計算</div></div>
+ <div class="ring-side"><div class="ring-gauge" id="usageRing" role="img" aria-label="週間枠の使用状況"><div class="ring-core"><span>使用済み</span><strong id="ringValue">0%</strong></div></div><div class="ring-caption" id="ringCaption">週間利用枠の使用済み率</div></div>
 </section>
 
 <div class="metrics">
@@ -170,17 +276,17 @@ tbody tr:not(.current):hover{background:rgba(151,168,201,.035)}
 </div>
 
 <section class="panel quota-panel">
- <div class="quota-head"><h3>週間枠の内訳</h3><small>REAL-TIME ALLOCATION</small></div>
+ <div class="quota-head"><h3>週間枠の内訳</h3><small>週間枠を100%として表示</small></div>
  <div class="bar" id="bar" role="img" aria-label="使用状況"><div class="used" id="barUsed" style="width:0%"></div><div class="free" id="barFree" style="width:0%"></div><div class="reserve" id="barReserve" style="width:100%"></div></div>
  <div class="legend"><span><i style="background:#929bb3"></i>使用済み</span><span><i style="background:var(--accent)"></i>今日あと使える</span><span><i style="background:#384052"></i>残しておく分</span></div>
- <div class="week-rail"><div class="week-rail-top"><span>WEEKLY TIMELINE</span><strong id="weekTimeLabel">週の進行状況</strong></div><div class="day-ticks" id="weekTicks" aria-label="7日間の進行状況"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+ <div class="week-rail"><div class="week-rail-top"><span>今週の経過</span><strong id="weekTimeLabel">週の進行状況</strong></div><div class="day-ticks" id="weekTicks" aria-label="7日間の進行状況"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
 </section>
 
 <div class="dashboardColumns">
 <div class="controlColumn">
 
 <section class="panel" id="weeklySettings">
-<div class="panel-head"><h2><span class="section-number">01</span>週間枠の設定</h2><span class="section-tag">WEEKLY LIMIT</span></div>
+<div class="panel-head"><h2><span class="section-number">01</span>週間枠の設定</h2><span class="section-tag">週間枠</span></div>
 <div id="gptUsageMode" hidden>
 <p class="help" style="margin:0 0 9px">ChatGPTの表示形式</p>
 <div class="switch" role="group" aria-label="ChatGPTの利用枠表示方法">
@@ -197,14 +303,14 @@ tbody tr:not(.current):hover{background:rgba(151,168,201,.035)}
 </section>
 
 <section class="panel" id="fiveHourPanel" hidden>
-<div class="panel-head"><h2><span class="section-number">02</span>5時間枠の設定</h2><span class="section-tag">5-HOUR LIMIT</span></div>
+<div class="panel-head"><h2><span class="section-number">02</span>5時間枠の設定</h2><span class="section-tag">5時間枠</span></div>
 <div class="fivegrid"><div class="field"><label for="fiveUsed">5時間枠の使用済み率（%）</label><input id="fiveUsed" type="number" min="0" max="100" step="0.01" inputmode="decimal" placeholder="例：2"/></div><div class="field"><label for="fiveResetAt">5時間枠のリセット日時（日本時間）</label><input id="fiveResetAt" type="datetime-local" step="60"/></div></div>
 <div class="timeblock"><div class="when"><div><span class="help">使用済み</span><div class="smallnum" id="fiveUsedDisplay">未設定</div></div><div><span class="help">残量</span><div class="smallnum" id="fiveRemainingDisplay">—</div></div></div><p id="fiveCountdown">5時間枠の情報を入力してください。</p></div>
 <p class="help">週間枠とは別の制限です。最新の表示を手動で入力してください。</p>
 </section>
 
 <section class="panel" id="allocationSettings">
-<div class="panel-head"><h2><span class="section-number">03</span>配分方法</h2><span class="section-tag">STRATEGY</span></div>
+<div class="panel-head"><h2><span class="section-number">03</span>配分方法</h2><span class="section-tag">配分の選択</span></div>
 <div class="switch">
 <button id="regular" aria-pressed="true" type="button"><b>週間均等配分</b>7日間の理想ペースと比較</button>
 <button id="redistribute" aria-pressed="false" type="button"><b>残り枠を再配分</b>現在の枠を残り時間で再配分</button></div>
@@ -214,7 +320,7 @@ tbody tr:not(.current):hover{background:rgba(151,168,201,.035)}
 
 <div class="insightColumn">
 <section class="panel" id="dailyPanel">
-<div class="panel-head"><h2><span class="section-number">04</span>日ごとの利用目標</h2><span class="section-tag">7-DAY PLAN</span></div>
+<div class="panel-head"><h2><span class="section-number">04</span>日ごとの利用目標</h2><span class="section-tag">7日間</span></div>
 <p class="help">サービスのリセット時刻から24時間単位で区切った目標です。現在の日を強調表示しています。</p>
 <div class="tables" style="margin-top:16px"><table><thead><tr><th>区間終了（日本時間）</th><th>使用上限</th><th>残量下限</th></tr></thead><tbody id="dailyRows"></tbody></table></div>
 </section>
@@ -222,11 +328,11 @@ tbody tr:not(.current):hover{background:rgba(151,168,201,.035)}
 </div>
 
 <div class="refGrid">
-<section class="panel"><div class="panel-head"><h2>早見表① <span style="color:var(--subtle);font-weight:500">残り日数別の使用割合</span></h2><span class="section-tag">QUICK REFERENCE</span></div><p class="help">残っている枠を残り日数で均等配分した場合の目安。</p><div class="tables"><table><thead><tr><th>残り日数</th><th>1日に使える割合</th></tr></thead><tbody id="ref1"></tbody></table></div></section>
-<section class="panel"><div class="panel-head"><h2>早見表② <span style="color:var(--subtle);font-weight:500">理想的な消費ペース</span></h2><span class="section-tag">WEEKLY BASELINE</span></div><p class="help">週の開始時に100%残っていて、毎日同じ量を使う場合。</p><div class="tables"><table><thead><tr><th>残り日数</th><th>使用済み目安</th><th>残量目安</th></tr></thead><tbody id="ref2"></tbody></table></div></section>
+<section class="panel"><div class="panel-head"><h2>早見表① <span style="color:var(--subtle);font-weight:500">残り日数別の使用割合</span></h2><span class="section-tag">日割り</span></div><p class="help">残っている枠を残り日数で均等配分した場合の目安。</p><div class="tables"><table><thead><tr><th>残り日数</th><th>1日に使える割合</th></tr></thead><tbody id="ref1"></tbody></table></div></section>
+<section class="panel"><div class="panel-head"><h2>早見表② <span style="color:var(--subtle);font-weight:500">理想的な消費ペース</span></h2><span class="section-tag">週間目標</span></div><p class="help">週の開始時に100%残っていて、毎日同じ量を使う場合。</p><div class="tables"><table><thead><tr><th>残り日数</th><th>使用済み目安</th><th>残量目安</th></tr></thead><tbody id="ref2"></tbody></table></div></section>
 </div>
 <p class="disclaimer">この計算機は利用ペース管理用です。実際のChatGPT・Claudeの使用量を自動取得するものではありません。リセット時刻と公式画面の制限を優先してください。</p>
-<footer class="footer"><span>QUOTA.STUDIO · PERSONAL USAGE PLANNER</span><span>設定は<strong>このブラウザ内</strong>に保存。サーバーへの送信・端末間同期なし。</span></footer>
+<footer class="footer"><span>利用枠の管理</span><span>設定は<strong>このブラウザ内</strong>に保存。サーバーへの送信・端末間同期なし。</span></footer>
 </main>
 <script>
 (()=>{'use strict';
@@ -250,7 +356,7 @@ function row(id,values,active=false){const tr=document.createElement('tr');if(ac
 function resetBase(now,info,used){s().base={start:now,cycle:info.start,day:info.index,used};}
 function render(){const st=s(),now=Date.now(),info=resetInfo(now,st),used=usedNow(),regular=st.mode==='regular';
  document.body.dataset.provider=provider;
- $('headerNow').textContent='JST · '+stamp(now);
+ $('headerNow').textContent='日本時間 '+stamp(now);
  $('ringValue').textContent=show(used);
  $('usageRing').style.setProperty('--progress',used+'%');
  $('usageRing').setAttribute('aria-label','週間枠の使用済み率 '+show(used));
@@ -279,8 +385,8 @@ function render(){const st=s(),now=Date.now(),info=resetInfo(now,st),used=usedNo
  $('alert').hidden=true;for(const id of ['available','maxUsed'])$(id).textContent='—';$('used').textContent=show(used);
  $('barUsed').style.width=used+'%';$('barFree').style.width='0%';$('barReserve').style.width=(100-used)+'%';
  $('bar').setAttribute('aria-label','現在の使用済み'+show(used)+'、リセット日時は未設定');
- $('quotaStatus').dataset.state='setup';$('statusText').textContent='SETUP REQUIRED';
- $('heroFoot').textContent='設定欄で次回リセット日時を入力';
+ $('quotaStatus').dataset.state='setup';$('statusText').textContent='日時未設定';
+ $('heroFoot').textContent='リセット日時を設定すると計算を開始します';
  $('weekTimeLabel').textContent='リセット日時の設定が必要です';
  Array.from($('weekTicks').children).forEach(t=>t.className='');
  $('dailyRows').replaceChildren();refreshReference(null);save();return;}
@@ -288,8 +394,8 @@ function render(){const st=s(),now=Date.now(),info=resetInfo(now,st),used=usedNo
  const b=st.base;
  const currentTarget=regular?100*(info.index+1)/7:Math.min(100,b.used+(100-b.used)*(info.todayEnd-b.start)/Math.max(1,info.end-b.start));
  const target=clip(currentTarget),bottom=100-target,can=Math.max(0,target-used),over=used>target+1e-9;
- $('quotaStatus').dataset.state=over?'over':'ready';$('statusText').textContent=over?'TARGET EXCEEDED':'ON TRACK';
- $('heroFoot').textContent='リセットまで '+countText(info.remaining)+' · JAPAN STANDARD TIME';
+ $('quotaStatus').dataset.state=over?'over':'ready';$('statusText').textContent=over?'目標超過':'計画内';
+ $('heroFoot').textContent='リセットまで '+countText(info.remaining)+' · 日本時間';
  $('weekTimeLabel').textContent=(info.index+1)+' / 7 日目';
  Array.from($('weekTicks').children).forEach((el,i)=>{el.className=i<info.index?'complete':i===info.index?'active':'';});
 
