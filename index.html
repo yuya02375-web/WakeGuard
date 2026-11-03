@@ -270,7 +270,7 @@ tbody tr:not(.current):hover{background:#f7f9f6}
 </section>
 
 <div class="metrics">
- <section class="panel metric"><div class="name" id="availableLabel">今日あと使える量</div><div class="num" id="available">—</div><p class="help">週間枠全体に対する割合</p></section>
+ <section class="panel metric"><div class="name" id="availableLabel">今日あと使える量</div><div class="num" id="available">—</div><p class="help" id="availableHelp">週間枠全体に対する割合</p></section>
  <section class="panel metric"><div class="name" id="usedLabel">現在の使用済み率</div><div class="num" id="used">0%</div><p class="help" id="usedHelp">現在の利用状況</p></section>
  <section class="panel metric"><div class="name" id="limitLabel">今日の使用済み率の上限</div><div class="num" id="maxUsed">—</div><p class="help">計画上の上限</p></section>
 </div>
@@ -387,6 +387,7 @@ function render(){const st=s(),now=Date.now(),info=resetInfo(now,st),used=usedNo
  $('bar').setAttribute('aria-label','現在の使用済み'+show(used)+'、リセット日時は未設定');
  $('quotaStatus').dataset.state='setup';$('statusText').textContent='日時未設定';
  $('heroFoot').textContent='リセット日時を設定すると計算を開始します';
+ $('availableLabel').textContent='今日あと使える量';$('availableHelp').textContent='週間枠全体に対する割合';
  $('weekTimeLabel').textContent='リセット日時の設定が必要です';
  Array.from($('weekTicks').children).forEach(t=>t.className='');
  $('dailyRows').replaceChildren();refreshReference(null);save();return;}
@@ -394,6 +395,10 @@ function render(){const st=s(),now=Date.now(),info=resetInfo(now,st),used=usedNo
  const b=st.base;
  const currentTarget=regular?100*(info.index+1)/7:Math.min(100,b.used+(100-b.used)*(info.todayEnd-b.start)/Math.max(1,info.end-b.start));
  const target=clip(currentTarget),bottom=100-target,can=Math.max(0,target-used),over=used>target+1e-9;
+ const lastDay=info.index===6;
+ const deadline='リセットまで '+countText(info.remaining);
+ $('availableLabel').textContent=lastDay?'リセットまでの週間残量':'今日あと使える量';
+ $('availableHelp').textContent=lastDay?'この週間枠の残り。実際の利用は5時間枠にも制限されます。':'週間枠全体に対する割合（5時間枠は別）';
  $('quotaStatus').dataset.state=over?'over':'ready';$('statusText').textContent=over?'目標超過':'計画内';
  $('heroFoot').textContent='リセットまで '+countText(info.remaining)+' · 日本時間';
  $('weekTimeLabel').textContent=(info.index+1)+' / 7 日目';
@@ -402,12 +407,14 @@ function render(){const st=s(),now=Date.now(),info=resetInfo(now,st),used=usedNo
  $('baselineInfo').textContent='開始時の使用済み率：'+show(b.used)+' ／ 固定日時：'+stamp(b.start);
  $('nextReset').textContent=jstDate(info.end);$('countdown').textContent='リセットまで '+countText(info.remaining)+'（'+(info.remaining/DAY).toFixed(2)+'日）';
  $('nowLine').textContent='今日の区切り：'+stamp(info.todayEnd)+'　｜　現在：'+stamp(now);
- $('targetLabel').textContent=isRemaining?'今日の区切り時刻までに残す最低ライン':'今日の区切り時刻までの使用済み率の上限';
+ $('targetLabel').textContent=lastDay?(isRemaining?'リセット直前の残量下限（計画上）':'リセット直前の使用済み率上限（計画上）'):(isRemaining?'今日の区切り時刻までに残す最低ライン':'今日の区切り時刻までの使用済み率の上限');
  $('target').textContent=show(isRemaining?bottom:target);
- $('direction').textContent=over?(isRemaining?'現在の残量は'+show(100-used)+'。目標の'+show(bottom)+'を'+show(used-target)+'下回っています。':'現在の使用済み率は'+show(used)+'。目標の'+show(target)+'を'+show(used-target)+'超えています。'):(isRemaining?'現在'+show(100-used)+'残っています。'+show(bottom)+'になるまで、あと'+show(can)+'使用できます。':'現在'+show(used)+'使用済みです。'+show(target)+'まで、あと'+show(can)+'使用できます。');
+ $('direction').textContent=lastDay?
+    (isRemaining?'現在の週間残量は'+show(100-used)+'。'+deadline+'。この枠はリセットで回復するため、残量'+show(bottom)+'まで使う配分です。':'現在の使用済み率は'+show(used)+'。'+deadline+'。計画上は'+show(target)+'まで使用できます。'):
+    (over?(isRemaining?'現在の残量は'+show(100-used)+'。目標の'+show(bottom)+'を'+show(used-target)+'下回っています。':'現在の使用済み率は'+show(used)+'。目標の'+show(target)+'を'+show(used-target)+'超えています。'):(isRemaining?'現在'+show(100-used)+'残っています。'+show(bottom)+'になるまで、あと'+show(can)+'使用できます。':'現在'+show(used)+'使用済みです。'+show(target)+'まで、あと'+show(can)+'使用できます。'));
  $('alert').hidden=!over;$('alert').textContent=over?'今日の目標を'+show(used-target)+'超過しています。': '';
  $('available').textContent=show(can);$('used').textContent=show(used);$('maxUsed').textContent=show(target);
- $('barUsed').style.width=used+'%';$('barFree').style.width=can+'%';$('barReserve').style.width=Math.max(0,100-used-can)+'%';$('bar').setAttribute('aria-label','使用済み'+show(used)+'、今日追加使用できる'+show(can)+'、それ以外の残り'+show(Math.max(0,100-used-can)));
+ $('barUsed').style.width=used+'%';$('barFree').style.width=can+'%';$('barReserve').style.width=Math.max(0,100-used-can)+'%';$('bar').setAttribute('aria-label','使用済み'+show(used)+'、リセットまでの計画上追加使用可能量'+show(can)+'、それ以外の残り'+show(Math.max(0,100-used-can)));
  $('dailyRows').replaceChildren();
  for(let i=0;i<7;i++){const end=info.start+(i+1)*DAY;const boundary=regular?100*(i+1)/7: end<=b.start?b.used: b.used+(100-b.used)*(end-b.start)/Math.max(1,info.end-b.start);row('dailyRows',[stamp(end),show(boundary),show(100-boundary)],i===info.index);}
  refreshReference(info.index);
