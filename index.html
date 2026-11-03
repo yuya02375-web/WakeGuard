@@ -93,9 +93,9 @@ function render(){const st=s(),now=Date.now(),info=resetInfo(now,st),used=usedNo
  $('baselineInfo').textContent='開始時の使用済み率：'+show(b.used)+' ／ 固定日時：'+stamp(b.start);
  $('nextReset').textContent=jstDate(info.end);$('countdown').textContent='リセットまで '+countText(info.remaining)+'（'+(info.remaining/DAY).toFixed(2)+'日）';
  $('nowLine').textContent='今日の区切り：'+stamp(info.todayEnd)+'　｜　現在：'+stamp(now);
- $('targetLabel').textContent=provider==='gpt'?'今日の区切り時刻までに残す最低ライン':'今日の区切り時刻までの使用済み率の上限';
- $('target').textContent=show(provider==='gpt'?bottom:target);
- $('direction').textContent=over?(provider==='gpt'?'残量は現在'+show(100-used)+'。今日の目標下限'+show(bottom)+'を下回っています。':'使用済みは現在'+show(used)+'。今日の目標上限'+show(target)+'を超えています。'):(provider==='gpt'?'現在'+show(100-used)+'残っています。'+show(bottom)+'になるまで、あと'+show(can)+'使用できます。':'現在'+show(used)+'使用済みです。'+show(target)+'になるまで、あと'+show(can)+'使用できます。');
+ $('targetLabel').textContent=isRemaining?'今日の区切り時刻までに残す最低ライン':'今日の区切り時刻までの使用済み率の上限';
+ $('target').textContent=show(isRemaining?bottom:target);
+ $('direction').textContent=over?(isRemaining?'現在の残量は'+show(100-used)+'。目標の'+show(bottom)+'を'+show(used-target)+'下回っています。':'現在の使用済み率は'+show(used)+'。目標の'+show(target)+'を'+show(used-target)+'超えています。'):(isRemaining?'現在'+show(100-used)+'残っています。'+show(bottom)+'になるまで、あと'+show(can)+'使用できます。':'現在'+show(used)+'使用済みです。'+show(target)+'まで、あと'+show(can)+'使用できます。');
  $('alert').hidden=!over;$('alert').textContent=over?'今日の目標を'+show(used-target)+'超過しています。': '';
  $('available').textContent=show(can);$('used').textContent=show(used);$('maxUsed').textContent=show(target);
  $('barUsed').style.width=used+'%';$('barFree').style.width=can+'%';$('barReserve').style.width=Math.max(0,100-used-can)+'%';$('bar').setAttribute('aria-label','使用済み'+show(used)+'、今日追加使用できる'+show(can)+'、それ以外の残り'+show(Math.max(0,100-used-can)));
