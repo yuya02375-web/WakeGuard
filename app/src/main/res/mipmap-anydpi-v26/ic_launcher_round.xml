@@ -1,1 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?><adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/ignido_midnight"/><foreground android:drawable="@drawable/ic_ignido_v296_sunrise"/></adaptive-icon>
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ignido_icon_background" />
+    <foreground android:drawable="@drawable/ic_ignido_v299_foreground" />
+</adaptive-icon>

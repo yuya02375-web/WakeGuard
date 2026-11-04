@@ -33,12 +33,12 @@ public class StatsActivity extends Activity {
         ScrollView sv=new ScrollView(this);body=new LinearLayout(this);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(Ui.dp(this,18),Ui.dp(this,8),Ui.dp(this,18),Ui.dp(this,28));sv.addView(body);root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
 
         LinearLayout hero=Ui.card(this);hero.setOrientation(LinearLayout.VERTICAL);
-        hero.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,22,this));
-        hero.setPadding(Ui.dp(this,16),Ui.dp(this,4),Ui.dp(this,16),Ui.dp(this,8));
-        companion=new StreakCompanionView(this);hero.addView(companion,new LinearLayout.LayoutParams(-1,Ui.dp(this,248)));
+        hero.setBackground(Ui.gradientRound(this,26,0xFF2B465D,0xFF172A3B));
+        hero.setPadding(Ui.dp(this,18),Ui.dp(this,8),Ui.dp(this,18),Ui.dp(this,12));
+        companion=new StreakCompanionView(this);hero.addView(companion,new LinearLayout.LayoutParams(-1,Ui.dp(this,282)));
         LinearLayout summary=Ui.row(this);summary.setGravity(Gravity.BOTTOM);summary.setPadding(0,Ui.dp(this,2),0,Ui.dp(this,12));
         LinearLayout currentBox=new LinearLayout(this);currentBox.setOrientation(LinearLayout.VERTICAL);
-        currentValue=Ui.text(this,"0日",40,Ui.TEXT);currentValue.setTypeface(null,Typeface.BOLD);currentBox.addView(currentValue);
+        currentValue=Ui.text(this,"0日",46,Ui.TEXT);currentValue.setTypeface(null,Typeface.BOLD);currentBox.addView(currentValue);
         TextView streakLabel=Ui.text(this,"現在のストリーク",13,Ui.MUTED);currentBox.addView(streakLabel);
         summary.addView(currentBox,new LinearLayout.LayoutParams(0,-2,1));
         LinearLayout growthBox=new LinearLayout(this);growthBox.setOrientation(LinearLayout.VERTICAL);growthBox.setGravity(Gravity.END);
@@ -51,7 +51,7 @@ public class StatsActivity extends Activity {
         LinearLayout bestBox=new LinearLayout(this);bestBox.setOrientation(LinearLayout.VERTICAL);bestBox.addView(Ui.text(this,"最高",12,Ui.MUTED));bestValue=Ui.text(this,"-",20,Ui.TEXT);bestValue.setTypeface(null,Typeface.BOLD);bestBox.addView(bestValue);metrics.addView(bestBox,new LinearLayout.LayoutParams(0,-2,1));
         LinearLayout totalBox=new LinearLayout(this);totalBox.setOrientation(LinearLayout.VERTICAL);totalBox.addView(Ui.text(this,"成功",12,Ui.MUTED));totalValue=Ui.text(this,"-",20,Ui.TEXT);totalValue.setTypeface(null,Typeface.BOLD);totalBox.addView(totalValue);metrics.addView(totalBox,new LinearLayout.LayoutParams(0,-2,1));
         LinearLayout protectMetric=new LinearLayout(this);protectMetric.setOrientation(LinearLayout.VERTICAL);protectMetric.addView(Ui.text(this,"保護",12,Ui.MUTED));TextView protectMetricValue=Ui.text(this,"最大3日",20,Ui.TEXT);protectMetricValue.setTypeface(null,Typeface.BOLD);protectMetric.addView(protectMetricValue);metrics.addView(protectMetric,new LinearLayout.LayoutParams(0,-2,1));
-        metrics.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,18,this));
+        metrics.setBackground(Ui.gradient(this,Ui.SURFACE,0xFF1D3042));
         body.addView(metrics,Ui.cardParams(this));
 
         TextView protectHeader=Ui.sectionHeader(this,"ストリーク保護");protectHeader.setPadding(0,Ui.dp(this,18),0,Ui.dp(this,6));body.addView(protectHeader);

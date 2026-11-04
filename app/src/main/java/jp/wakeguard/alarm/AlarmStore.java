@@ -25,7 +25,7 @@ public final class AlarmStore {
             this.missionCount=Math.max(1,Math.min(500,missionCount));
             this.volume=Math.max(0,Math.min(100,volume));
             this.vibration=vibration==null?"IRREGULAR":vibration;this.soundUri=soundUri==null?"":soundUri;this.soundName=soundName==null?"":soundName;
-             this.soundBytes=soundBytes;this.soundDurationMs=soundDurationMs;this.ringDurationSec=Math.max(0,Math.min(86400,ringDurationSec));this.fullStopDurationSec=Math.max(0,Math.min(86400,fullStopDurationSec));this.preNotifyMin=Math.max(0,Math.min(1440,preNotifyMin));this.snoozeMinutes=Math.max(1,Math.min(60,snoozeMinutes));
+             this.soundBytes=soundBytes;this.soundDurationMs=soundDurationMs;this.ringDurationSec=Math.max(0,Math.min(86400,ringDurationSec));this.fullStopDurationSec=Math.max(0,Math.min(86400,fullStopDurationSec));this.preNotifyMin=Math.max(0,Math.min(1440,preNotifyMin));this.snoozeMinutes=Math.max(0,Math.min(60,snoozeMinutes));
         }
         public boolean oneShot(){return dayMask==0;}
     }
@@ -40,7 +40,7 @@ public final class AlarmStore {
         long id=o.optLong("id",-1); if(id<1000)return null;
         Entry e=new Entry(id,Math.max(0,Math.min(23,o.optInt("hour",7))),Math.max(0,Math.min(59,o.optInt("minute",0))),o.optInt("days",0)&0x7F,
                 o.optBoolean("enabled",true),o.optString("label",""),
-                o.has("steps")?o.optInt("steps",50):Prefs.steps(c),
+                o.has("steps")?o.optInt("steps",10):Prefs.steps(c),
                 o.optString("missionType","STEPS"),o.optInt("missionCount",3),
                 o.has("volume")?o.optInt("volume",15):Prefs.volume(c),
                 o.has("vibration")?o.optString("vibration","IRREGULAR"):Prefs.vibration(c),

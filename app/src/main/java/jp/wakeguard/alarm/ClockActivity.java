@@ -314,10 +314,11 @@ public class ClockActivity extends Activity {
     private void buildWorldOverview(){
         LinkedHashSet<String> zones=loadZones();
         LinearLayout localCard=Ui.card(this);
-        localCard.setPadding(Ui.dp(this,22),Ui.dp(this,18),Ui.dp(this,22),Ui.dp(this,18));
-        localCard.addView(Ui.text(this,"現在の時刻",13,Ui.MUTED));
-        overviewLocalTime=Ui.title(this,"--:--",42);
-        overviewLocalTime.setTypeface(Typeface.create("sans-serif-light",Typeface.NORMAL));
+        localCard.setBackground(Ui.gradientRound(this,26,0xFF2B465D,0xFF1B3043));
+        localCard.setPadding(Ui.dp(this,22),Ui.dp(this,19),Ui.dp(this,22),Ui.dp(this,19));
+        localCard.addView(Ui.overline(this,"現在の時刻"));
+        overviewLocalTime=Ui.title(this,"--:--",52);
+        overviewLocalTime.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));
         localCard.addView(overviewLocalTime,Ui.gapTop(this,4));
         overviewLocalDate=Ui.text(this,"",13,Ui.MUTED);
         localCard.addView(overviewLocalDate,Ui.gapTop(this,3));
@@ -341,7 +342,7 @@ public class ClockActivity extends Activity {
 
     private void addWorldOverviewCard(GridLayout grid,String zoneId,int index,int columns,int cardW,int cardH,int gap){
         try{ZoneId.of(zoneId);}catch(Throwable t){return;}
-        LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setGravity(Gravity.CENTER);card.setPadding(Ui.dp(this,10),Ui.dp(this,14),Ui.dp(this,10),Ui.dp(this,12));card.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,18,this));
+        LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setGravity(Gravity.CENTER);card.setPadding(Ui.dp(this,10),Ui.dp(this,14),Ui.dp(this,10),Ui.dp(this,12));card.setBackground(Ui.gradient(this,Ui.SURFACE,0xFF1D3042));
         String nameText=WorldCityCatalog.savedWorldLabel(this,zoneId,friendlyZoneName(zoneId));
         TextView name=text(nameText,columns<=2?18:columns==3?15:columns==4?13:11,Ui.TEXT);name.setTypeface(null,Typeface.BOLD);name.setGravity(Gravity.CENTER);name.setSingleLine(true);name.setMaxLines(1);name.setEllipsize(null);name.setAutoSizeTextTypeUniformWithConfiguration(columns<=2?12:10,columns<=2?18:columns==3?15:columns==4?13:11,1,android.util.TypedValue.COMPLEX_UNIT_SP);card.addView(name,new LinearLayout.LayoutParams(-1,-2));
         FrameLayout stage=new FrameLayout(this);TextView time=text("--:--",columns<=2?36:columns==3?30:columns==4?24:20,Ui.TEXT);time.setTypeface(Typeface.MONOSPACE,Typeface.NORMAL);time.setGravity(Gravity.CENTER);time.setSingleLine(true);time.setMaxLines(1);time.setEllipsize(null);time.setAutoSizeTextTypeUniformWithConfiguration(columns<=2?24:columns==3?20:16,columns<=2?36:columns==3?30:columns==4?24:20,1,android.util.TypedValue.COMPLEX_UNIT_SP);ClockFaceActivity.AnalogFace analog=new ClockFaceActivity.AnalogFace(this);time.setVisibility(worldAnalog()?View.GONE:View.VISIBLE);analog.setVisibility(worldAnalog()?View.VISIBLE:View.GONE);stage.addView(time,new FrameLayout.LayoutParams(-1,-1));stage.addView(analog,new FrameLayout.LayoutParams(-1,-1));card.addView(stage,new LinearLayout.LayoutParams(-1,0,1));
@@ -868,7 +869,7 @@ public class ClockActivity extends Activity {
 
     private void buildStopwatch() {
         stopwatchStage=new FrameLayout(this);
-        stopwatchDisplay=text("00:00:00.00",43,Ui.TEXT);
+        stopwatchDisplay=text("00:00:00.00",46,Ui.TEXT);
         stopwatchDisplay.setTypeface(Typeface.MONOSPACE,Typeface.NORMAL); stopwatchDisplay.setGravity(Gravity.CENTER); stopwatchDisplay.setPadding(0,Ui.dp(this,18),0,Ui.dp(this,14));
         stopwatchAnalog=new ClockFaceActivity.AnalogFace(this);
         stopwatchAnalog.configure(p().getBoolean("analog_numbers",true),p().getBoolean("analog_ticks",true),p().getBoolean("analog_seconds",true),p().getInt("analog_number_scale",1));
@@ -877,9 +878,9 @@ public class ClockActivity extends Activity {
         stopwatchStage.setClickable(true);stopwatchStage.setLongClickable(true);
         stopwatchStage.setOnClickListener(v->toggleStopwatchFace());
         stopwatchStage.setOnLongClickListener(v->{openClockFace("stopwatch",null,-1L);return true;});
-        body.addView(new View(this),new LinearLayout.LayoutParams(-1,Ui.dp(this,16)));
-        stopwatchStage.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,24,this));
-        body.addView(stopwatchStage,new LinearLayout.LayoutParams(-1,Ui.dp(this,192)));
+        TextView stopwatchCaption=Ui.overline(this,"TIME  /  LAP");stopwatchCaption.setPadding(Ui.dp(this,4),0,0,Ui.dp(this,8));body.addView(stopwatchCaption);
+        stopwatchStage.setBackground(Ui.gradientRound(this,26,0xFF263D53,0xFF142637));
+        body.addView(stopwatchStage,new LinearLayout.LayoutParams(-1,Ui.dp(this,224)));
         stopwatchStateHint=Ui.text(this,"停止中  ·  タップで表示切替、長押しで全画面",11,Ui.MUTED_2);stopwatchStateHint.setGravity(Gravity.CENTER);body.addView(stopwatchStateHint,Ui.gapTop(this,8));
         LinearLayout row=new LinearLayout(this); row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(0,Ui.dp(this,24),0,0);
         stopwatchLapReset=Ui.button(this,"リセット",false); row.addView(stopwatchLapReset,new LinearLayout.LayoutParams(0,Ui.dp(this,56),1));row.addView(new View(this),new LinearLayout.LayoutParams(Ui.dp(this,12),1));
@@ -1005,7 +1006,8 @@ public class ClockActivity extends Activity {
     }
 
     private void buildTimer() {
-        TextView quickTitle=text("時間を設定",18,Ui.TEXT); quickTitle.setTypeface(null,Typeface.BOLD); body.addView(quickTitle);
+        TextView quickTitle=Ui.title(this,"時間を設定",25); body.addView(quickTitle);
+        TextView quickHint=Ui.text(this,"時間を入力するか、プリセットを選んで開始します",13,Ui.MUTED);quickHint.setPadding(0,Ui.dp(this,4),0,0);body.addView(quickHint);
 
         LinearLayout durationRow=new LinearLayout(this); durationRow.setGravity(Gravity.CENTER_VERTICAL); durationRow.setPadding(0,Ui.dp(this,12),0,0);
         quickHours=quickNumber("時"); quickMinutes=quickNumber("分"); quickSeconds=quickNumber("秒");

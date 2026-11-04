@@ -116,8 +116,9 @@ public class AlarmService extends Service implements SensorEventListener {
         // must not erase the evidence of a disappearing ring screen.
         if (ACTION_FIRE_NEW.equals(action) || ACTION_FIRE_TEST.equals(action)) Prefs.lastAlarmError(this, "");
         if (ACTION_SNOOZE.equals(action)) {
-            if(!Prefs.sessionIsTest(this)) SnoozeScheduler.schedule(this,Prefs.activeAlarmId(this),AlarmProfiles.snoozeMinutes(this,Prefs.activeAlarmId(this)));
-            stopAlarm();
+            int snoozeMinutes=AlarmProfiles.snoozeMinutes(this,Prefs.activeAlarmId(this));
+            if(Prefs.sessionIsTest(this)){stopAlarm();}
+            else if(snoozeMinutes>0){SnoozeScheduler.schedule(this,Prefs.activeAlarmId(this),snoozeMinutes);stopAlarm();}
             return START_NOT_STICKY;
         }
 

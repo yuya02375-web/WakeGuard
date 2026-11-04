@@ -35,24 +35,24 @@ import android.widget.TextView;
  * large readable clock typography, and compact navigation.
  */
 public final class Ui {
-    public static final int BG = 0xFF10141B;
-    public static final int BG_2 = 0xFF10141B;
-    public static final int SURFACE = 0xFF1B222C;
-    public static final int SURFACE_2 = 0xFF282F3B;
-    public static final int SURFACE_3 = 0xFF303540;
-    public static final int BORDER = 0xFF353D49;
-    public static final int BORDER_HOT = 0x447F584B;
-    public static final int ACCENT = 0xFFFF9A74;
-    public static final int ACCENT_2 = 0xFFFF9671;
-    public static final int CYAN = 0xFF8ABCD5;
-    public static final int BLUE = 0xFF8DA8DE;
-    public static final int VIOLET = 0xFFB39CE2;
-    public static final int PINK = 0xFFE4A1BA;
-    public static final int TEXT = 0xFFF6F4F0;
-    public static final int MUTED = 0xFFB1B2BC;
-    public static final int MUTED_2 = 0xFF898C98;
-    public static final int SUCCESS = 0xFF81D4AD;
-    public static final int DANGER = 0xFFFF8C83;
+    public static final int BG = 0xFF0C1520;
+    public static final int BG_2 = 0xFF142230;
+    public static final int SURFACE = 0xFF172737;
+    public static final int SURFACE_2 = 0xFF23364A;
+    public static final int SURFACE_3 = 0xFF2D4256;
+    public static final int BORDER = 0xFF304458;
+    public static final int BORDER_HOT = 0x667F583A;
+    public static final int ACCENT = 0xFFFFC074;
+    public static final int ACCENT_2 = 0xFFFF8A61;
+    public static final int CYAN = 0xFF79C7D5;
+    public static final int BLUE = 0xFF89ADE3;
+    public static final int VIOLET = 0xFFB59BE5;
+    public static final int PINK = 0xFFE6A0B8;
+    public static final int TEXT = 0xFFFFF3E3;
+    public static final int MUTED = 0xFFAEBDCA;
+    public static final int MUTED_2 = 0xFF778B9B;
+    public static final int SUCCESS = 0xFF86D5B5;
+    public static final int DANGER = 0xFFFF887B;
     private Ui() {}
 
     public static int dp(Activity a, int v) { return Math.round(v * a.getResources().getDisplayMetrics().density); }
@@ -99,12 +99,24 @@ public final class Ui {
 
             paint.setStyle(Paint.Style.FILL);
             paint.setShader(null);
-            paint.setColor(SURFACE);
+            paint.setShader(active
+                    ? new LinearGradient(0, r.top, 0, r.bottom,
+                            0xFF20364A, 0xFF172737, Shader.TileMode.CLAMP)
+                    : null);
+            paint.setColor(active ? SURFACE : BG_2);
             canvas.drawRoundRect(r, radius, radius, paint);
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeWidth(density);
-            paint.setColor(active ? 0x665E554F : BORDER);
+            paint.setShader(null);
+            paint.setColor(active ? 0x887D5D43 : BORDER);
             canvas.drawRoundRect(r, radius, radius, paint);
+            if (active) {
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(ACCENT_2);
+                RectF marker = new RectF(r.left + 1, r.top + radius, r.left + edge + 1,
+                        r.top + radius + 28f * density);
+                canvas.drawRoundRect(marker, edge, edge, paint);
+            }
             paint.setStyle(Paint.Style.FILL);
         }
 
@@ -138,7 +150,7 @@ public final class Ui {
     public static GradientDrawable gradient(Activity a, int... colors) {
         int[] c = (colors != null && colors.length >= 2) ? colors : new int[]{SURFACE, SURFACE_2};
         GradientDrawable d = new GradientDrawable(GradientDrawable.Orientation.TL_BR, c);
-        d.setCornerRadius(dp(a, 18));
+        d.setCornerRadius(dp(a, 22));
         d.setStroke(dp(a,1), BORDER);
         return d;
     }
@@ -153,7 +165,7 @@ public final class Ui {
     public static GradientDrawable screenGradient(Activity a) {
         GradientDrawable d = new GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{BG, BG, BG});
+                new int[]{0xFF0A1420, BG, BG_2});
         return d;
     }
 
@@ -204,7 +216,7 @@ public final class Ui {
         LinearLayout l = new LinearLayout(a);
         l.setOrientation(LinearLayout.VERTICAL);
         l.setPadding(dp(a,18),dp(a,17),dp(a,18),dp(a,17));
-        l.setBackground(roundStroke(SURFACE, BORDER, 18, a));
+        l.setBackground(gradient(a, SURFACE, 0xFF1B2D3E));
         if (Build.VERSION.SDK_INT >= 21) l.setElevation(0);
         return l;
     }

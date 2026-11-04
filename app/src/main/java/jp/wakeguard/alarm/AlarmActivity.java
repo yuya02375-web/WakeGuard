@@ -174,7 +174,7 @@ public class AlarmActivity extends Activity {
             if(!alarmVideoMode)missionCard.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,20,this)); root.addView(missionCard,new LinearLayout.LayoutParams(-1,0,1)); buildMission(type);
         }
 
-        Button snooze=Ui.button(this,"スヌーズ "+AlarmProfiles.snoozeMinutes(this,Prefs.activeAlarmId(this))+"分",false);snooze.setOnClickListener(v->{try{startService(new Intent(this,AlarmService.class).setAction(AlarmService.ACTION_SNOOZE));}catch(Throwable ignored){}try{finishAndRemoveTask();}catch(Throwable ignored){finish();}});if(Prefs.sessionIsTest(this))snooze.setVisibility(View.GONE);
+        int snoozeMinutes=AlarmProfiles.snoozeMinutes(this,Prefs.activeAlarmId(this));Button snooze=Ui.button(this,"スヌーズ "+snoozeMinutes+"分",false);snooze.setOnClickListener(v->{try{startService(new Intent(this,AlarmService.class).setAction(AlarmService.ACTION_SNOOZE));}catch(Throwable ignored){}try{finishAndRemoveTask();}catch(Throwable ignored){finish();}});if(Prefs.sessionIsTest(this)||snoozeMinutes<=0)snooze.setVisibility(View.GONE);
         stop = Ui.button(this, "NONE".equals(type)?"アラームを停止":"ミッションを完了してください", true); stop.setEnabled("NONE".equals(type));stop.setVisibility(View.VISIBLE);stop.setMinHeight(Ui.dp(this,"NONE".equals(type)?72:58));stop.setTextSize("NONE".equals(type)?19:16);
         stop.setOnClickListener(v -> { String current=sessionType();if("NONE".equals(current))Prefs.missionComplete(this,true);if("NONE".equals(current)||missionDone()) { try { startService(new Intent(this, AlarmService.class).setAction(AlarmService.ACTION_STOP)); } catch (Throwable ignored) {} try { finishAndRemoveTask(); } catch (Throwable ignored) { finish(); } } });
         if(directVideoStop){

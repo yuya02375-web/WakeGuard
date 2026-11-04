@@ -28,7 +28,7 @@ public final class Prefs {
         return sp.contains("hour") || sp.contains("minute") || sp.contains("days") || sp.contains("enabled")
                 || sp.contains("primary_label") || sp.contains("primary_mission_type") || sp.contains("primary_mission_count");
     }
-    public static int steps(Context c) { return p(c).getInt("steps", 50); }
+    public static int steps(Context c) { return p(c).getInt("steps", 10); }
     public static void steps(Context c, int v) { p(c).edit().putInt("steps", v).commit(); }
     public static int volume(Context c) { return p(c).getInt("volume", 15); }
     public static void volume(Context c, int v) { p(c).edit().putInt("volume", v).apply(); }
@@ -48,8 +48,8 @@ public final class Prefs {
     public static void fullStopDurationSec(Context c, int v) { p(c).edit().putInt("full_stop_duration_sec",Math.max(0,Math.min(86400,v))).apply(); }
     public static int preNotifyMin(Context c) { return Math.max(0,Math.min(1440,p(c).getInt("pre_notify_min",30))); }
     public static void preNotifyMin(Context c, int v) { p(c).edit().putInt("pre_notify_min",Math.max(0,Math.min(1440,v))).apply(); }
-    public static int snoozeMinutes(Context c) { return Math.max(1,Math.min(60,p(c).getInt("snooze_minutes",5))); }
-    public static void snoozeMinutes(Context c, int v) { p(c).edit().putInt("snooze_minutes",Math.max(1,Math.min(60,v))).apply(); }
+    public static int snoozeMinutes(Context c) { return Math.max(0,Math.min(60,p(c).getInt("snooze_minutes",0))); }
+    public static void snoozeMinutes(Context c, int v) { p(c).edit().putInt("snooze_minutes",Math.max(0,Math.min(60,v))).apply(); }
     public static boolean active(Context c) { return p(c).getBoolean("alarm_active", false); }
     public static void active(Context c, boolean v) { p(c).edit().putBoolean("alarm_active", v).apply(); }
     public static float baseline(Context c) { return p(c).getFloat("step_baseline", -1f); }
@@ -80,7 +80,7 @@ public final class Prefs {
     public static void missionComplete(Context c, boolean v) { p(c).edit().putBoolean("mission_complete", v).apply(); }
     public static String primaryLabel(Context c) { return p(c).getString("primary_label", "メインアラーム"); }
     public static void primaryLabel(Context c, String v) { p(c).edit().putString("primary_label", v == null ? "メインアラーム" : v).apply(); }
-    public static String primaryMissionType(Context c) { return AlarmStore.normalizeMission(p(c).getString("primary_mission_type", "STEPS")); }
+    public static String primaryMissionType(Context c) { return AlarmStore.normalizeMission(p(c).getString("primary_mission_type", "NONE")); }
     public static void primaryMissionType(Context c, String v) { p(c).edit().putString("primary_mission_type", AlarmStore.normalizeMission(v)).apply(); }
     public static int primaryMissionCount(Context c) { return Math.max(1,p(c).getInt("primary_mission_count", 3)); }
     public static void primaryMissionCount(Context c, int v) { p(c).edit().putInt("primary_mission_count", Math.max(1,Math.min(500,v))).apply(); }

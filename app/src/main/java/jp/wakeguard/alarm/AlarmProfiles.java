@@ -18,7 +18,7 @@ public final class AlarmProfiles {
     public static AlarmStore.Entry defaults(Context c) {
         AlarmStore.Entry p = primary(c);
         return new AlarmStore.Entry(-1L, 7, 0, 0, true, "アラーム",
-                p.steps, p.missionType, p.missionCount, p.volume, p.vibration, p.soundUri, p.soundName, p.soundBytes, p.soundDurationMs, 0, 0, 30, 5);
+                10, "NONE", p.missionCount, p.volume, p.vibration, p.soundUri, p.soundName, p.soundBytes, p.soundDurationMs, 0, 0, 30, 0);
     }
 
     public static List<AlarmStore.Entry> all(Context c) {
@@ -59,7 +59,7 @@ public final class AlarmProfiles {
     public static int ringDurationSec(Context c,long id){ return Math.max(0,Math.min(86400,get(c,id).ringDurationSec)); }
     public static int fullStopDurationSec(Context c,long id){ return Math.max(0,Math.min(86400,get(c,id).fullStopDurationSec)); }
     public static int preNotifyMin(Context c,long id){ return Math.max(0,Math.min(1440,get(c,id).preNotifyMin)); }
-    public static int snoozeMinutes(Context c,long id){ return Math.max(1,Math.min(60,get(c,id).snoozeMinutes)); }
+    public static int snoozeMinutes(Context c,long id){ return Math.max(0,Math.min(60,get(c,id).snoozeMinutes)); }
 
     public static String resolveSessionMission(Context c,long id){
         String t=missionType(c,id);
