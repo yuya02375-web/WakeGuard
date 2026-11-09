@@ -6,3 +6,26 @@ dist/
 *.jks
 *.keystore
 *.p12
+
+# Workbench-local browser profile used only for visual rendering.
+.tmp-chrome-ui-preview/
+
+# Local icon exploration renders and build scratch files.
+WakeGuard-2.9.7-app-overlay.zip
+assets/.tmp-aapt2/
+assets/.candidate-*.png
+assets/.icon-review-*.png
+assets/[0-9][0-9]-test-render.png
+assets/icon-concepts-v297.png
+assets/icon-concepts-v297/
+assets/icon-implementation-v297.png
+assets/icon-size-preview-v297.png
+assets/ignido-alarm-clock.png
+assets/ignido-alarm-icon-v299.png
+assets/ignido-alarm-icon-v299.svg
+assets/ignido-approved-icon-implementation-preview.png
+assets/ignido-brand-symbol-v302-48.png
+assets/ignido-brand-symbol-v302-preview.png
+assets/ignido-brand-symbol-v302.svg
+assets/ui-preview-v297.html
+assets/ui-preview-v297.png

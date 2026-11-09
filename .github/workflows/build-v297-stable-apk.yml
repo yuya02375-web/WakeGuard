@@ -60,7 +60,20 @@ jobs:
           cp -R app WakeGuard/app
           grep -Fq 'versionCode = 197' WakeGuard/app/build.gradle.kts
           grep -Fq 'versionName = "2.9.7"' WakeGuard/app/build.gradle.kts
-          grep -Fq 'ic_ignido_v299_foreground' WakeGuard/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          for launcher in \
+            WakeGuard/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml \
+            WakeGuard/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml \
+            WakeGuard/app/src/main/res/mipmap-anydpi-v33/ic_launcher.xml \
+            WakeGuard/app/src/main/res/mipmap-anydpi-v33/ic_launcher_round.xml; do
+            grep -Fq 'ic_ignido_approved_foreground' "$launcher"
+          done
+          for launcher in \
+            WakeGuard/app/src/main/res/mipmap-anydpi-v33/ic_launcher.xml \
+            WakeGuard/app/src/main/res/mipmap-anydpi-v33/ic_launcher_round.xml; do
+            grep -Fq 'ic_ignido_approved_monochrome' "$launcher"
+          done
+          test -s WakeGuard/app/src/main/res/drawable-nodpi/ic_ignido_approved_foreground.png
+          test -s WakeGuard/app/src/main/res/drawable-nodpi/ic_ignido_approved_monochrome.png
 
       - name: Enable AndroidX
         working-directory: WakeGuard
