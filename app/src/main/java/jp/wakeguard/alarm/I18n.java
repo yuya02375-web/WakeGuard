@@ -65,14 +65,20 @@ public final class I18n {
         put("伝説の炎を維持中","Legendary flame active","전설의 불꽃 유지 중"); put("最初の1日で火が灯る","The flame starts on day 1","첫날부터 불꽃이 켜집니다");
         put("成長段階  1日 → 3日 → 7日 → 14日 → 30日","Growth: day 1 → 3 → 7 → 14 → 30","성장 단계  1일 → 3일 → 7일 → 14일 → 30일");
         put("アラームを追加","Add alarm","알람 추가"); put("アラームを編集","Edit alarm","알람 편집"); put("アラームを有効にする","Enable alarm","알람 사용");
+        put("時刻と曜日","Time & days","시간 및 요일"); put("アラーム時刻","Alarm time","알람 시간"); put("タップして時刻を変更","Tap to change the time","탭하여 시간 변경"); put("繰り返す曜日","Repeat days","반복 요일");
         put("基本設定","Basic settings","기본 설정"); put("名前","Name","이름"); put("繰り返し","Repeat","반복"); put("曜日を選ばなければ1回だけ鳴ります","If no days are selected, it rings once","요일을 선택하지 않으면 한 번만 울립니다");
-        put("事前通知","Pre-alarm notification","사전 알림"); put("分前"," min before","분 전"); put("アラームの前に音・振動なしの通知で知らせます","Shows a silent notification before the alarm","알람 전에 소리·진동 없는 알림으로 알려줍니다");
+        put("事前通知","Pre-alarm notification","사전 알림"); put("通知とスヌーズ","Notifications & snooze","알림 및 스누즈"); put("スヌーズ","Snooze","스누즈"); put("スヌーズを使う","Enable snooze","스누즈 사용"); put("再通知まで","Snooze interval","다시 알림 간격"); put("分前"," min before","분 전"); put("アラームの前に音・振動なしの通知で知らせます","Shows a silent notification before the alarm","알람 전에 소리·진동 없는 알림으로 알려줍니다");
         put("分後にアラーム"," min until alarm","분 후 알람"); put("アラーム事前通知","Alarm reminders","알람 사전 알림"); put("アラームの前にサイレント通知で知らせます","Shows a silent reminder before the alarm","알람 전에 무음 알림으로 알려줍니다");
         put("解除方法","Dismiss method","해제 방법"); put("ミッション","Mission","미션"); put("ミッションを選択","Choose mission","미션 선택");
+        put("アラーム一覧","Alarm list","알람 목록"); put("スヌーズ中","Snoozing","스누즈 중");
+        put("スヌーズ中  %d件","Snoozing: %d alarms","스누즈 중: %d건");
+        put("スヌーズ中  ·  あと %s","Snoozing  ·  in %s","스누즈 종료까지 %s");
+        put("あと %s","in %s","%s 후"); put("起きた","I'm up","일어났어요");
+        put("取消","Cancel","취소"); put("すべて取消","Cancel all","모두 취소");
         put("なし","None","없음"); put("歩数","Steps","걸음 수"); put("計算","Math","계산"); put("記憶","Memory","기억"); put("コード入力","Code entry","코드 입력");
         put("文章入力","Text entry","문장 입력"); put("連打","Rapid tap","연타"); put("長押し","Press and hold","길게 누르기"); put("シェイク","Shake","흔들기"); put("スワイプ","Swipe","스와이프"); put("順番タップ","Tap in order","순서 탭"); put("逆順入力","Reverse entry","역순 입력"); put("ランダム","Random","랜덤");
         put("音と振動","Sound & vibration","소리 및 진동"); put("アラーム音","Alarm sound","알람 소리"); put("標準アラーム音","Default alarm sound","기본 알람 소리");
-        put("標準音に戻す","Use default sound","기본 소리로 되돌리기"); put("選択した音源","Selected audio","선택한 오디오"); put("振動","Vibration","진동");
+        put("標準音に戻す","Use default sound","기본 소리로 되돌리기"); put("選択した音源","Selected audio","선택한 오디오"); put("振動","Vibration","진동"); put("試聴","Preview","미리 듣기");
         put("アラームを削除","Delete alarm","알람 삭제"); put("このアラームだけ削除します。","Only this alarm will be deleted.","이 알람만 삭제됩니다.");
         put("このアラームをテスト","Test this alarm","이 알람 테스트"); put("保存しました","Saved","저장했습니다"); put("設定値を確認してください","Check the settings","설정값을 확인하세요");
         put("この音源は読み込めません","Unable to load this audio","이 오디오를 불러올 수 없습니다"); put("テストを開始できません","Unable to start the test","테스트를 시작할 수 없습니다");
@@ -141,6 +147,11 @@ public final class I18n {
         put("現在のタイムゾーンはスクロールしても上部に固定されます","The current time zone stays pinned while you scroll","현재 시간대는 스크롤해도 상단에 고정됩니다");
         put("時","h","시"); put("分","min","분"); put("秒","sec","초"); put("問","questions","문제"); put("文","sentences","문장"); put("歩","steps","걸음");
         put("自動停止","Auto stop","자동 중지");
+        put("止めるまで音と振動が続きます","Sound and vibration continue until dismissed","해제할 때까지 소리와 진동이 계속됩니다");
+        put("設定時間後にアラームを完全に終了します","The alarm fully ends after the set time","설정 시간이 지나면 알람이 완전히 종료됩니다");
+        put("音と振動を止めた後、アラームを完全に終了します","Sound and vibration stop first, then the alarm fully ends","소리와 진동이 먼저 멈춘 뒤 알람이 완전히 종료됩니다");
+        put("設定した時間のうち短い方でアラームが終了します","The alarm ends at the shorter of the two set times","설정한 두 시간 중 더 짧은 시간에 알람이 종료됩니다");
+        put("完全停止は音と振動の停止より後に設定してください","Set the full stop later than the sound and vibration stop","전체 중지는 소리와 진동 중지보다 늦게 설정하세요");
         put("音・振動だけ自動停止","Auto-stop sound & vibration","소리·진동만 자동 중지");
         put("音・振動を止めるまで","Time until sound & vibration stop","소리·진동 중지까지");
         put("オンにすると指定時間後に音と振動だけ停止します。ミッション画面は残ります。","When enabled, sound and vibration stop after the set time. The mission screen remains.","켜면 설정한 시간이 지난 뒤 소리와 진동만 멈추고 미션 화면은 유지됩니다.");
@@ -238,7 +249,7 @@ public final class I18n {
         m=Pattern.compile("^タップ  あと (\\d+)回$").matcher(s);if(m.matches())return ko?"탭  앞으로 "+m.group(1)+"회":"Tap  "+m.group(1)+" remaining";
         m=Pattern.compile("^音量 (\\d+)%$").matcher(s);if(m.matches())return (ko?"음량 ":"Volume ")+m.group(1)+"%";
 
-        m=Pattern.compile("^([＋+−-]?)(\\d+)時間(?: (\\d+)分)?(?: (\\d+)秒)?$").matcher(s);
+        m=Pattern.compile("^([＋+−-]?)(\\d+)時間(?: ?(\\d+)分)?(?: (\\d+)秒)?$").matcher(s);
         if(m.matches())return m.group(1)+m.group(2)+(ko?"시간":"h")+(m.group(3)==null?"":" "+m.group(3)+(ko?"분":"m"))+(m.group(4)==null?"":" "+m.group(4)+(ko?"초":"s"));
         m=Pattern.compile("^([＋+−-]?)(\\d+)分(?: (\\d+)秒)?$").matcher(s);
         if(m.matches())return m.group(1)+m.group(2)+(ko?"분":"m")+(m.group(3)==null?"":" "+m.group(3)+(ko?"초":"s"));

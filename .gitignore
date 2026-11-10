@@ -12,6 +12,7 @@ dist/
 
 # Local icon exploration renders and build scratch files.
 WakeGuard-2.9.7-app-overlay.zip
+downloads/WakeGuard-2.9.7-stable.zip
 assets/.tmp-aapt2/
 assets/.candidate-*.png
 assets/.icon-review-*.png
