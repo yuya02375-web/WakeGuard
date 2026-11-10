@@ -1,4 +1,4 @@
-name: Build IGNIDO Wake 2.9.7 Stable APK
+name: Build IGNIDO Wake 2.9.8 Stable APK
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
     branches:
       - codex/restore-v295
     paths:
-      - '.github/workflows/build-v297-stable-apk.yml'
+      - '.github/workflows/build-v298-stable-apk.yml'
       - 'app/**'
       - '.wakeguard-parts/**'
 
@@ -58,8 +58,8 @@ jobs:
         run: |
           rm -rf WakeGuard/app
           cp -R app WakeGuard/app
-          grep -Fq 'versionCode = 197' WakeGuard/app/build.gradle.kts
-          grep -Fq 'versionName = "2.9.7"' WakeGuard/app/build.gradle.kts
+          grep -Fq 'versionCode = 198' WakeGuard/app/build.gradle.kts
+          grep -Fq 'versionName = "2.9.8"' WakeGuard/app/build.gradle.kts
           for launcher in \
             WakeGuard/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml \
             WakeGuard/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml \
@@ -95,8 +95,8 @@ jobs:
         shell: bash
         run: |
           grep -Fq 'applicationId = "jp.wakeguard.alarm"' app/build.gradle.kts
-          grep -Fq 'versionCode = 197' app/build.gradle.kts
-          grep -Fq 'versionName = "2.9.7"' app/build.gradle.kts
+          grep -Fq 'versionCode = 198' app/build.gradle.kts
+          grep -Fq 'versionName = "2.9.8"' app/build.gradle.kts
           test -n "$WAKEGUARD_KEYSTORE_B64"
           test -n "$WAKEGUARD_KEYSTORE_PASSWORD"
           test -n "$WAKEGUARD_KEY_ALIAS"
@@ -128,8 +128,9 @@ jobs:
         run: |
           APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
           AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
+          AAPT2="$ANDROID_HOME/build-tools/36.0.0/aapt2"
           INPUT="WakeGuard/app/build/outputs/apk/release/app-release-unsigned.apk"
-          OUTPUT="WakeGuard-2.9.7-stable.apk"
+          OUTPUT="WakeGuard-2.9.8-stable.apk"
           "$APKSIGNER" sign \
             --ks "$RUNNER_TEMP/wakeguard-release.p12" \
             --ks-type PKCS12 \
@@ -144,12 +145,15 @@ jobs:
           ACTUAL="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/apk-signature.txt" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
           EXPECTED="DB95A00E32A6B4C3F54D43B91CF67155DCA7057C2C0EE145F5FB98178F311C2E"
           test "$ACTUAL" = "$EXPECTED"
-          "$AAPT" dump badging "$OUTPUT" | grep -F "package: name='jp.wakeguard.alarm' versionCode='197' versionName='2.9.7'"
+          "$AAPT" dump badging "$OUTPUT" | grep -F "package: name='jp.wakeguard.alarm' versionCode='198' versionName='2.9.8'"
+          "$AAPT2" dump resources "$OUTPUT" > "$RUNNER_TEMP/apk-resources.txt"
+          grep -Fq 'drawable/ic_ignido_approved_foreground' "$RUNNER_TEMP/apk-resources.txt"
+          grep -Fq 'drawable/ic_ignido_approved_monochrome' "$RUNNER_TEMP/apk-resources.txt"
           sha256sum "$OUTPUT" > "$OUTPUT.sha256"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WakeGuard-2.9.7-stable
+          name: WakeGuard-2.9.8-stable
           path: |
-            WakeGuard-2.9.7-stable.apk
-            WakeGuard-2.9.7-stable.apk.sha256
+            WakeGuard-2.9.8-stable.apk
+            WakeGuard-2.9.8-stable.apk.sha256
