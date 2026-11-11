@@ -78,6 +78,9 @@ public class SystemSettingsActivity extends Activity {
         LinearLayout card = sectionCard("アプリ設定", null);
         addActionRow(card, localize("アプリの言語", "App language", "앱 언어"), I18n.selectedLanguageLabel(this), this::showLanguageDialog);
         addDivider(card);
+        addActionRow(card, localize("デザインセット", "Design set", "디자인 세트"), DesignSets.currentLabel(this),
+                () -> Ui.launchNoAnimation(this, new Intent(this, DesignSetPickerActivity.class)));
+        addDivider(card);
         addActionRow(card, localize("UIスタイル", "UI style", "UI 스타일"),
                 UiProfiles.current(this).label(this),
                 () -> Ui.launchNoAnimation(this, new Intent(this, UiProfilePickerActivity.class)));
@@ -85,6 +88,9 @@ public class SystemSettingsActivity extends Activity {
         addActionRow(card, localize("デザインと配色", "Design and color", "디자인과 색상"),
                 VisualDesigns.current(this).label(this) + "  ·  " + AppThemes.current(this).label(this),
                 () -> Ui.launchNoAnimation(this, new Intent(this, VisualDesignPickerActivity.class)));
+        addDivider(card);
+        addActionRow(card, localize("キャラクター", "Character", "캐릭터"), MascotCatalog.current(this).label(this),
+                () -> Ui.launchNoAnimation(this, new Intent(this, MascotPickerActivity.class)));
         addDivider(card);
         addActionRow(card, localize("時計の詳細設定", "Clock settings", "시계 설정"), localize("表示と文字盤を調整", "Customize clock display and face", "시계 표시와 문자판을 설정"), () ->
                 Ui.launchNoAnimation(this, new Intent(this, ClockSettingsActivity.class)));
@@ -97,7 +103,8 @@ public class SystemSettingsActivity extends Activity {
     }
 
     private String appearanceKey() {
-        return UiProfiles.id(this) + ":" + VisualDesigns.id(this) + ":" + AppThemes.key(this);
+        return UiProfiles.id(this) + ":" + VisualDesigns.id(this) + ":" + AppThemes.key(this)
+                + ":" + MascotCatalog.id(this);
     }
 
     private void addBackupCard() {

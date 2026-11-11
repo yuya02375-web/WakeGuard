@@ -63,6 +63,8 @@
         <activity android:name=".AlarmEditorActivity" android:exported="false" />
         <activity android:name=".SystemSettingsActivity" android:exported="false" />
         <activity android:name=".ThemePickerActivity" android:exported="false" />
+        <activity android:name=".DesignSetPickerActivity" android:exported="false" />
+        <activity android:name=".MascotPickerActivity" android:exported="false" />
         <activity android:name=".UiProfilePickerActivity" android:exported="false" />
         <activity android:name=".VisualDesignPickerActivity" android:exported="false" />
         <activity android:name=".StatsActivity" android:exported="false" />

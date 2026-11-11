@@ -13,6 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class MainActivity extends Activity {
+    private String builtAppearanceKey;
     private LinearLayout list, nextCard;
     private android.widget.GridLayout tileGrid;
     private TextView nextText,nextMeta,nextStatus;
@@ -22,11 +23,22 @@ public class MainActivity extends Activity {
     private final Runnable countdownTick=new Runnable(){@Override public void run(){render();countdownHandler.postDelayed(this,30000L);}};
 
     @Override protected void onCreate(Bundle b){
-        super.onCreate(b); Ui.prepareActivity(this); AlarmService.ensureNotificationChannel(this);
+        super.onCreate(b); Ui.prepareActivity(this); builtAppearanceKey=appearanceKey(); AlarmService.ensureNotificationChannel(this);
         buildUi(); requestRuntimePermissions(); AlarmScheduler.reschedule(this);
     }
-    @Override protected void onResume(){super.onResume();AlarmScheduler.reschedule(this);for(TimerStore.Entry e:TimerStore.all(this))if(e.running&&e.remaining()>1500L)TimerReceiver.schedule(this,e.id,e.endMs);render();countdownHandler.removeCallbacks(countdownTick);countdownHandler.postDelayed(countdownTick,30000L);}
+    @Override protected void onResume(){
+        super.onResume();
+        String currentAppearance=appearanceKey();
+        if(builtAppearanceKey!=null&&!builtAppearanceKey.equals(currentAppearance)){recreate();return;}
+        AlarmScheduler.reschedule(this);
+        for(TimerStore.Entry e:TimerStore.all(this))if(e.running&&e.remaining()>1500L)TimerReceiver.schedule(this,e.id,e.endMs);
+        render();countdownHandler.removeCallbacks(countdownTick);countdownHandler.postDelayed(countdownTick,30000L);
+    }
     @Override protected void onPause(){countdownHandler.removeCallbacks(countdownTick);super.onPause();}
+
+    private String appearanceKey(){
+        return UiProfiles.id(this)+":"+VisualDesigns.id(this)+":"+AppThemes.key(this)+":"+MascotCatalog.id(this);
+    }
 
     private void buildUi(){
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setBackground(Ui.screenGradient(this));
@@ -41,7 +53,14 @@ public class MainActivity extends Activity {
         nextCard.setBackground(Ui.gradientRound(this,24,Ui.HERO_START,Ui.HERO_END));
         LinearLayout heroTop=Ui.row(this);heroTop.setPadding(0,0,0,0);
         TextView nextLabel=Ui.overline(this,"次の起床");nextLabel.setTextColor(Ui.HERO_TEXT);heroTop.addView(nextLabel,new LinearLayout.LayoutParams(0,-2,1));
-        nextStatus=Ui.text(this,"有効なアラーム  0",12,Ui.HERO_TEXT);heroTop.addView(nextStatus);nextCard.addView(heroTop);
+        nextStatus=Ui.text(this,"有効なアラーム  0",12,Ui.HERO_TEXT);heroTop.addView(nextStatus);
+        String mascotId=MascotCatalog.id(this);
+        if(!"none".equals(mascotId)){
+            MascotArtView mascot=new MascotArtView(this,mascotId);
+            LinearLayout.LayoutParams mascotLp=new LinearLayout.LayoutParams(Ui.dp(this,46),Ui.dp(this,46));
+            mascotLp.setMargins(Ui.dp(this,8),0,0,0);heroTop.addView(mascot,mascotLp);
+        }
+        nextCard.addView(heroTop);
         nextText=Ui.title(this,"--:--",60);nextText.setTextColor(Ui.HERO_TEXT);
         nextText.setTypeface(android.graphics.Typeface.create("sans-serif-light",android.graphics.Typeface.NORMAL));
         nextText.setIncludeFontPadding(false);nextText.setAutoSizeTextTypeUniformWithConfiguration(34,60,1,android.util.TypedValue.COMPLEX_UNIT_SP);nextText.setPadding(0,Ui.dp(this,10),0,Ui.dp(this,4));nextCard.addView(nextText);
