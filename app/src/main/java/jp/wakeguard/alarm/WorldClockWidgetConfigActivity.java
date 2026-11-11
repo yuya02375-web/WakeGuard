@@ -155,7 +155,7 @@ public class WorldClockWidgetConfigActivity extends Activity {
         });
     }
 
-    private void refreshStyleButtons(){boolean d="digital".equals(selectedStyle),a="analog".equals(selectedStyle),b="both".equals(selectedStyle);digitalButton.setBackground(d?Ui.round(Ui.ACCENT,14,this):Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));digitalButton.setTextColor(d?0xFF0D1B2A:Ui.TEXT);analogButton.setBackground(a?Ui.round(Ui.ACCENT,14,this):Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));analogButton.setTextColor(a?0xFF0D1B2A:Ui.TEXT);bothButton.setBackground(b?Ui.round(Ui.ACCENT,14,this):Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));bothButton.setTextColor(b?0xFF0D1B2A:Ui.TEXT);}
+    private void refreshStyleButtons(){boolean d="digital".equals(selectedStyle),a="analog".equals(selectedStyle),b="both".equals(selectedStyle);digitalButton.setBackground(d?Ui.round(Ui.ACCENT,14,this):Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));digitalButton.setTextColor(d?android.graphics.Color.WHITE:Ui.TEXT);analogButton.setBackground(a?Ui.round(Ui.ACCENT,14,this):Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));analogButton.setTextColor(a?android.graphics.Color.WHITE:Ui.TEXT);bothButton.setBackground(b?Ui.round(Ui.ACCENT,14,this):Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));bothButton.setTextColor(b?android.graphics.Color.WHITE:Ui.TEXT);}
     private void save(){
         try{ZoneId.of(selectedZone);}catch(Throwable t){selectedZone=ZoneId.systemDefault().getId();selectedLabel=WorldClockWidgetProvider.zoneLabel(this,selectedZone);}
         if(appWidgetId==AppWidgetManager.INVALID_APPWIDGET_ID&&pinProviderClass!=null){pinConfiguredWorld();return;}

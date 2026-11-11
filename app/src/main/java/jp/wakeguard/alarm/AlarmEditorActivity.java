@@ -19,13 +19,16 @@ import java.util.Locale;
 public class AlarmEditorActivity extends Activity {
     private static final int REQ_AUDIO=81,REQ_VIDEO=82;
     private static final String[] MISSION_KEYS={"NONE","STEPS","MATH","TAP","CODE","SHAKE","MEMORY","TYPE","HOLD","SWIPE","ORDER","REVERSE","RANDOM"};
-    private static final String[] MISSION_LABELS={"なし","歩数","計算","連打","コード入力","シェイク","記憶","文章入力","長押し","スワイプ","順番タップ","逆順入力","ランダム"};
     private long alarmId; private AlarmStore.Entry draft;
-    private EditText label,steps,missionCount; private Button time,sound,missionPicker,ringDuration,fullStopDuration,preNotify,snooze,preview; private CheckBox[] days=new CheckBox[7];
+    private EditText label,steps,missionCount; private Button time,sound,ringDuration,fullStopDuration,preNotify,snooze,preview,missionChange; private CheckBox[] days=new CheckBox[7];
     private Switch enabled,ringAutoStop,fullAutoStop,snoozeEnabled; private LinearLayout snoozeIntervalRow; private boolean renderingSnooze; private SeekBar volume; private TextView volumeText,soundStatus,stepsLabel,countLabel,missionNote,daySummary,autoStopSummary,autoStopWarning;
+    private LinearLayout missionSelectionPanel,stepsControl,countControl; private TextView selectedMissionTitle; private Button[] missionTiles=new Button[MISSION_KEYS.length];
     private RadioGroup vibration; private RadioButton[] vibrationChoices=new RadioButton[3]; private String selectedMission="NONE"; private MediaPlayer previewPlayer;
 
-    @Override protected void onCreate(Bundle b){super.onCreate(b);Ui.prepareActivity(this);alarmId=getIntent().getLongExtra("alarmId",-1L);draft=alarmId<0?AlarmProfiles.defaults(this):AlarmProfiles.get(this,alarmId);selectedMission=AlarmStore.normalizeMission(draft.missionType);build();render();}
+    @Override protected void onCreate(Bundle b){super.onCreate(b);Ui.prepareActivity(this);alarmId=getIntent().getLongExtra("alarmId",-1L);
+        if(alarmId>=1000L){draft=AlarmStore.find(this,alarmId);if(draft==null){Toast.makeText(this,editorText("このアラームはすでに削除されています","This alarm has already been deleted","이 알람은 이미 삭제되었습니다"),Toast.LENGTH_LONG).show();finish();return;}}
+        else draft=alarmId<0?AlarmProfiles.defaults(this):AlarmProfiles.get(this,alarmId);
+        selectedMission=AlarmStore.normalizeMission(draft.missionType);build();render();}
 
     private void build(){
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setBackground(Ui.screenGradient(this));
@@ -36,37 +39,43 @@ public class AlarmEditorActivity extends Activity {
 
         ScrollView sv=new ScrollView(this);sv.setFillViewport(false);sv.setClipToPadding(false);LinearLayout body=new LinearLayout(this);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(Ui.dp(this,18),Ui.dp(this,10),Ui.dp(this,18),Ui.dp(this,18));sv.addView(body);root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
 
-        LinearLayout timeHero=Ui.card(this);timeHero.setBackground(Ui.gradientRound(this,26,0xFF2B465D,0xFF1B3043));timeHero.setPadding(Ui.dp(this,20),Ui.dp(this,16),Ui.dp(this,20),Ui.dp(this,16));
-        timeHero.addView(Ui.sectionHeader(this,I18n.tr(this,"時刻と曜日")));
+        LinearLayout timeHero=Ui.card(this);timeHero.setBackground(Ui.round(0xFFFFB5A6,26,this));timeHero.setPadding(Ui.dp(this,20),Ui.dp(this,16),Ui.dp(this,20),Ui.dp(this,16));
+        TextView timeHeader=Ui.sectionHeader(this,I18n.tr(this,"時刻と曜日"));timeHeader.setTextColor(Ui.TEXT);timeHero.addView(timeHeader);
         LinearLayout timeControls=Ui.row(this);timeControls.setPadding(0,Ui.dp(this,2),0,0);
-        timeControls.addView(Ui.overline(this,I18n.tr(this,"アラーム時刻")),new LinearLayout.LayoutParams(0,-2,1));
+        TextView timeLabel=Ui.overline(this,I18n.tr(this,"アラーム時刻"));timeLabel.setTextColor(Ui.TEXT);timeControls.addView(timeLabel,new LinearLayout.LayoutParams(0,-2,1));
         enabled=new Switch(this);enabled.setText(I18n.tr(this,"アラームを有効にする"));enabled.setTextSize(13);enabled.setTextColor(Ui.TEXT);Ui.styleSwitch(enabled,this);timeControls.addView(enabled);timeHero.addView(timeControls);
         time=Ui.ghostButton(this,"07:00");time.setTextSize(58);time.setTextColor(Ui.TEXT);time.setBackgroundColor(android.graphics.Color.TRANSPARENT);time.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));time.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);time.setPadding(0,0,0,0);time.setOnClickListener(v->new TimePickerDialog(this,(x,h,m)->{draft.fixedAt=0L;draft.hour=h;draft.minute=m;time.setText(String.format(Locale.JAPAN,"%02d:%02d",h,m));},draft.hour,draft.minute,true).show());timeHero.addView(time,new LinearLayout.LayoutParams(-1,Ui.dp(this,80)));
-        TextView timeHint=Ui.text(this,I18n.tr(this,"タップして時刻を変更"),13,Ui.MUTED);timeHero.addView(timeHint);
-        TextView repeat=Ui.text(this,I18n.tr(this,"繰り返す曜日"),13,Ui.MUTED);timeHero.addView(repeat,Ui.gapTop(this,10));
+        TextView timeHint=Ui.text(this,I18n.tr(this,"タップして時刻を変更"),13,Ui.TEXT);timeHero.addView(timeHint);
+        TextView repeat=Ui.text(this,I18n.tr(this,"繰り返す曜日"),13,Ui.TEXT);timeHero.addView(repeat,Ui.gapTop(this,10));
         LinearLayout dayRow=new LinearLayout(this);String[]dn={"月","火","水","木","金","土","日"};for(int i=0;i<7;i++){
             CheckBox day=new CheckBox(this);days[i]=day;
             day.setText(I18n.tr(this,dn[i]));day.setButtonDrawable(null);
             day.setGravity(Gravity.CENTER);day.setTextSize(13);day.setMinHeight(Ui.dp(this,48));day.setMinWidth(0);day.setMinimumWidth(0);day.setSingleLine(true);
             day.setPadding(0,0,0,0);
-            day.setTextColor(Ui.MUTED);
+            day.setTextColor(Ui.TEXT);
             day.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));
             day.setOnCheckedChangeListener((v,checked)->{
-                day.setTextColor(checked?Ui.BG:Ui.MUTED);
+                day.setTextColor(checked?android.graphics.Color.WHITE:Ui.TEXT);
                 day.setBackground(checked?Ui.round(Ui.ACCENT_2,14,this):Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));
                 refreshDaySummary();
             });
             LinearLayout.LayoutParams cell=new LinearLayout.LayoutParams(0,Ui.dp(this,48),1f);
             cell.setMargins(Ui.dp(this,2),0,Ui.dp(this,2),0);dayRow.addView(day,cell);
-        }timeHero.addView(dayRow,Ui.gapTop(this,8));daySummary=Ui.text(this,I18n.tr(this,"曜日を選ばなければ1回だけ鳴ります"),12,Ui.MUTED);timeHero.addView(daySummary,Ui.gapTop(this,4));body.addView(timeHero,Ui.cardParams(this));
+        }timeHero.addView(dayRow,Ui.gapTop(this,8));daySummary=Ui.text(this,I18n.tr(this,"曜日を選ばなければ1回だけ鳴ります"),12,Ui.TEXT);timeHero.addView(daySummary,Ui.gapTop(this,4));body.addView(timeHero,Ui.cardParams(this));
 
         LinearLayout nameCard=Ui.card(this);nameCard.addView(Ui.sectionHeader(this,I18n.tr(this,"名前")));label=input(I18n.tr(this,"学校、休日など"),InputType.TYPE_CLASS_TEXT);nameCard.addView(label,Ui.gapTop(this,4));body.addView(nameCard,Ui.cardParams(this));
 
         LinearLayout missionCard=Ui.card(this);missionCard.addView(Ui.sectionHeader(this,I18n.tr(this,"解除方法")));
-        missionPicker=Ui.ghostButton(this,I18n.tr(this,"歩数")+"  ›");missionPicker.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);missionPicker.setTextColor(Ui.ACCENT);missionPicker.setMinHeight(Ui.dp(this,52));missionPicker.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));missionPicker.setOnClickListener(v->chooseMission());missionCard.addView(missionPicker,Ui.gapTop(this,4));
-        missionNote=Ui.text(this,"",13,Ui.MUTED);missionCard.addView(missionNote,Ui.gapTop(this,2));
-        stepsLabel=Ui.text(this,I18n.tr(this,"解除に必要な歩数"),13,Ui.MUTED);missionCard.addView(stepsLabel,Ui.gapTop(this,14));steps=input("10",InputType.TYPE_CLASS_NUMBER);missionCard.addView(steps,Ui.gapTop(this,6));
-        countLabel=Ui.text(this,I18n.tr(this,"回数"),13,Ui.MUTED);missionCard.addView(countLabel,Ui.gapTop(this,14));missionCount=input("3",InputType.TYPE_CLASS_NUMBER);missionCard.addView(missionCount,Ui.gapTop(this,6));body.addView(missionCard,Ui.cardParams(this));
+        LinearLayout missionSummary=Ui.row(this);missionSummary.setGravity(Gravity.CENTER_VERTICAL);missionSummary.setPadding(Ui.dp(this,14),Ui.dp(this,12),Ui.dp(this,8),Ui.dp(this,12));missionSummary.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,18,this));
+        LinearLayout summaryText=new LinearLayout(this);summaryText.setOrientation(LinearLayout.VERTICAL);summaryText.setGravity(Gravity.CENTER_VERTICAL);
+        selectedMissionTitle=Ui.title(this,I18n.tr(this,"なし"),18);summaryText.addView(selectedMissionTitle);
+        missionNote=Ui.text(this,"",13,Ui.MUTED);missionNote.setMaxLines(3);summaryText.addView(missionNote,Ui.gapTop(this,3));
+        missionSummary.addView(summaryText,new LinearLayout.LayoutParams(0,-2,1));
+        missionChange=Ui.ghostButton(this,I18n.tr(this,"ミッションを選択")+"  ›");missionChange.setMinHeight(Ui.dp(this,48));missionChange.setTextColor(Ui.ACCENT);missionChange.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,14,this));missionChange.setOnClickListener(v->toggleMissionPicker());missionSummary.addView(missionChange);missionCard.addView(missionSummary,Ui.gapTop(this,4));
+        stepsLabel=Ui.text(this,I18n.tr(this,"解除に必要な歩数"),13,Ui.MUTED);steps=input("10",InputType.TYPE_CLASS_NUMBER);missionCard.addView(stepsLabel,Ui.gapTop(this,10));stepsControl=buildMissionStepper(steps,1,9999,10,"歩数");missionCard.addView(stepsControl,Ui.gapTop(this,2));
+        countLabel=Ui.text(this,I18n.tr(this,"回数"),13,Ui.MUTED);missionCount=input("3",InputType.TYPE_CLASS_NUMBER);missionCard.addView(countLabel,Ui.gapTop(this,8));countControl=buildMissionStepper(missionCount,1,500,3,"回数");missionCard.addView(countControl,Ui.gapTop(this,2));
+        missionSelectionPanel=new LinearLayout(this);missionSelectionPanel.setOrientation(LinearLayout.VERTICAL);missionSelectionPanel.setVisibility(View.GONE);missionCard.addView(missionSelectionPanel,Ui.gapTop(this,12));
+        buildMissionSelector(missionSelectionPanel);body.addView(missionCard,Ui.cardParams(this));
 
         LinearLayout notifyCard=Ui.card(this);notifyCard.addView(Ui.sectionHeader(this,I18n.tr(this,"通知とスヌーズ")));
         LinearLayout preRow=Ui.row(this);preRow.setPadding(0,Ui.dp(this,4),0,0);TextView preLabel=Ui.text(this,I18n.tr(this,"事前通知"),15,Ui.TEXT);preRow.addView(preLabel,new LinearLayout.LayoutParams(0,-2,1));preNotify=Ui.ghostButton(this,"30"+I18n.tr(this,"分前")+"  ›");preNotify.setTextColor(Ui.ACCENT);preNotify.setOnClickListener(v->showPreNotifyDialog());preRow.addView(preNotify);notifyCard.addView(preRow);
@@ -118,12 +127,53 @@ public class AlarmEditorActivity extends Activity {
         daySummary.setText(selected.length()==0?I18n.tr(this,"曜日を選ばなければ1回だけ鳴ります"):selected.toString());
     }
 
-    private void chooseMission(){int checked=missionIndex(selectedMission);String[] labels=new String[MISSION_LABELS.length];for(int i=0;i<labels.length;i++)labels[i]=I18n.tr(this,MISSION_LABELS[i]);new AlertDialog.Builder(this).setTitle(I18n.tr(this,"ミッションを選択")).setSingleChoiceItems(labels,checked,(d,which)->{selectedMission=MISSION_KEYS[which];missionPicker.setText(labels[which]+"  ›");refreshMissionFields();d.dismiss();}).show();}
-    private int missionIndex(String t){for(int i=0;i<MISSION_KEYS.length;i++)if(MISSION_KEYS[i].equals(t))return i;return 0;}
+    private void toggleMissionPicker(){boolean show=missionSelectionPanel.getVisibility()!=View.VISIBLE;missionSelectionPanel.setVisibility(show?View.VISIBLE:View.GONE);missionChange.setText((show?editorText("選択を閉じる","Close selection","선택 닫기"):I18n.tr(this,"ミッションを選択"))+"  "+(show?"⌃":"›"));}
+    private void chooseMission(String key){if(missionIndex(key)<0)return;selectedMission=key;missionSelectionPanel.setVisibility(View.GONE);missionChange.setText(I18n.tr(this,"ミッションを選択")+"  ›");refreshMissionFields();}
+    private int missionIndex(String t){for(int i=0;i<MISSION_KEYS.length;i++)if(MISSION_KEYS[i].equals(t))return i;return -1;}
+
+    private LinearLayout buildMissionStepper(EditText value,int min,int max,int initial,String label){
+        LinearLayout row=Ui.row(this);row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(0,Ui.dp(this,2),0,Ui.dp(this,2));
+        Button minus=Ui.ghostButton(this,"−");minus.setTextSize(22);minus.setMinWidth(Ui.dp(this,48));minus.setMinHeight(Ui.dp(this,48));minus.setPadding(0,0,0,Ui.dp(this,3));minus.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,24,this));minus.setContentDescription(editorText("減らす","Decrease","줄이기")+" "+I18n.tr(this,label));
+        value.setText(String.valueOf(initial));value.setGravity(Gravity.CENTER);value.setSelectAllOnFocus(true);value.setMinHeight(Ui.dp(this,48));value.setContentDescription(I18n.tr(this,label));
+        Button plus=Ui.ghostButton(this,"＋");plus.setTextSize(19);plus.setMinWidth(Ui.dp(this,48));plus.setMinHeight(Ui.dp(this,48));plus.setPadding(0,0,0,Ui.dp(this,2));plus.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,24,this));plus.setContentDescription(editorText("増やす","Increase","늘리기")+" "+I18n.tr(this,label));
+        minus.setOnClickListener(v->adjustMissionValue(value,-1,min,max,initial));plus.setOnClickListener(v->adjustMissionValue(value,1,min,max,initial));
+        row.addView(minus,new LinearLayout.LayoutParams(Ui.dp(this,50),Ui.dp(this,50)));LinearLayout.LayoutParams valueLp=new LinearLayout.LayoutParams(Ui.dp(this,112),Ui.dp(this,50));valueLp.setMargins(Ui.dp(this,8),0,Ui.dp(this,8),0);row.addView(value,valueLp);row.addView(plus,new LinearLayout.LayoutParams(Ui.dp(this,50),Ui.dp(this,50)));
+        return row;
+    }
+
+    private void adjustMissionValue(EditText field,int change,int min,int max,int fallback){
+        int value=fallback;try{String raw=field.getText().toString().trim();if(!raw.isEmpty())value=Integer.parseInt(raw);}catch(Throwable ignored){}
+        field.setText(String.valueOf(Math.max(min,Math.min(max,value+change))));
+    }
+
+    private void buildMissionSelector(LinearLayout panel){
+        addMissionGroup(panel,editorText("体を動かす","Move","움직이기"),new String[]{"STEPS","SHAKE","TAP","HOLD","SWIPE"});
+        addMissionGroup(panel,editorText("頭を使う","Think","생각하기"),new String[]{"MATH","MEMORY","ORDER","REVERSE","TYPE","CODE"});
+        addMissionGroup(panel,editorText("おまかせ・なし","Surprise or none","랜덤 또는 없음"),new String[]{"RANDOM","NONE"});
+    }
+
+    private void addMissionGroup(LinearLayout panel,String title,String[] keys){
+        panel.addView(Ui.sectionHeader(this,title),Ui.gapTop(this,4));
+        LinearLayout row=null;
+        for(int i=0;i<keys.length;i++){
+            if(i%2==0){row=Ui.row(this);row.setGravity(Gravity.CENTER_VERTICAL);panel.addView(row,Ui.gapTop(this,4));}
+            final String key=keys[i];Button tile=Ui.ghostButton(this,I18n.tr(this,AlarmProfiles.missionName(key)));tile.setAllCaps(false);tile.setTextSize(14);tile.setGravity(Gravity.CENTER);tile.setSingleLine(false);tile.setMaxLines(3);tile.setMinHeight(Ui.dp(this,64));tile.setPadding(Ui.dp(this,8),Ui.dp(this,8),Ui.dp(this,8),Ui.dp(this,8));tile.setOnClickListener(v->chooseMission(key));
+            int index=missionIndex(key);if(index>=0)missionTiles[index]=tile;LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,-2,1f);if(i%2==1)lp.setMargins(Ui.dp(this,8),0,0,0);else lp.setMargins(0,0,Ui.dp(this,4),0);row.addView(tile,lp);
+            if(i==keys.length-1&&keys.length%2==1){View spacer=new View(this);row.addView(spacer,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1f));}
+        }
+    }
+
+    private String editorText(String japanese,String english,String korean){
+        String translated=I18n.tr(this,japanese);if(!japanese.equals(translated))return translated;
+        String language=I18n.language(this);return "ko".equals(language)?korean:"en".equals(language)?english:japanese;
+    }
 
     private EditText input(String hint,int type){EditText e=new EditText(this);e.setHint(I18n.tr(this,hint));e.setHintTextColor(Ui.MUTED_2);e.setTextColor(Ui.TEXT);e.setTextSize(17);e.setInputType(type);e.setSingleLine(true);e.setMinHeight(Ui.dp(this,54));e.setPadding(Ui.dp(this,14),Ui.dp(this,9),Ui.dp(this,14),Ui.dp(this,9));e.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));return e;}
 
-    private void refreshMissionFields(){if(steps==null)return;String t=selectedMission;boolean needSteps="STEPS".equals(t)||"RANDOM".equals(t);boolean needCount=!("NONE".equals(t)||"STEPS".equals(t));stepsLabel.setVisibility(needSteps?View.VISIBLE:View.GONE);steps.setVisibility(needSteps?View.VISIBLE:View.GONE);countLabel.setVisibility(needCount?View.VISIBLE:View.GONE);missionCount.setVisibility(needCount?View.VISIBLE:View.GONE);
+    private void refreshMissionFields(){if(steps==null)return;String t=selectedMission;boolean needSteps="STEPS".equals(t)||"RANDOM".equals(t);boolean needCount=!("NONE".equals(t)||"STEPS".equals(t));stepsLabel.setVisibility(needSteps?View.VISIBLE:View.GONE);stepsControl.setVisibility(needSteps?View.VISIBLE:View.GONE);countLabel.setVisibility(needCount?View.VISIBLE:View.GONE);countControl.setVisibility(needCount?View.VISIBLE:View.GONE);
+        selectedMissionTitle.setText(I18n.tr(this,AlarmProfiles.missionName(t)));
+        missionChange.setText(I18n.tr(this,"ミッションを選択")+"  ›");
+        for(int i=0;i<MISSION_KEYS.length;i++){Button tile=missionTiles[i];if(tile==null)continue;boolean selected=MISSION_KEYS[i].equals(t);tile.setSelected(selected);tile.setTextColor(selected?Ui.ACCENT:Ui.TEXT);tile.setTypeface(android.graphics.Typeface.create("sans-serif-medium",android.graphics.Typeface.NORMAL));tile.setBackground(selected?Ui.roundStroke(Ui.SURFACE_2,Ui.ACCENT,16,this):Ui.roundStroke(Ui.SURFACE,Ui.BORDER,16,this));String description=I18n.tr(this,AlarmProfiles.missionName(MISSION_KEYS[i]));if(selected)description+=" · "+editorText("選択中","Selected","선택됨");tile.setContentDescription(description);}
         if("NONE".equals(t)){missionNote.setText(I18n.tr(this,"追加の解除操作なし。停止ボタンを押すだけで解除できます。"));}
         else if("STEPS".equals(t)){stepsLabel.setText(I18n.tr(this,"解除に必要な歩数"));missionNote.setText(I18n.tr(this,"実際に歩いて解除します。"));}
         else if("MATH".equals(t)){countLabel.setText(I18n.tr(this,"正解する問題数"));missionNote.setText(I18n.tr(this,"足し算・引き算・掛け算を解きます。"));}
@@ -151,7 +201,7 @@ public class AlarmEditorActivity extends Activity {
     }
     private void renderSnooze(){if(snooze==null)return;boolean use=draft.snoozeMinutes>0;renderingSnooze=true;snoozeEnabled.setChecked(use);renderingSnooze=false;if(snoozeIntervalRow!=null)snoozeIntervalRow.setVisibility(use?View.VISIBLE:View.GONE);snooze.setText((use?draft.snoozeMinutes:5)+I18n.tr(this,"分")+"  ›");}
     private void showSnoozeDialog(){final int[] values={1,3,5,10,15,20,30,45,60};String[] labels=new String[values.length];int checked=0;for(int i=0;i<values.length;i++){labels[i]=values[i]+I18n.tr(this,"分");if(values[i]==draft.snoozeMinutes)checked=i;}new AlertDialog.Builder(this).setTitle(I18n.tr(this,"スヌーズ")).setSingleChoiceItems(labels,checked,(d,w)->{draft.snoozeMinutes=values[w];renderSnooze();d.dismiss();}).setNegativeButton(I18n.tr(this,"キャンセル"),null).show();}
-    private void togglePreview(){if(previewPlayer!=null){stopPreview();return;}try{String raw=draft.soundUri==null?"":draft.soundUri.trim();Uri uri;if(raw.isEmpty())uri=android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_ALARM);else if(raw.startsWith("content:")||raw.startsWith("file:"))uri=Uri.parse(raw);else uri=Uri.fromFile(new File(raw));previewPlayer=new MediaPlayer();previewPlayer.setAudioStreamType(android.media.AudioManager.STREAM_ALARM);previewPlayer.setDataSource(this,uri);previewPlayer.setLooping(false);float v=Math.max(0f,Math.min(1f,draft.volume/100f));previewPlayer.setVolume(v,v);previewPlayer.setOnCompletionListener(x->stopPreview());previewPlayer.prepare();previewPlayer.start();if(preview!=null)preview.setText("■  "+I18n.tr(this,"停止"));}catch(Throwable t){stopPreview();Toast.makeText(this,I18n.tr(this,"この音源は試聴できません"),Toast.LENGTH_SHORT).show();}}
+    private void togglePreview(){if(previewPlayer!=null){stopPreview();return;}try{String raw=draft.soundUri==null?"":draft.soundUri.trim();Uri uri;if(raw.isEmpty())uri=android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_ALARM);else if(raw.startsWith("content:")||raw.startsWith("file:"))uri=Uri.parse(raw);else uri=Uri.fromFile(new File(raw));previewPlayer=new MediaPlayer();previewPlayer.setAudioStreamType(android.media.AudioManager.STREAM_ALARM);previewPlayer.setDataSource(this,uri);previewPlayer.setLooping(false);int currentVolume=volume==null?draft.volume:volume.getProgress();float v=Math.max(0f,Math.min(1f,currentVolume/100f));previewPlayer.setVolume(v,v);previewPlayer.setOnCompletionListener(x->stopPreview());previewPlayer.prepare();previewPlayer.start();if(preview!=null)preview.setText("■  "+I18n.tr(this,"停止"));}catch(Throwable t){stopPreview();Toast.makeText(this,I18n.tr(this,"この音源は試聴できません"),Toast.LENGTH_SHORT).show();}}
     private void stopPreview(){MediaPlayer p=previewPlayer;previewPlayer=null;if(p!=null){try{p.stop();}catch(Throwable ignored){}try{p.release();}catch(Throwable ignored){}}if(preview!=null)preview.setText("▶  "+I18n.tr(this,"試聴"));}
     @Override protected void onStop(){stopPreview();super.onStop();}
 
@@ -213,7 +263,7 @@ public class AlarmEditorActivity extends Activity {
         d.setContentView(box);d.show();android.view.Window w=d.getWindow();if(w!=null){w.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));w.setDimAmount(.65f);w.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND);w.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.92f),-2);}
     }
 
-    private void render(){enabled.setChecked(draft.enabled);label.setText(draft.label);time.setText(String.format(Locale.JAPAN,"%02d:%02d",draft.hour,draft.minute));for(int i=0;i<7;i++)days[i].setChecked((draft.dayMask&(1<<i))!=0);refreshDaySummary();steps.setText(String.valueOf(draft.steps));missionCount.setText(String.valueOf(draft.missionCount));selectedMission=AlarmStore.normalizeMission(draft.missionType);missionPicker.setText(I18n.tr(this,AlarmProfiles.missionName(selectedMission))+"  ›");volume.setProgress(draft.volume);int vibrationIndex="OFF".equals(draft.vibration)?0:("STRONG".equals(draft.vibration)?2:1);vibration.check(vibrationChoices[vibrationIndex].getId());renderSound();renderPreNotify();renderSnooze();renderAutoStop();refreshMissionFields();}
+    private void render(){enabled.setChecked(draft.enabled);label.setText(draft.label);time.setText(String.format(Locale.JAPAN,"%02d:%02d",draft.hour,draft.minute));for(int i=0;i<7;i++)days[i].setChecked((draft.dayMask&(1<<i))!=0);refreshDaySummary();steps.setText(String.valueOf(draft.steps));missionCount.setText(String.valueOf(draft.missionCount));selectedMission=AlarmStore.normalizeMission(draft.missionType);volume.setProgress(draft.volume);int vibrationIndex="OFF".equals(draft.vibration)?0:("STRONG".equals(draft.vibration)?2:1);vibration.check(vibrationChoices[vibrationIndex].getId());renderSound();renderPreNotify();renderSnooze();renderAutoStop();refreshMissionFields();}
     private void renderSound(){
         if(draft.soundName==null||draft.soundName.isEmpty()){soundStatus.setText(I18n.tr(this,"標準アラーム音"));return;}
         String size=draft.soundBytes>0?String.format(Locale.JAPAN,"%.1f MB",draft.soundBytes/1048576.0):I18n.tr(this,"サイズ不明");

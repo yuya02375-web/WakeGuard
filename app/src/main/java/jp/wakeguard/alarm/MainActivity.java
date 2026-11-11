@@ -14,7 +14,9 @@ import java.util.*;
 
 public class MainActivity extends Activity {
     private LinearLayout list, nextCard;
-    private TextView nextText,nextMeta,statsText;
+    private TextView nextText,nextMeta,nextStatus;
+    private FrameLayout horizonTrack;
+    private View horizonDot;
     private final Handler countdownHandler=new Handler(Looper.getMainLooper());
     private final Runnable countdownTick=new Runnable(){@Override public void run(){render();countdownHandler.postDelayed(this,30000L);}};
 
@@ -28,53 +30,46 @@ public class MainActivity extends Activity {
     private void buildUi(){
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setBackground(Ui.screenGradient(this));
 
-        LinearLayout top=new LinearLayout(this);top.setOrientation(LinearLayout.VERTICAL);top.setPadding(Ui.dp(this,22),Ui.dp(this,18),Ui.dp(this,16),Ui.dp(this,14));
+        LinearLayout top=new LinearLayout(this);top.setOrientation(LinearLayout.VERTICAL);top.setPadding(Ui.dp(this,22),Ui.dp(this,17),Ui.dp(this,22),Ui.dp(this,11));
         top.addView(Ui.overline(this,"IGNIDO  /  WAKE"));
-        LinearLayout titleRow=Ui.row(this);titleRow.setPadding(0,Ui.dp(this,5),0,0);
-        TextView title=Ui.title(this,"アラーム",30);titleRow.addView(title,new LinearLayout.LayoutParams(0,-2,1));
-        ImageButton settings=Ui.iconButton(this,R.drawable.ic_v292_action_settings,false,"アプリ設定");settings.setOnClickListener(v->startActivity(new Intent(this,SystemSettingsActivity.class)));
-        ImageButton add=Ui.iconButton(this,R.drawable.ic_v292_action_add,true,"アラームを追加");add.setOnClickListener(v->edit(-1));titleRow.addView(add);
-        titleRow.addView(settings);top.addView(titleRow);root.addView(top);
+        TextView title=Ui.title(this,"アラーム",32);title.setPadding(0,Ui.dp(this,5),0,0);top.addView(title);root.addView(top);
 
-        nextCard=new LinearLayout(this);nextCard.setOrientation(LinearLayout.HORIZONTAL);nextCard.setGravity(Gravity.CENTER_VERTICAL);
-        nextCard.setPadding(Ui.dp(this,22),Ui.dp(this,19),Ui.dp(this,18),Ui.dp(this,19));
-        nextCard.setBackground(Ui.gradientRound(this,26,0xFF2B465D,0xFF1B3043));
-        LinearLayout nextCopy=new LinearLayout(this);nextCopy.setOrientation(LinearLayout.VERTICAL);
-        TextView nextLabel=Ui.overline(this,"次のアラーム");nextLabel.setTextColor(Ui.ACCENT);nextCopy.addView(nextLabel);
-        nextText=Ui.title(this,"--:--",52);nextText.setTypeface(android.graphics.Typeface.create("sans-serif-medium",android.graphics.Typeface.NORMAL));
-        nextText.setPadding(0,Ui.dp(this,3),0,0);nextCopy.addView(nextText);
-        nextMeta=Ui.text(this,"",13,Ui.MUTED);nextMeta.setPadding(0,Ui.dp(this,2),0,0);nextCopy.addView(nextMeta);
-        nextCard.addView(nextCopy,new LinearLayout.LayoutParams(0,-2,1));
-        android.widget.ImageView mark=new android.widget.ImageView(this);mark.setImageResource(R.drawable.ic_ignido_v299_foreground);mark.setContentDescription(null);mark.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);mark.setAlpha(.95f);
-        nextCard.addView(mark,new LinearLayout.LayoutParams(Ui.dp(this,70),Ui.dp(this,70)));
-        LinearLayout.LayoutParams nextLp=new LinearLayout.LayoutParams(-1,-2);nextLp.setMargins(Ui.dp(this,18),0,Ui.dp(this,18),Ui.dp(this,12));root.addView(nextCard,nextLp);
-
-        LinearLayout statsRow=Ui.row(this);statsRow.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,18,this));
-        statsRow.setPadding(Ui.dp(this,18),Ui.dp(this,12),Ui.dp(this,16),Ui.dp(this,12));
-        TextView statsLabel=Ui.title(this,"ストリーク",15);
-        statsRow.addView(statsLabel,new LinearLayout.LayoutParams(0,-2,1));
-        statsText=Ui.text(this,"",13,Ui.MUTED);
-        statsRow.addView(statsText);
-        TextView statsArrow=Ui.text(this,"  ›",22,Ui.ACCENT);
-        statsRow.addView(statsArrow);
-        statsRow.setContentDescription("ストリークの記録を見る");
-        statsRow.setOnClickListener(v->Ui.launchNoAnimation(this,new Intent(this,StatsActivity.class)));
-        LinearLayout.LayoutParams statsLp=new LinearLayout.LayoutParams(-1,-2);statsLp.setMargins(Ui.dp(this,18),0,Ui.dp(this,18),Ui.dp(this,5));root.addView(statsRow,statsLp);
+        // The top of the home screen is now a single glanceable wake-up horizon.
+        nextCard=new LinearLayout(this);nextCard.setOrientation(LinearLayout.VERTICAL);
+        nextCard.setPadding(Ui.dp(this,22),Ui.dp(this,18),Ui.dp(this,22),Ui.dp(this,17));
+        nextCard.setBackground(Ui.gradientRound(this,24,0xFFFFB9A8,0xFFFFD9C9));
+        LinearLayout heroTop=Ui.row(this);heroTop.setPadding(0,0,0,0);
+        TextView nextLabel=Ui.overline(this,"次の起床");nextLabel.setTextColor(Ui.TEXT);heroTop.addView(nextLabel,new LinearLayout.LayoutParams(0,-2,1));
+        nextStatus=Ui.text(this,"有効なアラーム  0",12,Ui.TEXT);heroTop.addView(nextStatus);nextCard.addView(heroTop);
+        nextText=Ui.title(this,"--:--",60);nextText.setTextColor(Ui.TEXT);
+        nextText.setTypeface(android.graphics.Typeface.create("sans-serif-light",android.graphics.Typeface.NORMAL));
+        nextText.setIncludeFontPadding(false);nextText.setAutoSizeTextTypeUniformWithConfiguration(34,60,1,android.util.TypedValue.COMPLEX_UNIT_SP);nextText.setPadding(0,Ui.dp(this,10),0,Ui.dp(this,4));nextCard.addView(nextText);
+        nextMeta=Ui.text(this,"次のアラームはありません",14,Ui.TEXT);nextCard.addView(nextMeta);
+        horizonTrack=new FrameLayout(this);horizonTrack.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        View horizonLine=new View(this);horizonLine.setBackgroundColor(0x66333B43);horizonLine.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        FrameLayout.LayoutParams lineLp=new FrameLayout.LayoutParams(-1,Ui.dp(this,1),Gravity.CENTER_VERTICAL);horizonTrack.addView(horizonLine,lineLp);
+        horizonDot=new View(this);horizonDot.setBackground(Ui.round(Ui.ACCENT_2,8,this));horizonDot.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        FrameLayout.LayoutParams dotLp=new FrameLayout.LayoutParams(Ui.dp(this,8),Ui.dp(this,8),Gravity.START|Gravity.CENTER_VERTICAL);horizonTrack.addView(horizonDot,dotLp);
+        LinearLayout.LayoutParams trackLp=new LinearLayout.LayoutParams(-1,Ui.dp(this,14));trackLp.setMargins(0,Ui.dp(this,7),0,0);nextCard.addView(horizonTrack,trackLp);
+        LinearLayout horizonScale=Ui.row(this);TextView startOfDay=Ui.text(this,"00:00",10,Ui.TEXT);TextView endOfDay=Ui.text(this,"24:00",10,Ui.TEXT);horizonScale.addView(startOfDay,new LinearLayout.LayoutParams(0,-2,1));endOfDay.setGravity(Gravity.END);horizonScale.addView(endOfDay,new LinearLayout.LayoutParams(0,-2,1));nextCard.addView(horizonScale);
+        LinearLayout.LayoutParams nextLp=new LinearLayout.LayoutParams(-1,-2);nextLp.setMargins(Ui.dp(this,18),Ui.dp(this,4),Ui.dp(this,18),Ui.dp(this,3));root.addView(nextCard,nextLp);
 
         ScrollView sv=new ScrollView(this);sv.setFillViewport(true);sv.setVerticalScrollBarEnabled(false);list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);
-        list.setPadding(Ui.dp(this,18),Ui.dp(this,14),Ui.dp(this,18),Ui.dp(this,28));sv.addView(list);
+        list.setPadding(Ui.dp(this,18),Ui.dp(this,6),Ui.dp(this,18),Ui.dp(this,16));sv.addView(list);
         root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
 
+        Button add=Ui.button(this,"アラームを追加",true);add.setOnClickListener(v->edit(-1));
+        LinearLayout action=new LinearLayout(this);action.setPadding(Ui.dp(this,18),Ui.dp(this,5),Ui.dp(this,18),Ui.dp(this,7));action.addView(add,new LinearLayout.LayoutParams(-1,-2));root.addView(action);
         root.addView(bottomNav());
         setContentView(root);
         Ui.applySystemBarInsets(this, root);
     }
 
     private LinearLayout bottomNav(){
-        LinearLayout nav=new LinearLayout(this);nav.setGravity(Gravity.CENTER);nav.setPadding(Ui.dp(this,9),Ui.dp(this,7),Ui.dp(this,9),Ui.dp(this,8));nav.setBackgroundColor(Ui.SURFACE);
-        Button alarms=Ui.bottomTab(this,"アラーム",true);Button world=Ui.bottomTab(this,"時計",false);Button timer=Ui.bottomTab(this,"タイマー",false);Button sw=Ui.bottomTab(this,"ストップウォッチ",false);Button streak=Ui.bottomTab(this,"ストリーク",false);
-        nav.addView(alarms,new LinearLayout.LayoutParams(0,Ui.dp(this,63),1));nav.addView(world,new LinearLayout.LayoutParams(0,Ui.dp(this,63),1));nav.addView(timer,new LinearLayout.LayoutParams(0,Ui.dp(this,63),1));nav.addView(sw,new LinearLayout.LayoutParams(0,Ui.dp(this,63),1));nav.addView(streak,new LinearLayout.LayoutParams(0,Ui.dp(this,63),1));
-        world.setOnClickListener(v->openClock("world"));timer.setOnClickListener(v->openClock("timer"));sw.setOnClickListener(v->openClock("stopwatch"));streak.setOnClickListener(v->Ui.launchNoAnimation(this,new Intent(this,StatsActivity.class)));return nav;
+        LinearLayout nav=new LinearLayout(this);nav.setGravity(Gravity.CENTER);nav.setPadding(Ui.dp(this,9),Ui.dp(this,5),Ui.dp(this,9),Ui.dp(this,5));nav.setBackgroundColor(Ui.SURFACE);
+        Button alarms=Ui.bottomTab(this,"アラーム",true);Button clock=Ui.bottomTab(this,"時計",false);Button records=Ui.bottomTab(this,"記録",false);Button settings=Ui.bottomTab(this,"設定",false);
+        nav.addView(alarms,new LinearLayout.LayoutParams(0,Ui.dp(this,63),1));nav.addView(clock,new LinearLayout.LayoutParams(0,Ui.dp(this,63),1));nav.addView(records,new LinearLayout.LayoutParams(0,Ui.dp(this,63),1));nav.addView(settings,new LinearLayout.LayoutParams(0,Ui.dp(this,63),1));
+        clock.setOnClickListener(v->openClock("world"));records.setOnClickListener(v->Ui.launchNoAnimation(this,new Intent(this,StatsActivity.class)));settings.setOnClickListener(v->Ui.launchNoAnimation(this,new Intent(this,SystemSettingsActivity.class)));return nav;
     }
 
     private void openClock(String mode){
@@ -85,24 +80,19 @@ public class MainActivity extends Activity {
     private void render(){
         list.removeAllViews();
         list.setGravity(Gravity.TOP);
-        list.setPadding(Ui.dp(this,18),Ui.dp(this,14),Ui.dp(this,18),Ui.dp(this,28));
+        list.setPadding(Ui.dp(this,18),Ui.dp(this,6),Ui.dp(this,18),Ui.dp(this,16));
         refreshNext();
-        refreshStats();
         List<AlarmStore.Entry> alarms=AlarmProfiles.all(this);
         alarms.sort(Comparator.comparingInt((AlarmStore.Entry e)->e.hour).thenComparingInt(e->e.minute));
         if(alarms.isEmpty()){
-            list.setGravity(Gravity.CENTER_VERTICAL);
-            list.setPadding(Ui.dp(this,18),Ui.dp(this,4),Ui.dp(this,18),Ui.dp(this,12));
-            LinearLayout empty=Ui.card(this);empty.setGravity(Gravity.CENTER);empty.setPadding(Ui.dp(this,24),Ui.dp(this,26),Ui.dp(this,24),Ui.dp(this,26));
-            android.widget.ImageView illustration=new android.widget.ImageView(this);illustration.setImageResource(R.drawable.ic_ignido_v299_foreground);illustration.setContentDescription(null);
-            LinearLayout.LayoutParams illustrationLp=new LinearLayout.LayoutParams(Ui.dp(this,68),Ui.dp(this,68));illustrationLp.bottomMargin=Ui.dp(this,6);empty.addView(illustration,illustrationLp);
-            TextView large=Ui.title(this,"アラームがありません",22);large.setGravity(Gravity.CENTER);empty.addView(large);
-            TextView note=Ui.text(this,"時間と解除方法を設定して、最初のアラームを作成しましょう。",14,Ui.MUTED);
-            note.setGravity(Gravity.CENTER);note.setPadding(0,Ui.dp(this,12),0,Ui.dp(this,12));empty.addView(note);
-            Button create=Ui.button(this,"アラームを追加",true);create.setOnClickListener(v->edit(-1));empty.addView(create);
-            list.addView(empty);return;
+            LinearLayout empty=Ui.card(this);empty.setOrientation(LinearLayout.HORIZONTAL);empty.setGravity(Gravity.CENTER_VERTICAL);empty.setPadding(Ui.dp(this,18),Ui.dp(this,17),Ui.dp(this,18),Ui.dp(this,17));
+            TextView symbol=Ui.title(this,"—",28);symbol.setTextColor(Ui.ACCENT_2);symbol.setGravity(Gravity.CENTER);empty.addView(symbol,new LinearLayout.LayoutParams(Ui.dp(this,42),Ui.dp(this,42)));
+            LinearLayout copy=new LinearLayout(this);copy.setOrientation(LinearLayout.VERTICAL);copy.setPadding(Ui.dp(this,12),0,0,0);
+            TextView large=Ui.title(this,"アラームはまだありません",17);copy.addView(large);
+            TextView note=Ui.text(this,"次のアラームはありません",13,Ui.MUTED);note.setPadding(0,Ui.dp(this,4),0,0);copy.addView(note);
+            empty.addView(copy,new LinearLayout.LayoutParams(0,-2,1));list.addView(empty,Ui.cardParams(this));return;
         }
-        LinearLayout listHeading=Ui.row(this);listHeading.setPadding(Ui.dp(this,2),Ui.dp(this,9),Ui.dp(this,2),Ui.dp(this,8));
+        LinearLayout listHeading=Ui.row(this);listHeading.setPadding(Ui.dp(this,2),Ui.dp(this,3),Ui.dp(this,2),Ui.dp(this,4));
         TextView listTitle=Ui.sectionHeader(this,I18n.tr(this,"アラーム一覧"));listHeading.addView(listTitle,new LinearLayout.LayoutParams(0,-2,1));
         listHeading.addView(Ui.pill(this,String.valueOf(alarms.size())));list.addView(listHeading);
         Map<Long,Long> snoozes=SnoozeScheduler.active(this);
@@ -117,24 +107,23 @@ public class MainActivity extends Activity {
     }
 
     private void addAlarmRow(AlarmStore.Entry e){
-        LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.VERTICAL);row.setPadding(Ui.dp(this,20),Ui.dp(this,20),Ui.dp(this,18),Ui.dp(this,18));row.setBackground(Ui.burnCard(this,e.enabled));if(Build.VERSION.SDK_INT>=21)row.setElevation(0);row.setAlpha(1f);row.setOnClickListener(v->edit(e.id));if(e.id>=1000)row.setOnLongClickListener(v->{confirmDelete(e);return true;});
+        LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.VERTICAL);row.setPadding(Ui.dp(this,14),Ui.dp(this,11),Ui.dp(this,10),Ui.dp(this,10));row.setBackground(Ui.burnCard(this,e.enabled));if(Build.VERSION.SDK_INT>=21)row.setElevation(0);row.setAlpha(1f);row.setOnClickListener(v->edit(e.id));if(e.id>=1000)row.setOnLongClickListener(v->{confirmDelete(e);return true;});
         LinearLayout first=new LinearLayout(this);first.setGravity(Gravity.CENTER_VERTICAL);
-        TextView time=Ui.title(this,String.format(Locale.JAPAN,"%02d:%02d",e.hour,e.minute),44);time.setTextColor(e.enabled?Ui.ACCENT:Ui.MUTED_2);time.setTypeface(android.graphics.Typeface.create("sans-serif-light",android.graphics.Typeface.NORMAL));first.addView(time,new LinearLayout.LayoutParams(0,-2,1));
+        TextView time=Ui.title(this,String.format(Locale.JAPAN,"%02d:%02d",e.hour,e.minute),38);time.setTextColor(e.enabled?Ui.ACCENT_2:Ui.MUTED_2);time.setTypeface(android.graphics.Typeface.create("sans-serif-light",android.graphics.Typeface.NORMAL));time.setIncludeFontPadding(false);
+        LinearLayout details=new LinearLayout(this);details.setOrientation(LinearLayout.VERTICAL);details.setPadding(Ui.dp(this,12),0,Ui.dp(this,6),0);
+        String label=(e.label==null||e.label.trim().isEmpty())?"アラーム":e.label.trim();TextView name=Ui.title(this,label,16);name.setTypeface(android.graphics.Typeface.create("sans-serif-medium",android.graphics.Typeface.BOLD));name.setTextColor(e.enabled?Ui.TEXT:Ui.MUTED);name.setSingleLine(true);name.setEllipsize(android.text.TextUtils.TruncateAt.END);details.addView(name);
+        String scheduleText=repeatText(e.dayMask);long now=System.currentTimeMillis();long next=AlarmScheduler.nextTriggerMillis(this,e);String remaining=(e.enabled&&next>now)?String.format(I18n.locale(this),I18n.tr(this,"あと %s"),relativeText(next-now)):"";
+        String scheduleLine=scheduleText+(remaining.isEmpty()?"":"  ·  "+remaining);TextView schedule=Ui.text(this,scheduleLine,12,e.enabled?Ui.ACCENT:Ui.MUTED_2);schedule.setSingleLine(true);schedule.setEllipsize(android.text.TextUtils.TruncateAt.END);schedule.setPadding(0,Ui.dp(this,3),0,0);details.addView(schedule);
+        first.addView(time,new LinearLayout.LayoutParams(-2,-2));first.addView(details,new LinearLayout.LayoutParams(0,-2,1));
         Switch on=new Switch(this);on.setChecked(e.enabled);Ui.styleSwitch(on,this);first.addView(on);row.addView(first);
-        String label=(e.label==null||e.label.trim().isEmpty())?"アラーム":e.label.trim();TextView name=Ui.title(this,label,18);name.setTypeface(android.graphics.Typeface.create("sans-serif-medium",android.graphics.Typeface.BOLD));name.setTextColor(e.enabled?Ui.TEXT:Ui.MUTED);row.addView(name,Ui.gapTop(this,5));
-        String scheduleText=repeatText(e.dayMask);long now=System.currentTimeMillis();long next=AlarmScheduler.nextTriggerMillis(this,e);String remaining=(next>now)?String.format(I18n.locale(this),I18n.tr(this,"あと %s"),relativeText(next-now)):"";
-        LinearLayout chips=new LinearLayout(this);chips.setGravity(Gravity.CENTER_VERTICAL);chips.setOrientation(LinearLayout.HORIZONTAL);
-        chips.addView(e.enabled?Ui.accentPill(this,scheduleText):Ui.pill(this,scheduleText));
-        if(!remaining.isEmpty()){View gap=new View(this);chips.addView(gap,new LinearLayout.LayoutParams(Ui.dp(this,8),1));chips.addView(e.enabled?Ui.accentPill(this,remaining):Ui.pill(this,remaining));}
-        row.addView(chips,Ui.gapTop(this,9));
         String missionText=I18n.tr(this,AlarmProfiles.missionName(e.missionType))+"  ·  "+I18n.tr(this,AlarmProfiles.missionSummary(this,e.id));
-        LinearLayout missionRow=Ui.row(this);missionRow.setPadding(0,Ui.dp(this,9),0,0);
-        TextView missionIcon=Ui.text(this,AlarmProfiles.missionIcon(e.missionType),14,e.enabled?Ui.ACCENT:Ui.MUTED);
+        LinearLayout missionRow=new LinearLayout(this);missionRow.setGravity(Gravity.CENTER_VERTICAL);missionRow.setPadding(Ui.dp(this,4),Ui.dp(this,6),0,0);
+        TextView missionIcon=Ui.text(this,AlarmProfiles.missionIcon(e.missionType),12,e.enabled?Ui.ACCENT_2:Ui.MUTED);
         missionIcon.setGravity(Gravity.CENTER);missionIcon.setTypeface(null,android.graphics.Typeface.BOLD);missionIcon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         missionIcon.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,50,this));
-        missionRow.addView(missionIcon,new LinearLayout.LayoutParams(Ui.dp(this,30),Ui.dp(this,30)));
-        TextView detail=Ui.text(this,missionText,13,Ui.MUTED);detail.setSingleLine(true);detail.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        LinearLayout.LayoutParams detailLp=new LinearLayout.LayoutParams(0,-2,1);detailLp.setMargins(Ui.dp(this,10),0,0,0);missionRow.addView(detail,detailLp);row.addView(missionRow);
+        missionRow.addView(missionIcon,new LinearLayout.LayoutParams(Ui.dp(this,23),Ui.dp(this,23)));
+        TextView detail=Ui.text(this,missionText,12,Ui.MUTED);detail.setSingleLine(true);detail.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams detailLp=new LinearLayout.LayoutParams(0,-2,1);detailLp.setMargins(Ui.dp(this,8),0,0,0);missionRow.addView(detail,detailLp);row.addView(missionRow);
         long snoozeAt=SnoozeScheduler.scheduledAt(this,e.id);
         if(snoozeAt>now){
             LinearLayout snoozeRow=new LinearLayout(this);snoozeRow.setGravity(Gravity.CENTER_VERTICAL);snoozeRow.setPadding(0,Ui.dp(this,10),0,0);snoozeRow.setOnClickListener(v->{});
@@ -166,8 +155,25 @@ public class MainActivity extends Activity {
                 }).show();
     }
 
-    private void refreshNext(){long regular=AlarmScheduler.nextTriggerMillis(this),snooze=SnoozeScheduler.nextAt(this);long ms=regular;if(snooze>0&&(ms<=0||snooze<ms))ms=snooze;if(ms<=0){nextCard.setVisibility(android.view.View.GONE);return;}nextCard.setVisibility(android.view.View.VISIBLE);ZonedDateTime z=Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault());nextText.setText(z.format(DateTimeFormatter.ofPattern("HH:mm",I18n.locale(this))));String when=z.format(DateTimeFormatter.ofPattern(I18n.datePattern(this,"short"),I18n.locale(this)));String prefix=(snooze>0&&ms==snooze)?I18n.tr(this,"スヌーズ中")+"  ·  ":"";String remaining=String.format(I18n.locale(this),I18n.tr(this,"あと %s"),relativeText(ms-System.currentTimeMillis()));nextMeta.setText(when+"  ·  "+prefix+remaining);}
-    private void refreshStats(){if(statsText!=null)statsText.setText(I18n.tr(this,StreakTracker.displayCurrent(this)+"日  ·  最高 "+Prefs.bestStreak(this)+"日"));}
+    private void refreshNext(){
+        long regular=AlarmScheduler.nextTriggerMillis(this),snooze=SnoozeScheduler.nextAt(this);long ms=regular;if(snooze>0&&(ms<=0||snooze<ms))ms=snooze;
+        int enabled=0;for(AlarmStore.Entry e:AlarmProfiles.all(this))if(e.enabled)enabled++;
+        nextStatus.setText(I18n.tr(this,"有効なアラーム")+"  "+enabled);
+        if(ms<=0){nextText.setText("--:--");nextMeta.setText(I18n.tr(this,"次のアラームはありません"));horizonDot.setVisibility(View.INVISIBLE);return;}
+        ZonedDateTime z=Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault());nextText.setText(z.format(DateTimeFormatter.ofPattern("HH:mm",I18n.locale(this))));
+        horizonDot.setVisibility(View.VISIBLE);
+        int minuteOfDay=z.getHour()*60+z.getMinute();
+        horizonTrack.post(()->{
+            int usable=Math.max(0,horizonTrack.getWidth()-horizonDot.getWidth());
+            android.widget.FrameLayout.LayoutParams params=(android.widget.FrameLayout.LayoutParams)horizonDot.getLayoutParams();
+            params.leftMargin=Math.round(usable*(minuteOfDay/1440f));
+            params.gravity=Gravity.START|Gravity.CENTER_VERTICAL;
+            horizonDot.setLayoutParams(params);
+        });
+        String when=z.format(DateTimeFormatter.ofPattern(I18n.datePattern(this,"short"),I18n.locale(this)));
+        String prefix=(snooze>0&&ms==snooze)?I18n.tr(this,"スヌーズ中")+"  ·  ":"";
+        String remaining=String.format(I18n.locale(this),I18n.tr(this,"あと %s"),relativeText(ms-System.currentTimeMillis()));nextMeta.setText(when+"  ·  "+prefix+remaining);
+    }
     private String relativeText(long ms){long mins=Math.max(1,(long)Math.ceil(ms/60000.0));long h=mins/60,m=mins%60;String duration;if(h==0)duration=m+"分";else if(m==0)duration=h+"時間";else duration=h+"時間"+m+"分";return I18n.tr(this,duration);}
     private String repeatText(int m){if(m==0)return I18n.tr(this,"1回のみ");if((m&127)==127)return I18n.tr(this,"毎日");String[]n={"月","火","水","木","金","土","日"};StringBuilder b=new StringBuilder();for(int i=0;i<7;i++)if((m&(1<<i))!=0){if(b.length()>0)b.append(" ");b.append(I18n.tr(this,n[i]));}return b.toString();}
 

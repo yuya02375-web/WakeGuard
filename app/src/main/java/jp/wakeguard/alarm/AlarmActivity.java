@@ -153,13 +153,33 @@ public class AlarmActivity extends Activity {
         if(alarmVideoMode){alarmVideoView=(androidx.media3.ui.PlayerView)getLayoutInflater().inflate(R.layout.view_alarm_video_texture,frame,false);alarmVideoView.setBackgroundColor(Color.TRANSPARENT);alarmVideoView.setShutterBackgroundColor(Color.TRANSPARENT);alarmVideoView.setUseController(false);alarmVideoView.setResizeMode(androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM);alarmVideoView.setKeepScreenOn(true);frame.addView(alarmVideoView,new FrameLayout.LayoutParams(-1,-1));}
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(Ui.dp(this,24), Ui.dp(this,34), Ui.dp(this,24), Ui.dp(this,24));
+        root.setPadding(Ui.dp(this,22), Ui.dp(this,20), Ui.dp(this,22), Ui.dp(this,18));
         root.setBackgroundColor(alarmVideoMode?Color.TRANSPARENT:Ui.BG);
 
-        TextView now = Ui.title(this, java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")), alarmVideoMode?52:60);if(alarmVideoMode)now.setShadowLayer(10f,0,2,Color.BLACK);
-        now.setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.NORMAL); now.setGravity(Gravity.CENTER); root.addView(now);
-        TextView title = Ui.text(this, AlarmProfiles.label(this, Prefs.activeAlarmId(this)), 16, alarmVideoMode?Ui.TEXT:Ui.MUTED);if(alarmVideoMode)title.setShadowLayer(8f,0,2,Color.BLACK); title.setGravity(Gravity.CENTER); root.addView(title,Ui.gapTop(this,4));
-        if(!alarmVideoMode){ TextView status=Ui.overline(this,"アラームが鳴っています");status.setGravity(Gravity.CENTER);root.addView(status,Ui.gapTop(this,24)); }
+        if(!alarmVideoMode){
+            LinearLayout masthead=Ui.row(this);masthead.setGravity(Gravity.CENTER_VERTICAL);
+            TextView brand=Ui.overline(this,"WakeGuard");brand.setTextColor(Ui.ACCENT);masthead.addView(brand,new LinearLayout.LayoutParams(0,-2,1));
+            TextView status=Ui.accentPill(this,"アラームが鳴っています");
+            status.setContentDescription(I18n.tr(this,"アラームが鳴っています"));
+            masthead.addView(status);root.addView(masthead);
+        }
+
+        LinearLayout timeCard=new LinearLayout(this);timeCard.setOrientation(LinearLayout.VERTICAL);timeCard.setGravity(Gravity.CENTER);
+        timeCard.setPadding(Ui.dp(this,18),Ui.dp(this,16),Ui.dp(this,18),Ui.dp(this,16));
+        if(!alarmVideoMode)timeCard.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,24,this));
+        else timeCard.setBackground(Ui.roundStroke(0xB30D1118,0x77FFFFFF,24,this));
+        TextView now = Ui.title(this, java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")), alarmVideoMode?52:64);
+        if(alarmVideoMode){now.setTextColor(Color.WHITE);now.setShadowLayer(10f,0,2,Color.BLACK);}
+        else now.setTextColor(Ui.TEXT);
+        now.setTypeface(android.graphics.Typeface.create("sans-serif-light",android.graphics.Typeface.NORMAL));
+        now.setGravity(Gravity.CENTER);now.setIncludeFontPadding(false);
+        if(android.os.Build.VERSION.SDK_INT>=21)now.setLetterSpacing(-0.025f);
+        timeCard.addView(now,new LinearLayout.LayoutParams(-1,-2));
+        TextView title = Ui.text(this, AlarmProfiles.label(this, Prefs.activeAlarmId(this)), 15, alarmVideoMode?Color.WHITE:Ui.MUTED);
+        if(alarmVideoMode)title.setShadowLayer(8f,0,2,Color.BLACK);
+        title.setGravity(Gravity.CENTER);title.setMaxLines(2);title.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        timeCard.addView(title,Ui.gapTop(this,4));
+        root.addView(timeCard,Ui.gapTop(this,alarmVideoMode?18:16));
 
         String type=sessionType();
         boolean directVideoStop=alarmVideoMode&&"NONE".equals(type);
@@ -168,25 +188,39 @@ public class AlarmActivity extends Activity {
             Prefs.missionComplete(this,true);count=null;prompt=null;feedback=null;missionName=null;
             root.addView(new View(this),new LinearLayout.LayoutParams(-1,0,1));
         }else{
-            missionName=Ui.title(this,AlarmProfiles.missionName(type),24);if(alarmVideoMode)missionName.setShadowLayer(8f,0,2,Color.BLACK);missionName.setGravity(Gravity.CENTER);root.addView(missionName,Ui.gapTop(this,28));
-            TextView instruction=Ui.text(this,"NONE".equals(type)?"停止ボタンを押すとアラームを停止します":"このミッションを完了するとアラームを解除できます",13,alarmVideoMode?Ui.TEXT:Ui.MUTED);if(alarmVideoMode)instruction.setShadowLayer(7f,0,2,Color.BLACK);instruction.setGravity(Gravity.CENTER);root.addView(instruction,Ui.gapTop(this,6));
-            missionCard.setPadding(Ui.dp(this,12),Ui.dp(this,20),Ui.dp(this,12),Ui.dp(this,14));
-            if(!alarmVideoMode)missionCard.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,20,this)); root.addView(missionCard,new LinearLayout.LayoutParams(-1,0,1)); buildMission(type);
+            LinearLayout missionIntro=new LinearLayout(this);missionIntro.setOrientation(LinearLayout.VERTICAL);missionIntro.setGravity(Gravity.CENTER);
+            missionName=Ui.title(this,AlarmProfiles.missionName(type),22);
+            if(alarmVideoMode){missionName.setTextColor(Color.WHITE);missionName.setShadowLayer(8f,0,2,Color.BLACK);}
+            missionName.setGravity(Gravity.CENTER);missionName.setMaxLines(2);missionName.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            missionIntro.addView(missionName,new LinearLayout.LayoutParams(-1,-2));
+            TextView instruction=Ui.text(this,"NONE".equals(type)?"停止ボタンを押すとアラームを停止します":"このミッションを完了するとアラームを解除できます",13,alarmVideoMode?Color.WHITE:Ui.MUTED);
+            if(alarmVideoMode)instruction.setShadowLayer(7f,0,2,Color.BLACK);
+            instruction.setGravity(Gravity.CENTER);missionIntro.addView(instruction,Ui.gapTop(this,5));
+            root.addView(missionIntro,Ui.gapTop(this,18));
+            missionCard.setPadding(Ui.dp(this,18),Ui.dp(this,18),Ui.dp(this,18),Ui.dp(this,16));
+            if(!alarmVideoMode)missionCard.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,22,this));
+            else missionCard.setBackground(Ui.roundStroke(0xB30D1118,0x77FFFFFF,22,this));
+            LinearLayout.LayoutParams missionParams=new LinearLayout.LayoutParams(-1,0,1);
+            missionParams.setMargins(0,Ui.dp(this,14),0,0);
+            root.addView(missionCard,missionParams);buildMission(type);
         }
 
-        int snoozeMinutes=AlarmProfiles.snoozeMinutes(this,Prefs.activeAlarmId(this));Button snooze=Ui.button(this,"スヌーズ "+snoozeMinutes+"分",false);snooze.setOnClickListener(v->{try{startService(new Intent(this,AlarmService.class).setAction(AlarmService.ACTION_SNOOZE));}catch(Throwable ignored){}try{finishAndRemoveTask();}catch(Throwable ignored){finish();}});if(Prefs.sessionIsTest(this)||snoozeMinutes<=0)snooze.setVisibility(View.GONE);
-        stop = Ui.button(this, "NONE".equals(type)?"アラームを停止":"ミッションを完了してください", true); stop.setEnabled("NONE".equals(type));stop.setVisibility(View.VISIBLE);stop.setMinHeight(Ui.dp(this,"NONE".equals(type)?72:58));stop.setTextSize("NONE".equals(type)?19:16);
+        int snoozeMinutes=AlarmProfiles.snoozeMinutes(this,Prefs.activeAlarmId(this));Button snooze=Ui.button(this,"スヌーズ "+snoozeMinutes+"分",false);snooze.setContentDescription(I18n.tr(this,"スヌーズ "+snoozeMinutes+"分"));snooze.setOnClickListener(v->{try{startService(new Intent(this,AlarmService.class).setAction(AlarmService.ACTION_SNOOZE));}catch(Throwable ignored){}try{finishAndRemoveTask();}catch(Throwable ignored){finish();}});if(Prefs.sessionIsTest(this)||snoozeMinutes<=0)snooze.setVisibility(View.GONE);
+        stop = Ui.button(this, "NONE".equals(type)?"アラームを停止":"ミッションを完了してください", true); stop.setContentDescription(I18n.tr(this,"NONE".equals(type)?"アラームを停止":"ミッションを完了してください"));stop.setEnabled("NONE".equals(type));stop.setVisibility(View.VISIBLE);stop.setMinHeight(Ui.dp(this,"NONE".equals(type)?68:64));stop.setTextSize("NONE".equals(type)?17:14);
         stop.setOnClickListener(v -> { String current=sessionType();if("NONE".equals(current))Prefs.missionComplete(this,true);if("NONE".equals(current)||missionDone()) { try { startService(new Intent(this, AlarmService.class).setAction(AlarmService.ACTION_STOP)); } catch (Throwable ignored) {} try { finishAndRemoveTask(); } catch (Throwable ignored) { finish(); } } });
         if(directVideoStop){
             stop.setText(I18n.tr(this,"停止"));
             stop.setMinHeight(Ui.dp(this,48));
             stop.setTextSize(16);
         }else{
-            root.addView(snooze,Ui.gapTop(this,12));
-            root.addView(stop,Ui.gapTop(this,10));stop.bringToFront();
+            LinearLayout controls=new LinearLayout(this);controls.setOrientation(LinearLayout.HORIZONTAL);controls.setGravity(Gravity.CENTER_VERTICAL);
+            LinearLayout.LayoutParams stopParams=new LinearLayout.LayoutParams(0,Ui.dp(this,"NONE".equals(type)?66:64),snooze.getVisibility()==View.VISIBLE?1.45f:1f);
+            controls.addView(stop,stopParams);
+            if(snooze.getVisibility()==View.VISIBLE){LinearLayout.LayoutParams snoozeParams=new LinearLayout.LayoutParams(0,Ui.dp(this,60),1f);snoozeParams.setMargins(Ui.dp(this,10),0,0,0);controls.addView(snooze,snoozeParams);}
+            root.addView(controls,Ui.gapTop(this,14));stop.bringToFront();
         }
         if(!alarmVideoMode){
-            TextView footer = Ui.text(this, "戻る・ホームでは停止しません", 12, Ui.MUTED);footer.setGravity(Gravity.CENTER);root.addView(footer, Ui.gapTop(this,12));
+            TextView footer = Ui.text(this, "戻る・ホームでは停止しません", 12, Ui.MUTED);footer.setGravity(Gravity.CENTER);root.addView(footer, Ui.gapTop(this,10));
         }
         frame.addView(root,new FrameLayout.LayoutParams(-1,-1));
         if(directVideoStop){
@@ -226,9 +260,9 @@ public class AlarmActivity extends Activity {
     private int targetCount(){ String t=sessionType(); long id=Prefs.activeAlarmId(this); if("STEPS".equals(t)) return AlarmProfiles.steps(this,id); int n=AlarmProfiles.missionCount(this,id); if("HOLD".equals(t)) return Math.max(2,Math.min(30,n)); if("TAP".equals(t) && "RANDOM".equals(AlarmProfiles.missionType(this,id))) return Math.max(20,n*10); return n; }
 
     private void buildMission(String type){
-        missionCard.removeAllViews(); count=Ui.title(this,"",38);count.setGravity(Gravity.CENTER);missionCard.addView(count);
-        prompt=Ui.text(this,"",19,Ui.TEXT);prompt.setGravity(Gravity.CENTER);prompt.setPadding(0,Ui.dp(this,18),0,0);missionCard.addView(prompt);
-        feedback=Ui.text(this,"",13,alarmVideoMode?Ui.TEXT:Ui.MUTED);feedback.setGravity(Gravity.CENTER);feedback.setPadding(0,Ui.dp(this,10),0,0);if(alarmVideoMode){count.setShadowLayer(8f,0,2,Color.BLACK);prompt.setShadowLayer(8f,0,2,Color.BLACK);feedback.setShadowLayer(7f,0,2,Color.BLACK);}missionCard.addView(feedback); action=null;answer=null;
+        missionCard.removeAllViews(); count=Ui.title(this,"",38);count.setGravity(Gravity.CENTER);count.setTextColor(alarmVideoMode?Color.WHITE:Ui.ACCENT_2);missionCard.addView(count);
+        prompt=Ui.text(this,"",19,alarmVideoMode?Color.WHITE:Ui.TEXT);prompt.setGravity(Gravity.CENTER);prompt.setPadding(0,Ui.dp(this,18),0,0);missionCard.addView(prompt);
+        feedback=Ui.text(this,"",13,alarmVideoMode?Color.WHITE:Ui.MUTED);feedback.setGravity(Gravity.CENTER);feedback.setPadding(0,Ui.dp(this,10),0,0);if(alarmVideoMode){count.setShadowLayer(8f,0,2,Color.BLACK);prompt.setShadowLayer(8f,0,2,Color.BLACK);feedback.setShadowLayer(7f,0,2,Color.BLACK);}missionCard.addView(feedback); action=null;answer=null;
         if("NONE".equals(type)){Prefs.missionComplete(this,true);prompt.setText(I18n.tr(this,"追加の解除操作はありません"));feedback.setText(I18n.tr(this,"下の停止ボタンを押してください"));}
         else if("STEPS".equals(type)){ prompt.setText(I18n.tr(this,"スマホを持って歩いてください")); }
         else if("TAP".equals(type)){ action=Ui.button(this,"タップ",false);action.setTextSize(22);action.setOnClickListener(v->{if(missionDone())return;int p=Prefs.missionProgress(this)+1;Prefs.missionProgress(this,p);if(p>=targetCount())completeMission();render();});missionCard.addView(action,Ui.gapTop(this,22));prompt.setText(I18n.tr(this,"ボタンを繰り返しタップ")); }
@@ -286,12 +320,12 @@ public class AlarmActivity extends Activity {
     private void render() {
         if(!Prefs.active(this)){try{finishAndRemoveTask();}catch(Throwable ignored){finish();}return;}
         if (stop == null) return; String type=sessionType();int target=targetCount();boolean done=missionDone();
-        if("NONE".equals(type)){Prefs.missionComplete(this,true);stop.setVisibility(View.VISIBLE);stop.setEnabled(true);stop.setAlpha(1f);stop.setText(I18n.tr(this,"アラームを停止"));stop.bringToFront();if(count!=null)count.setText(I18n.tr(this,"解除できます"));if(feedback!=null)feedback.setText(I18n.tr(this,"下の停止ボタンを押してください"));syncVideoState();return;}
+        if("NONE".equals(type)){Prefs.missionComplete(this,true);stop.setVisibility(View.VISIBLE);stop.setEnabled(true);stop.setAlpha(1f);stop.setText(I18n.tr(this,"アラームを停止"));stop.setContentDescription(I18n.tr(this,"アラームを停止"));stop.bringToFront();if(count!=null)count.setText(I18n.tr(this,"解除できます"));if(feedback!=null)feedback.setText(I18n.tr(this,"下の停止ボタンを押してください"));syncVideoState();return;}
         if(count==null)return;
         if("STEPS".equals(type)){ int s=Prefs.currentSteps(this);boolean available=Prefs.stepSensorAvailable(this);count.setText(available?I18n.tr(this,s+" / "+target+" 歩"):I18n.tr(this,"歩数センサーを利用できません"));if(available&&s>=target){Prefs.missionComplete(this,true);done=true;}if(feedback!=null&&!done)feedback.setText(available?I18n.tr(this,"あと "+Math.max(0,target-s)+" 歩"):I18n.tr(this,"身体活動権限を確認してください")); }
         else if("HOLD".equals(type)){long e=holdStartMs<=0?0:SystemClock.elapsedRealtime()-holdStartMs;float sec=Math.min(target,e/1000f);count.setText(I18n.tr(this,String.format(java.util.Locale.US,"%.1f / %d 秒",sec,target)));}
         else { int p=Prefs.missionProgress(this);count.setText(p+" / "+target);if("TAP".equals(type)&&action!=null)action.setText(I18n.tr(this,done?"完了":"タップ  あと "+Math.max(0,target-p))); }
-        stop.setEnabled(done);stop.setText(I18n.tr(this,done?"アラームを停止":"ミッションを完了してください"));syncVideoState();
+        stop.setEnabled(done);stop.setText(I18n.tr(this,done?"アラームを停止":"ミッションを完了してください"));stop.setContentDescription(I18n.tr(this,done?"アラームを停止":"ミッションを完了してください"));syncVideoState();
     }
 
     @Override protected void onStart() { super.onStart(); activityStarted=true;visible=true;if(Prefs.active(this))syncVideoState(); }
