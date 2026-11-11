@@ -68,10 +68,20 @@ public class SystemSettingsActivity extends Activity {
 
     private void addAppCard() {
         LinearLayout card = sectionCard("アプリ設定", null);
-        addActionRow(card, "アプリの言語", I18n.selectedLanguageLabel(this), this::showLanguageDialog);
+        addActionRow(card, localize("アプリの言語", "App language", "앱 언어"), I18n.selectedLanguageLabel(this), this::showLanguageDialog);
         addDivider(card);
-        addActionRow(card, "時計の詳細設定", localize("表示と文字盤を調整", "Customize clock display and face", "시계 표시와 문자판을 설정"), () ->
+        addActionRow(card, localize("画面デザイン", "App design", "앱 디자인"),
+                AppThemes.current(this).label(this) + "  ·  " + themeModeLabel(AppThemes.mode(this)),
+                () -> Ui.launchNoAnimation(this, new Intent(this, ThemePickerActivity.class)));
+        addDivider(card);
+        addActionRow(card, localize("時計の詳細設定", "Clock settings", "시계 설정"), localize("表示と文字盤を調整", "Customize clock display and face", "시계 표시와 문자판을 설정"), () ->
                 Ui.launchNoAnimation(this, new Intent(this, ClockSettingsActivity.class)));
+    }
+
+    private String themeModeLabel(String mode) {
+        if (AppThemes.MODE_DARK.equals(mode)) return localize("ダーク", "Dark", "다크");
+        if (AppThemes.MODE_LIGHT.equals(mode)) return localize("ライト", "Light", "라이트");
+        return localize("システム", "System", "시스템");
     }
 
     private void addBackupCard() {

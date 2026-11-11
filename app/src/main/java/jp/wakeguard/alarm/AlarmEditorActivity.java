@@ -39,14 +39,14 @@ public class AlarmEditorActivity extends Activity {
 
         ScrollView sv=new ScrollView(this);sv.setFillViewport(false);sv.setClipToPadding(false);LinearLayout body=new LinearLayout(this);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(Ui.dp(this,18),Ui.dp(this,10),Ui.dp(this,18),Ui.dp(this,18));sv.addView(body);root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
 
-        LinearLayout timeHero=Ui.card(this);timeHero.setBackground(Ui.round(0xFFFFB5A6,26,this));timeHero.setPadding(Ui.dp(this,20),Ui.dp(this,16),Ui.dp(this,20),Ui.dp(this,16));
-        TextView timeHeader=Ui.sectionHeader(this,I18n.tr(this,"時刻と曜日"));timeHeader.setTextColor(Ui.TEXT);timeHero.addView(timeHeader);
+        LinearLayout timeHero=Ui.card(this);timeHero.setBackground(Ui.round(Ui.HERO_START,26,this));timeHero.setPadding(Ui.dp(this,20),Ui.dp(this,16),Ui.dp(this,20),Ui.dp(this,16));
+        TextView timeHeader=Ui.sectionHeader(this,I18n.tr(this,"時刻と曜日"));timeHeader.setTextColor(Ui.HERO_TEXT);timeHero.addView(timeHeader);
         LinearLayout timeControls=Ui.row(this);timeControls.setPadding(0,Ui.dp(this,2),0,0);
-        TextView timeLabel=Ui.overline(this,I18n.tr(this,"アラーム時刻"));timeLabel.setTextColor(Ui.TEXT);timeControls.addView(timeLabel,new LinearLayout.LayoutParams(0,-2,1));
-        enabled=new Switch(this);enabled.setText(I18n.tr(this,"アラームを有効にする"));enabled.setTextSize(13);enabled.setTextColor(Ui.TEXT);Ui.styleSwitch(enabled,this);timeControls.addView(enabled);timeHero.addView(timeControls);
-        time=Ui.ghostButton(this,"07:00");time.setTextSize(58);time.setTextColor(Ui.TEXT);time.setBackgroundColor(android.graphics.Color.TRANSPARENT);time.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));time.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);time.setPadding(0,0,0,0);time.setOnClickListener(v->new TimePickerDialog(this,(x,h,m)->{draft.fixedAt=0L;draft.hour=h;draft.minute=m;time.setText(String.format(Locale.JAPAN,"%02d:%02d",h,m));},draft.hour,draft.minute,true).show());timeHero.addView(time,new LinearLayout.LayoutParams(-1,Ui.dp(this,80)));
-        TextView timeHint=Ui.text(this,I18n.tr(this,"タップして時刻を変更"),13,Ui.TEXT);timeHero.addView(timeHint);
-        TextView repeat=Ui.text(this,I18n.tr(this,"繰り返す曜日"),13,Ui.TEXT);timeHero.addView(repeat,Ui.gapTop(this,10));
+        TextView timeLabel=Ui.overline(this,I18n.tr(this,"アラーム時刻"));timeLabel.setTextColor(Ui.HERO_TEXT);timeControls.addView(timeLabel,new LinearLayout.LayoutParams(0,-2,1));
+        enabled=new Switch(this);enabled.setText(I18n.tr(this,"アラームを有効にする"));enabled.setTextSize(13);enabled.setTextColor(Ui.HERO_TEXT);Ui.styleSwitch(enabled,this);timeControls.addView(enabled);timeHero.addView(timeControls);
+        time=Ui.ghostButton(this,"07:00");time.setTextSize(58);time.setTextColor(Ui.HERO_TEXT);time.setBackgroundColor(android.graphics.Color.TRANSPARENT);time.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));time.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);time.setPadding(0,0,0,0);time.setOnClickListener(v->new TimePickerDialog(this,(x,h,m)->{draft.fixedAt=0L;draft.hour=h;draft.minute=m;time.setText(String.format(Locale.JAPAN,"%02d:%02d",h,m));},draft.hour,draft.minute,true).show());timeHero.addView(time,new LinearLayout.LayoutParams(-1,Ui.dp(this,80)));
+        TextView timeHint=Ui.text(this,I18n.tr(this,"タップして時刻を変更"),13,Ui.HERO_TEXT);timeHero.addView(timeHint);
+        TextView repeat=Ui.text(this,I18n.tr(this,"繰り返す曜日"),13,Ui.HERO_TEXT);timeHero.addView(repeat,Ui.gapTop(this,10));
         LinearLayout dayRow=new LinearLayout(this);String[]dn={"月","火","水","木","金","土","日"};for(int i=0;i<7;i++){
             CheckBox day=new CheckBox(this);days[i]=day;
             day.setText(I18n.tr(this,dn[i]));day.setButtonDrawable(null);
@@ -55,13 +55,13 @@ public class AlarmEditorActivity extends Activity {
             day.setTextColor(Ui.TEXT);
             day.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));
             day.setOnCheckedChangeListener((v,checked)->{
-                day.setTextColor(checked?android.graphics.Color.WHITE:Ui.TEXT);
+                day.setTextColor(checked?Ui.ON_ACCENT:Ui.TEXT);
                 day.setBackground(checked?Ui.round(Ui.ACCENT_2,14,this):Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));
                 refreshDaySummary();
             });
             LinearLayout.LayoutParams cell=new LinearLayout.LayoutParams(0,Ui.dp(this,48),1f);
             cell.setMargins(Ui.dp(this,2),0,Ui.dp(this,2),0);dayRow.addView(day,cell);
-        }timeHero.addView(dayRow,Ui.gapTop(this,8));daySummary=Ui.text(this,I18n.tr(this,"曜日を選ばなければ1回だけ鳴ります"),12,Ui.TEXT);timeHero.addView(daySummary,Ui.gapTop(this,4));body.addView(timeHero,Ui.cardParams(this));
+        }timeHero.addView(dayRow,Ui.gapTop(this,8));daySummary=Ui.text(this,I18n.tr(this,"曜日を選ばなければ1回だけ鳴ります"),12,Ui.HERO_TEXT);timeHero.addView(daySummary,Ui.gapTop(this,4));body.addView(timeHero,Ui.cardParams(this));
 
         LinearLayout nameCard=Ui.card(this);nameCard.addView(Ui.sectionHeader(this,I18n.tr(this,"名前")));label=input(I18n.tr(this,"学校、休日など"),InputType.TYPE_CLASS_TEXT);nameCard.addView(label,Ui.gapTop(this,4));body.addView(nameCard,Ui.cardParams(this));
 

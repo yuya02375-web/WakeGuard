@@ -5,6 +5,7 @@ import android.app.Application;
 public class WakeGuardApp extends Application {
     @Override public void onCreate() {
         super.onCreate();
+        AppThemes.apply(this);
         BackupVault.installAutoBackup(this);
         new Thread(() -> {
             try { Thread.currentThread().setPriority(Thread.MIN_PRIORITY); WorldCityCatalog.preload(getApplicationContext()); }

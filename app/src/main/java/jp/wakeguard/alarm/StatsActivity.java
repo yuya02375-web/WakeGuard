@@ -128,7 +128,7 @@ public class StatsActivity extends Activity {
         card.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,24,this));
 
         companion=new StreakCompanionView(this);
-        companion.setBackground(Ui.round(0xFFFFE3DA,20,this));
+        companion.setBackground(Ui.round(Ui.HERO_START,20,this));
         LinearLayout.LayoutParams companionLp=new LinearLayout.LayoutParams(Ui.dp(this,118),Ui.dp(this,150));
         companionLp.setMargins(0,0,Ui.dp(this,12),0);
         card.addView(companion,companionLp);

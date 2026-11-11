@@ -111,10 +111,10 @@ public class TimeLogActivity extends Activity {
     }
 
     private void addOverviewCard(){
-        LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(Ui.dp(this,20),Ui.dp(this,17),Ui.dp(this,20),Ui.dp(this,16));card.setBackground(Ui.gradientRound(this,24,0xFFFFE7DE,Ui.SURFACE_2));
-        LinearLayout header=Ui.row(this);header.setPadding(0,0,0,0);TextView label=Ui.overline(this,"記録した時間");header.addView(label,new LinearLayout.LayoutParams(0,-2,1));TextView count=text(entries.size()+I18n.tr(this,"件"),13,Ui.MUTED);header.addView(count);card.addView(header);
-        TextView total=Ui.title(this,fmt(totalDurationAll()),34);total.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));total.setPadding(0,Ui.dp(this,5),0,0);card.addView(total);
-        TextView note=text("すべてのフォルダーの合計",13,Ui.MUTED);note.setPadding(0,Ui.dp(this,2),0,0);card.addView(note);
+        LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(Ui.dp(this,20),Ui.dp(this,17),Ui.dp(this,20),Ui.dp(this,16));card.setBackground(Ui.gradientRound(this,24,Ui.HERO_START,Ui.HERO_END));
+        LinearLayout header=Ui.row(this);header.setPadding(0,0,0,0);TextView label=Ui.overline(this,"記録した時間");label.setTextColor(Ui.HERO_TEXT);header.addView(label,new LinearLayout.LayoutParams(0,-2,1));TextView count=text(entries.size()+I18n.tr(this,"件"),13,Ui.HERO_TEXT);header.addView(count);card.addView(header);
+        TextView total=Ui.title(this,fmt(totalDurationAll()),34);total.setTextColor(Ui.HERO_TEXT);total.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));total.setPadding(0,Ui.dp(this,5),0,0);card.addView(total);
+        TextView note=text("すべてのフォルダーの合計",13,Ui.HERO_TEXT);note.setPadding(0,Ui.dp(this,2),0,0);card.addView(note);
         LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.setMargins(0,0,0,Ui.dp(this,5));body.addView(card,lp);
     }
 
@@ -130,7 +130,7 @@ public class TimeLogActivity extends Activity {
     private void addFolderCard(Folder f){
         LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(Ui.dp(this,17),Ui.dp(this,15),Ui.dp(this,17),Ui.dp(this,14));card.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,20,this));
         LinearLayout titleRow=Ui.row(this);titleRow.setPadding(0,0,0,0);TextView name=Ui.title(this,f.name,19);titleRow.addView(name,new LinearLayout.LayoutParams(0,-2,1));
-        TextView count=text(entryCount(f.id)+I18n.tr(this,"件"),12,Ui.ACCENT);count.setGravity(Gravity.CENTER);count.setPadding(Ui.dp(this,10),Ui.dp(this,5),Ui.dp(this,10),Ui.dp(this,5));count.setBackground(Ui.round(0xFFFFE3DA,14,this));titleRow.addView(count);card.addView(titleRow);
+        TextView count=text(entryCount(f.id)+I18n.tr(this,"件"),12,Ui.HERO_TEXT);count.setGravity(Gravity.CENTER);count.setPadding(Ui.dp(this,10),Ui.dp(this,5),Ui.dp(this,10),Ui.dp(this,5));count.setBackground(Ui.round(Ui.HERO_START,14,this));titleRow.addView(count);card.addView(titleRow);
         LocalDate now=LocalDate.now();
         long today=durationForDay(f.id,now);long week=durationForRange(f.id,weekStart(now),weekStart(now).plusDays(7));long total=totalDuration(f.id);
         LinearLayout details=new LinearLayout(this);details.setOrientation(LinearLayout.HORIZONTAL);details.setPadding(0,Ui.dp(this,13),0,0);

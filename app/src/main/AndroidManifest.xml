@@ -62,6 +62,7 @@
         <activity android:name=".MultiAlarmActivity" android:exported="false" />
         <activity android:name=".AlarmEditorActivity" android:exported="false" />
         <activity android:name=".SystemSettingsActivity" android:exported="false" />
+        <activity android:name=".ThemePickerActivity" android:exported="false" />
         <activity android:name=".StatsActivity" android:exported="false" />
         <activity android:name=".ClockFaceActivity" android:exported="false" android:showWhenLocked="true" />
         <activity android:name=".ClockSettingsActivity" android:exported="false" />

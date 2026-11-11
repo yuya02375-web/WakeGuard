@@ -34,32 +34,52 @@ import android.widget.TextView;
  * Warm paper surfaces, deep blue-gray ink, and restrained coral emphasis.
  */
 public final class Ui {
-    public static final int BG = 0xFFF6F2EB;
-    public static final int BG_2 = 0xFFEDE5DA;
-    public static final int SURFACE = 0xFFFFFCF7;
-    public static final int SURFACE_2 = 0xFFF2EAE1;
-    public static final int SURFACE_3 = 0xFFE8DED2;
-    public static final int BORDER = 0xFFD4C8BA;
-    public static final int BORDER_HOT = 0x66A85B50;
-    public static final int ACCENT = 0xFF3E5C70;
-    public static final int ACCENT_2 = 0xFFB34A40;
-    public static final int CYAN = 0xFF277C83;
-    public static final int BLUE = 0xFF3E66A0;
-    public static final int VIOLET = 0xFF71599C;
-    public static final int PINK = 0xFFAA526C;
-    public static final int TEXT = 0xFF252E36;
-    public static final int MUTED = 0xFF56636D;
-    public static final int MUTED_2 = 0xFF5B5F69;
-    public static final int SUCCESS = 0xFF2E745A;
-    public static final int DANGER = 0xFFAD3F36;
+    // Mutable at runtime so the selected palette is shared by every Java-built screen.
+    public static volatile int BG = 0xFFF6F2EB;
+    public static volatile int BG_2 = 0xFFEDE5DA;
+    public static volatile int SURFACE = 0xFFFFFCF7;
+    public static volatile int SURFACE_2 = 0xFFF2EAE1;
+    public static volatile int SURFACE_3 = 0xFFE8DED2;
+    public static volatile int BORDER = 0xFFD4C8BA;
+    public static volatile int BORDER_HOT = 0x66A85B50;
+    public static volatile int ACCENT = 0xFF3E5C70;
+    public static volatile int ACCENT_2 = 0xFFB34A40;
+    public static volatile int CYAN = 0xFF277C83;
+    public static volatile int BLUE = 0xFF3E66A0;
+    public static volatile int VIOLET = 0xFF71599C;
+    public static volatile int PINK = 0xFFAA526C;
+    public static volatile int TEXT = 0xFF252E36;
+    public static volatile int MUTED = 0xFF56636D;
+    public static volatile int MUTED_2 = 0xFF5B5F69;
+    public static volatile int SUCCESS = 0xFF2E745A;
+    public static volatile int DANGER = 0xFFAD3F36;
+    public static volatile int HERO_START = 0xFFFFB9A8;
+    public static volatile int HERO_END = 0xFFFFD9C9;
+    public static volatile int HERO_TEXT = 0xFF252E36;
+    public static volatile int HORIZON_LINE = 0x66333B43;
+    public static volatile int NAV_HIGHLIGHT = 0xFFF2DED7;
+    public static volatile int ON_ACCENT = 0xFFFFFFFF;
+    public static volatile boolean DARK_THEME = false;
+    public static volatile float CORNER_SCALE = 1f;
     private Ui() {}
+
+    public static void applyThemePalette(AppThemes.Theme t) {
+        if (t == null) return;
+        BG=t.bg; BG_2=t.bg2; SURFACE=t.surface; SURFACE_2=t.surface2; SURFACE_3=t.surface3;
+        BORDER=t.border; BORDER_HOT=t.borderHot; ACCENT=t.accent; ACCENT_2=t.accent2;
+        CYAN=t.cyan; BLUE=t.blue; VIOLET=t.violet; PINK=t.pink; TEXT=t.text;
+        MUTED=t.muted; MUTED_2=t.muted2; SUCCESS=t.success; DANGER=t.danger;
+        HERO_START=t.heroStart; HERO_END=t.heroEnd; HERO_TEXT=t.heroText;
+        HORIZON_LINE=t.horizonLine; NAV_HIGHLIGHT=t.navHighlight; ON_ACCENT=t.onAccent;
+        DARK_THEME=t.dark; CORNER_SCALE=t.cornerScale;
+    }
 
     public static int dp(Activity a, int v) { return Math.round(v * a.getResources().getDisplayMetrics().density); }
 
     public static GradientDrawable round(int color, float radiusDp, Activity a) {
         GradientDrawable d = new GradientDrawable();
         d.setColor(color);
-        d.setCornerRadius(dp(a, (int)radiusDp));
+        d.setCornerRadius(dp(a, Math.max(0, (int)(radiusDp * CORNER_SCALE))));
         return d;
     }
 
@@ -87,7 +107,7 @@ public final class Ui {
 
         BurnCardDrawable(Activity a, boolean active) {
             this.density = a.getResources().getDisplayMetrics().density;
-            this.radius = 18f * density;
+            this.radius = 18f * density * CORNER_SCALE;
             this.edge = 3f * density;
             this.active = active;
         }
@@ -149,7 +169,7 @@ public final class Ui {
     public static GradientDrawable gradient(Activity a, int... colors) {
         int[] c = (colors != null && colors.length >= 2) ? colors : new int[]{SURFACE, SURFACE_2};
         GradientDrawable d = new GradientDrawable(GradientDrawable.Orientation.TL_BR, c);
-        d.setCornerRadius(dp(a, 22));
+        d.setCornerRadius(dp(a, (int)(22f * CORNER_SCALE)));
         d.setStroke(dp(a,1), BORDER);
         return d;
     }
@@ -157,14 +177,14 @@ public final class Ui {
     public static GradientDrawable gradientRound(Activity a, float radius, int... colors) {
         int[] c = (colors != null && colors.length >= 2) ? colors : new int[]{SURFACE_2, SURFACE_3};
         GradientDrawable d = new GradientDrawable(GradientDrawable.Orientation.TL_BR, c);
-        d.setCornerRadius(dp(a, (int)radius));
+        d.setCornerRadius(dp(a, Math.max(0, (int)(radius * CORNER_SCALE))));
         return d;
     }
 
     public static GradientDrawable screenGradient(Activity a) {
         GradientDrawable d = new GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{0xFFFFFBF6, BG, BG_2});
+                new int[]{BG, BG, BG_2});
         return d;
     }
 
@@ -194,8 +214,8 @@ public final class Ui {
         Button b = new Button(a);
         b.setText(I18n.tr(a,s)); b.setAllCaps(false); b.setTextSize(15);
         b.setTypeface(null, Typeface.BOLD);
-        b.setTextColor(accent ? Color.WHITE : TEXT);
-        b.setBackground(new android.graphics.drawable.RippleDrawable(ColorStateList.valueOf(0x1A25333D), accent ? round(ACCENT_2, 16, a) : roundStroke(SURFACE_2, BORDER, 16, a), null));
+        b.setTextColor(accent ? ON_ACCENT : TEXT);
+        b.setBackground(new android.graphics.drawable.RippleDrawable(ColorStateList.valueOf(withAlpha(TEXT, 0x1A)), accent ? round(ACCENT_2, 16, a) : roundStroke(SURFACE_2, BORDER, 16, a), null));
         b.setMinHeight(dp(a, 54));
         b.setPadding(dp(a,16),0,dp(a,16),0);
         if (Build.VERSION.SDK_INT >= 21) b.setElevation(0);
@@ -253,7 +273,7 @@ public final class Ui {
     }
 
     public static TextView accentPill(Activity a, String text) {
-        TextView v = text(a,text,12,Color.WHITE);
+        TextView v = text(a,text,12,ON_ACCENT);
         v.setGravity(Gravity.CENTER);
         v.setTypeface(null,Typeface.BOLD);
         v.setPadding(dp(a,9),dp(a,6),dp(a,9),dp(a,6));
@@ -325,7 +345,7 @@ public final class Ui {
             if(!selected)return;
             Rect r=getBounds();
             float cx=r.exactCenterX(),top=r.top+3*density;
-            paint.setColor(0xFFF2DED7);paint.setStyle(Paint.Style.FILL);
+            paint.setColor(NAV_HIGHLIGHT);paint.setStyle(Paint.Style.FILL);
             float half=Math.min(r.width()/2f-3*density,27*density);
             c.drawRoundRect(cx-half,top,cx+half,top+31*density,16*density,16*density,paint);
         }
@@ -349,11 +369,11 @@ public final class Ui {
         ImageButton b=new ImageButton(a);
         b.setImageResource(drawableId);
         b.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-        b.setImageTintList(ColorStateList.valueOf(primary?Color.WHITE:ACCENT));
+        b.setImageTintList(ColorStateList.valueOf(primary?ON_ACCENT:ACCENT));
         b.setBackground(new android.graphics.drawable.RippleDrawable(
-            ColorStateList.valueOf(0x1A25333D),
+            ColorStateList.valueOf(withAlpha(TEXT, 0x1A)),
             round(primary?ACCENT_2:SURFACE_2,16,a),
-            round(Color.WHITE,16,a)));
+            round(SURFACE,16,a)));
         b.setPadding(dp(a,12),dp(a,12),dp(a,12),dp(a,12));
         b.setMinimumWidth(dp(a,48)); b.setMinimumHeight(dp(a,48));
         b.setContentDescription(I18n.tr(a,label));
@@ -364,10 +384,11 @@ public final class Ui {
 
     public static void styleSwitch(android.widget.Switch s, Activity a) {
         try { s.setThumbTintList(new ColorStateList(new int[][]{new int[]{android.R.attr.state_checked},new int[]{}},new int[]{ACCENT_2,MUTED_2})); } catch(Throwable ignored){}
-        try { s.setTrackTintList(new ColorStateList(new int[][]{new int[]{android.R.attr.state_checked},new int[]{}},new int[]{0x66B34A40,0x66A9A197})); } catch(Throwable ignored){}
+        try { s.setTrackTintList(new ColorStateList(new int[][]{new int[]{android.R.attr.state_checked},new int[]{}},new int[]{withAlpha(ACCENT_2,0x66),withAlpha(MUTED_2,0x66)})); } catch(Throwable ignored){}
     }
 
     public static void prepareActivity(Activity a) {
+        AppThemes.apply(a);
         statusBar(a);
         try { a.getWindow().setBackgroundDrawable(screenGradient(a)); } catch (Throwable ignored) {}
         try { a.getWindow().setWindowAnimations(0); } catch (Throwable ignored) {}
@@ -416,16 +437,21 @@ public final class Ui {
 
     public static void statusBar(Activity a) {
         try {
+            AppThemes.apply(a);
             int statusColor = Build.VERSION.SDK_INT >= 23 ? BG : ACCENT;
             int navigationColor = Build.VERSION.SDK_INT >= 26 ? BG : ACCENT;
             a.getWindow().setStatusBarColor(statusColor);
             a.getWindow().setNavigationBarColor(navigationColor);
             if (Build.VERSION.SDK_INT >= 29) a.getWindow().setNavigationBarContrastEnforced(false);
             if (Build.VERSION.SDK_INT >= 23) {
-                int flags = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-                if (Build.VERSION.SDK_INT >= 26) flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                int flags = DARK_THEME ? 0 : View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                if (!DARK_THEME && Build.VERSION.SDK_INT >= 26) flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
                 a.getWindow().getDecorView().setSystemUiVisibility(flags);
             }
         } catch (Throwable ignored) {}
+    }
+
+    public static int withAlpha(int color, int alpha) {
+        return (color & 0x00FFFFFF) | ((alpha & 0xFF) << 24);
     }
 }

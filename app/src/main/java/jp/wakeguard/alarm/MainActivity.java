@@ -37,21 +37,21 @@ public class MainActivity extends Activity {
         // The top of the home screen is now a single glanceable wake-up horizon.
         nextCard=new LinearLayout(this);nextCard.setOrientation(LinearLayout.VERTICAL);
         nextCard.setPadding(Ui.dp(this,22),Ui.dp(this,18),Ui.dp(this,22),Ui.dp(this,17));
-        nextCard.setBackground(Ui.gradientRound(this,24,0xFFFFB9A8,0xFFFFD9C9));
+        nextCard.setBackground(Ui.gradientRound(this,24,Ui.HERO_START,Ui.HERO_END));
         LinearLayout heroTop=Ui.row(this);heroTop.setPadding(0,0,0,0);
-        TextView nextLabel=Ui.overline(this,"次の起床");nextLabel.setTextColor(Ui.TEXT);heroTop.addView(nextLabel,new LinearLayout.LayoutParams(0,-2,1));
-        nextStatus=Ui.text(this,"有効なアラーム  0",12,Ui.TEXT);heroTop.addView(nextStatus);nextCard.addView(heroTop);
-        nextText=Ui.title(this,"--:--",60);nextText.setTextColor(Ui.TEXT);
+        TextView nextLabel=Ui.overline(this,"次の起床");nextLabel.setTextColor(Ui.HERO_TEXT);heroTop.addView(nextLabel,new LinearLayout.LayoutParams(0,-2,1));
+        nextStatus=Ui.text(this,"有効なアラーム  0",12,Ui.HERO_TEXT);heroTop.addView(nextStatus);nextCard.addView(heroTop);
+        nextText=Ui.title(this,"--:--",60);nextText.setTextColor(Ui.HERO_TEXT);
         nextText.setTypeface(android.graphics.Typeface.create("sans-serif-light",android.graphics.Typeface.NORMAL));
         nextText.setIncludeFontPadding(false);nextText.setAutoSizeTextTypeUniformWithConfiguration(34,60,1,android.util.TypedValue.COMPLEX_UNIT_SP);nextText.setPadding(0,Ui.dp(this,10),0,Ui.dp(this,4));nextCard.addView(nextText);
-        nextMeta=Ui.text(this,"次のアラームはありません",14,Ui.TEXT);nextCard.addView(nextMeta);
+        nextMeta=Ui.text(this,"次のアラームはありません",14,Ui.HERO_TEXT);nextCard.addView(nextMeta);
         horizonTrack=new FrameLayout(this);horizonTrack.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-        View horizonLine=new View(this);horizonLine.setBackgroundColor(0x66333B43);horizonLine.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        View horizonLine=new View(this);horizonLine.setBackgroundColor(Ui.HORIZON_LINE);horizonLine.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         FrameLayout.LayoutParams lineLp=new FrameLayout.LayoutParams(-1,Ui.dp(this,1),Gravity.CENTER_VERTICAL);horizonTrack.addView(horizonLine,lineLp);
         horizonDot=new View(this);horizonDot.setBackground(Ui.round(Ui.ACCENT_2,8,this));horizonDot.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         FrameLayout.LayoutParams dotLp=new FrameLayout.LayoutParams(Ui.dp(this,8),Ui.dp(this,8),Gravity.START|Gravity.CENTER_VERTICAL);horizonTrack.addView(horizonDot,dotLp);
         LinearLayout.LayoutParams trackLp=new LinearLayout.LayoutParams(-1,Ui.dp(this,14));trackLp.setMargins(0,Ui.dp(this,7),0,0);nextCard.addView(horizonTrack,trackLp);
-        LinearLayout horizonScale=Ui.row(this);TextView startOfDay=Ui.text(this,"00:00",10,Ui.TEXT);TextView endOfDay=Ui.text(this,"24:00",10,Ui.TEXT);horizonScale.addView(startOfDay,new LinearLayout.LayoutParams(0,-2,1));endOfDay.setGravity(Gravity.END);horizonScale.addView(endOfDay,new LinearLayout.LayoutParams(0,-2,1));nextCard.addView(horizonScale);
+        LinearLayout horizonScale=Ui.row(this);TextView startOfDay=Ui.text(this,"00:00",10,Ui.HERO_TEXT);TextView endOfDay=Ui.text(this,"24:00",10,Ui.HERO_TEXT);horizonScale.addView(startOfDay,new LinearLayout.LayoutParams(0,-2,1));endOfDay.setGravity(Gravity.END);horizonScale.addView(endOfDay,new LinearLayout.LayoutParams(0,-2,1));nextCard.addView(horizonScale);
         LinearLayout.LayoutParams nextLp=new LinearLayout.LayoutParams(-1,-2);nextLp.setMargins(Ui.dp(this,18),Ui.dp(this,4),Ui.dp(this,18),Ui.dp(this,3));root.addView(nextCard,nextLp);
 
         ScrollView sv=new ScrollView(this);sv.setFillViewport(true);sv.setVerticalScrollBarEnabled(false);list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);
