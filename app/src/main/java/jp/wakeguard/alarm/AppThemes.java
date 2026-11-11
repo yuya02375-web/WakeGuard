@@ -67,12 +67,13 @@ public final class AppThemes {
                     : (isDark ? mix(scheme.accent, Color.WHITE, .16f) : mix(scheme.accent, Color.BLACK, .12f));
 
             if ("dawn-ink".equals(id) && !isDark) {
-                // Preserve the existing light Dawn Ink palette byte-for-byte.
+                // Keep Dawn Ink's paper surfaces, while deriving emphasis from the
+                // selected accent so a blue palette never inherits coral.
                 bg2 = 0xFFEDE5DA;
                 surface2 = 0xFFF2EAE1;
                 surface3 = 0xFFE8DED2;
                 border = 0xFFD4C8BA;
-                borderHot = 0x66A85B50;
+                borderHot = withAlpha(accent2, 0x70);
                 cyan = 0xFF277C83;
                 blue = 0xFF3E66A0;
                 violet = 0xFF71599C;
@@ -81,12 +82,12 @@ public final class AppThemes {
                 muted2 = 0xFF5B5F69;
                 success = 0xFF2E745A;
                 danger = 0xFFAD3F36;
-                heroStart = 0xFFFFB9A8;
-                heroEnd = 0xFFFFD9C9;
-                heroText = 0xFF252E36;
-                horizonLine = 0x66333B43;
-                navHighlight = 0xFFF2DED7;
-                onAccent = 0xFFFFFFFF;
+                heroStart = accent;
+                heroEnd = accent2;
+                heroText = bestForeground(heroStart, heroEnd);
+                horizonLine = mix(bg, accent2, .43f);
+                navHighlight = mix(bg, accent2, .13f);
+                onAccent = contrastForeground(accent2);
             } else {
                 bg2 = mix(bg, text, isDark ? .10f : .075f);
                 surface2 = mix(surface, bg, isDark ? .52f : .42f);
@@ -154,8 +155,8 @@ public final class AppThemes {
     // 25 themes: the existing Dawn Ink default plus 24 distinct visual directions.
     private static final ThemeSpec[] SPECS = {
         new ThemeSpec("dawn-ink", "夜明けのインク", "Dawn Ink", "새벽 잉크",
-            new Scheme(0xFFF6F2EB, 0xFFFFFCF7, 0xFF252E36, 0xFF3E5C70, 0xFFB34A40),
-            new Scheme(0xFF101820, 0xFF1B272E, 0xFFEDF1F0, 0xFF9AB6C6, 0xFFF07769)),
+            new Scheme(0xFFF6F2EB, 0xFFFFFCF7, 0xFF252E36, 0xFF3E5C70),
+            new Scheme(0xFF101820, 0xFF1B272E, 0xFFEDF1F0, 0xFF9AB6C6)),
         new ThemeSpec("aurora", "オーロラ", "Aurora", "오로라",
             new Scheme(0xFFEEF7FA, 0xFFFFFFFF, 0xFF18313B, 0xFF007E9E),
             new Scheme(0xFF0C1A20, 0xFF152A33, 0xFFE7F7FA, 0xFF55C9D9)),
@@ -289,6 +290,7 @@ public final class AppThemes {
     public static void apply(Context context) {
         if (context == null) return;
         Ui.applyThemePalette(current(context));
+        WidgetSuite.refreshPaletteWidgets(context);
     }
 
     private static ThemeSpec findSpec(String id) {

@@ -7,7 +7,7 @@
     android:gravity="center_vertical"
     android:paddingLeft="10dp"
     android:paddingRight="10dp"
-    android:background="#FFF3E0">
+    android:background="#EAF2F9">
     <TextView
         android:id="@+id/timer_notification_label"
         android:layout_width="wrap_content"
@@ -16,7 +16,7 @@
         android:ellipsize="end"
         android:singleLine="true"
         android:text="タイマー"
-        android:textColor="#5D4037"
+        android:textColor="#2C4A63"
         android:textStyle="bold"
         android:textSize="11sp" />
     <Chronometer
@@ -26,7 +26,7 @@
         android:layout_weight="1"
         android:gravity="center_vertical|end"
         android:fontFamily="monospace"
-        android:textColor="#111111"
+        android:textColor="#172839"
         android:textStyle="bold"
         android:textSize="28sp" />
 </LinearLayout>

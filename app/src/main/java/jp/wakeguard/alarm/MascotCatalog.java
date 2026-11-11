@@ -1,7 +1,6 @@
 package jp.wakeguard.alarm;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 
 import java.util.Arrays;
 import java.util.Collections;

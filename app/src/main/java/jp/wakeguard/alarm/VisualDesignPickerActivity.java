@@ -25,17 +25,37 @@ import java.util.List;
 /** Selects the independent illustration, typography, and surface treatment axis. */
 public class VisualDesignPickerActivity extends Activity {
     private static final String[] CATEGORIES = {"all", "paper", "nature", "retro", "tech", "editorial", "playful"};
+    private static final String STATE_SELECTED_ID = "visual_design_picker.selected_id";
+    private static final String STATE_SELECTED_CATEGORY = "visual_design_picker.category";
+    private static final String STATE_SCROLL_Y = "visual_design_picker.scroll_y";
+    private static final String STATE_CATEGORY_SCROLL_X = "visual_design_picker.category_scroll_x";
     private String selectedId;
     private String selectedCategory = "all";
     private String paletteKey;
     private LinearLayout cards;
     private HorizontalScrollView categoryScroll;
+    private ScrollView designScroll;
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
         Ui.prepareActivity(this);
-        selectedId = VisualDesigns.id(this);
+        selectedId = state == null ? VisualDesigns.id(this)
+                : VisualDesigns.get(state.getString(STATE_SELECTED_ID, VisualDesigns.id(this))).id;
+        if (state != null) {
+            String category = state.getString(STATE_SELECTED_CATEGORY, "all");
+            for (String candidate : CATEGORIES) if (candidate.equals(category)) selectedCategory = candidate;
+        }
         build();
+        if (state != null) restoreScroll(state.getInt(STATE_SCROLL_Y, 0),
+                state.getInt(STATE_CATEGORY_SCROLL_X, 0));
+    }
+
+    @Override protected void onSaveInstanceState(Bundle outState) {
+        outState.putString(STATE_SELECTED_ID, selectedId);
+        outState.putString(STATE_SELECTED_CATEGORY, selectedCategory);
+        outState.putInt(STATE_SCROLL_Y, designScroll == null ? 0 : designScroll.getScrollY());
+        outState.putInt(STATE_CATEGORY_SCROLL_X, categoryScroll == null ? 0 : categoryScroll.getScrollX());
+        super.onSaveInstanceState(outState);
     }
 
     @Override public void onBackPressed() { finish(); }
@@ -44,8 +64,12 @@ public class VisualDesignPickerActivity extends Activity {
         super.onResume();
         String current = AppThemes.key(this);
         if (paletteKey != null && !paletteKey.equals(current)) {
+            int scrollY = designScroll == null ? 0 : designScroll.getScrollY();
+            int categoryX = categoryScroll == null ? 0 : categoryScroll.getScrollX();
             paletteKey = current;
-            recreate();
+            // Rebuild previews with the new palette, keeping the unapplied design choice.
+            build();
+            restoreScroll(scrollY, categoryX);
         }
     }
 
@@ -101,6 +125,7 @@ public class VisualDesignPickerActivity extends Activity {
         root.addView(header, new LinearLayout.LayoutParams(-1, -2));
 
         ScrollView scroll = new ScrollView(this);
+        designScroll = scroll;
         scroll.setFillViewport(true); scroll.setVerticalScrollBarEnabled(false);
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
@@ -129,6 +154,11 @@ public class VisualDesignPickerActivity extends Activity {
         paletteKey = AppThemes.key(this);
     }
 
+    private void restoreScroll(int designY, int categoryX) {
+        if (designScroll != null) designScroll.post(() -> designScroll.scrollTo(0, Math.max(0, designY)));
+        if (categoryScroll != null) categoryScroll.post(() -> categoryScroll.scrollTo(Math.max(0, categoryX), 0));
+    }
+
     private TextView categoryChip(String category) {
         TextView chip = new TextView(this);
         chip.setText(categoryLabel(category)); chip.setTextSize(12.5f); chip.setGravity(Gravity.CENTER);
@@ -140,8 +170,10 @@ public class VisualDesignPickerActivity extends Activity {
         params.setMargins(dp(2), dp(3), dp(6), dp(3)); chip.setLayoutParams(params);
         chip.setOnClickListener(v -> {
             if (category.equals(selectedCategory)) return;
+            int categoryX = categoryScroll == null ? 0 : categoryScroll.getScrollX();
             selectedCategory = category;
             build();
+            restoreScroll(0, categoryX);
         });
         return chip;
     }

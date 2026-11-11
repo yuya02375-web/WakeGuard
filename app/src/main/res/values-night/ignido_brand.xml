@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ignido_midnight">#0D141C</color>
+    <color name="ignido_icon_background">#010B3C</color>
+    <color name="ignido_ember">#3E5C70</color>
+    <color name="ignido_amber">#4C8DF0</color>
+    <color name="ignido_surface">#F8FAFD</color>
+</resources>

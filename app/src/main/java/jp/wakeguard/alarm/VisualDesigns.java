@@ -2,7 +2,6 @@ package jp.wakeguard.alarm;
 
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PixelFormat;
@@ -103,18 +102,39 @@ public final class VisualDesigns {
         return (color & 0x00FFFFFF) | ((alpha & 0xFF) << 24);
     }
 
-    /** Paints a subtle, palette-independent texture inside the supplied bounds. */
+    /** Uniform motif ink on pages, heroes and samples, in both light and dark mode. */
+    public static final int PATTERN_ALPHA = 0x24;
+
+    public static int patternColor(int accent) { return withAlpha(accent, PATTERN_ALPHA); }
+
+    /** Density is pixels per dp in the caller's canvas, including any preview scale. */
+    public static void drawPattern(Canvas canvas, String pattern, RectF bounds, int accent, float density) {
+        Paint ink = new Paint(Paint.ANTI_ALIAS_FLAG);
+        ink.setColor(accent);
+        drawPattern(canvas, pattern, bounds, ink, density);
+    }
+
+    /**
+     * The single motif renderer. Source supplies the palette's ACCENT RGB only;
+     * ink alpha and geometry are fixed here so a sample cannot exaggerate a motif.
+     * Does not read Ui state, so preset snapshots remain independent of live settings.
+     */
     public static void drawPattern(Canvas canvas, String pattern, RectF bounds, Paint source, float density) {
-        if (canvas == null || bounds == null || source == null || pattern == null || "none".equals(pattern)) return;
+        if (canvas == null || bounds == null || bounds.isEmpty() || source == null
+                || pattern == null || "none".equals(pattern)) return;
+        float unit = Float.isNaN(density) || Float.isInfinite(density) || density <= 0f ? 1f : density;
+        float step = cellDp(pattern) * unit;
         Paint p = new Paint(source);
         p.setAntiAlias(true);
-        float unit = Math.max(1f, density);
-        float step = 12f * unit;
+        p.setShader(null);
+        p.setPathEffect(null);
+        p.setColor(patternColor(source.getColor()));
+        p.setStyle(Paint.Style.STROKE);
+        p.setStrokeWidth(.75f * unit);
+        p.setStrokeCap(Paint.Cap.BUTT);
         float left = bounds.left, top = bounds.top, right = bounds.right, bottom = bounds.bottom;
         int save = canvas.save();
         canvas.clipRect(bounds);
-        p.setStyle(Paint.Style.STROKE);
-        p.setStrokeWidth(Math.max(0.65f * unit, p.getStrokeWidth()));
         if ("rules".equals(pattern)) {
             for (float y = top + step; y < bottom; y += step) canvas.drawLine(left, y, right, y, p);
         } else if ("grid".equals(pattern)) {
@@ -122,92 +142,113 @@ public final class VisualDesigns {
             for (float y = top + step; y < bottom; y += step) canvas.drawLine(left, y, right, y, p);
         } else if ("dots".equals(pattern)) {
             p.setStyle(Paint.Style.FILL);
-            float radius = 0.85f * unit;
             for (float y = top + step / 2; y < bottom; y += step)
-                for (float x = left + step / 2; x < right; x += step) canvas.drawCircle(x, y, radius, p);
+                for (float x = left + step / 2; x < right; x += step)
+                    canvas.drawCircle(x, y, .9f * unit, p);
         } else if ("diagonal".equals(pattern)) {
-            for (float x = left - (bottom - top); x < right; x += step)
-                canvas.drawLine(x, bottom, x + (bottom - top), top, p);
+            for (float x = left - bounds.height(); x < right; x += step)
+                canvas.drawLine(x, bottom, x + bounds.height(), top, p);
         } else if ("scanline".equals(pattern)) {
-            for (float y = top + 3f * unit; y < bottom; y += 5f * unit) canvas.drawLine(left, y, right, y, p);
+            p.setStrokeWidth(.6f * unit);
+            for (float y = top + step / 2; y < bottom; y += step) canvas.drawLine(left, y, right, y, p);
         } else if ("contour".equals(pattern)) {
-            float cx = bounds.centerX(), cy = bounds.centerY();
-            for (int i = 0; i < 5; i++) {
-                float inset = i * 4f * unit;
+            for (float inset = 0; inset < Math.min(bounds.width(), bounds.height()) / 2; inset += step) {
                 RectF oval = new RectF(left + inset, top + inset * .6f, right - inset, bottom - inset * .6f);
-                if (oval.width() > 1 && oval.height() > 1) canvas.drawOval(oval, p);
+                if (!oval.isEmpty()) canvas.drawOval(oval, p);
             }
-            Path path = new Path(); path.moveTo(left, cy);
-            path.cubicTo(cx - 12 * unit, top, cx + 12 * unit, bottom, right, cy);
+            Path path = new Path();
+            path.moveTo(left, bounds.centerY());
+            path.cubicTo(bounds.centerX() - 12f * unit, top,
+                    bounds.centerX() + 12f * unit, bottom, right, bounds.centerY());
             canvas.drawPath(path, p);
         } else if ("radial".equals(pattern)) {
             float cx = bounds.centerX(), cy = bounds.centerY();
-            float radius = Math.max(bounds.width(), bounds.height());
+            float radius = (float)Math.hypot(bounds.width(), bounds.height());
             for (int i = 0; i < 16; i++) {
-                double a = Math.PI * 2 * i / 16;
-                canvas.drawLine(cx, cy, cx + (float)Math.cos(a) * radius,
-                        cy + (float)Math.sin(a) * radius, p);
+                double angle = Math.PI * 2 * i / 16;
+                canvas.drawLine(cx, cy, cx + (float)Math.cos(angle) * radius,
+                        cy + (float)Math.sin(angle) * radius, p);
             }
             for (int i = 1; i < 4; i++) canvas.drawCircle(cx, cy, step * i, p);
         } else if ("halftone".equals(pattern)) {
             p.setStyle(Paint.Style.FILL);
-            for (float y = top + step / 2; y < bottom; y += step)
-                for (float x = left + step / 2; x < right; x += step)
-                    canvas.drawCircle(x, y, (1.1f + ((int)((x + y) / step) % 2) * .45f) * unit, p);
+            int row = 0;
+            for (float y = top + step / 2; y < bottom; y += step, row++) {
+                int column = 0;
+                for (float x = left + step / 2; x < right; x += step, column++)
+                    canvas.drawCircle(x, y, ((column + row) % 2 == 0 ? .6f : 1.2f) * unit, p);
+            }
         } else if ("circuit".equals(pattern)) {
-            p.setStyle(Paint.Style.STROKE);
             for (float y = top + step; y < bottom; y += step * 2) {
-                float start = left + step;
-                Path path = new Path(); path.moveTo(left, y); path.lineTo(start, y);
-                path.lineTo(start + step, y - step / 2); path.lineTo(start + step * 2, y - step / 2);
-                canvas.drawPath(path, p); canvas.drawCircle(start + step * 2, y - step / 2, 1.5f * unit, p);
+                for (float x = left; x < right; x += step * 4) {
+                    Path path = new Path();
+                    path.moveTo(x, y); path.lineTo(x + step, y);
+                    path.lineTo(x + step * 2, y - step / 2);
+                    path.lineTo(x + step * 3, y - step / 2);
+                    canvas.drawPath(path, p);
+                    canvas.drawCircle(x + step * 3, y - step / 2, 1.5f * unit, p);
+                }
             }
         } else if ("stitch".equals(pattern)) {
-            p.setStrokeWidth(1.2f * unit);
+            p.setStrokeWidth(.9f * unit);
             p.setPathEffect(new android.graphics.DashPathEffect(new float[]{3f * unit, 3f * unit}, 0));
             for (float y = top + step; y < bottom; y += step) canvas.drawLine(left, y, right, y, p);
-            p.setPathEffect(null);
         } else if ("waves".equals(pattern)) {
-            p.setStyle(Paint.Style.STROKE);
+            p.setStrokeWidth(.9f * unit);
             for (float base = top + step; base < bottom + step; base += step) {
                 Path path = new Path(); path.moveTo(left, base);
-                for (float x = left; x <= right; x += 4f * unit)
+                for (float x = left; x <= right + 4f * unit; x += 4f * unit)
                     path.lineTo(x, base + (float)Math.sin((x - left) / (8f * unit)) * 2.3f * unit);
                 canvas.drawPath(path, p);
             }
         } else if ("film".equals(pattern)) {
-            p.setStyle(Paint.Style.STROKE);
-            for (float x = left + step / 2; x < right; x += step * 1.4f) {
+            for (float x = left + step / 2; x < right; x += step) {
                 canvas.drawLine(x, top, x, bottom, p);
                 p.setStyle(Paint.Style.FILL);
-                for (float y = top + step / 2; y < bottom; y += step) canvas.drawCircle(x, y, 1.2f * unit, p);
+                for (float y = top + step / 2; y < bottom; y += step)
+                    canvas.drawCircle(x, y, 1.2f * unit, p);
                 p.setStyle(Paint.Style.STROKE);
             }
         } else if ("botanical".equals(pattern)) {
-            p.setStyle(Paint.Style.STROKE);
+            p.setStrokeWidth(.9f * unit);
             for (float x = left + step; x < right; x += step * 2) {
-                Path stem = new Path(); stem.moveTo(x, bottom); stem.quadTo(x - step, bounds.centerY(), x, top);
+                Path stem = new Path();
+                stem.moveTo(x, bottom); stem.quadTo(x - step, bounds.centerY(), x, top);
                 canvas.drawPath(stem, p);
-                for (int i = 1; i < 4; i++) {
-                    float y = top + i * (bottom - top) / 4;
+                for (float y = top + step; y < bottom; y += step) {
                     RectF leaf = new RectF(x - step * .85f, y - step * .3f, x, y + step * .3f);
                     canvas.drawOval(leaf, p);
-                    leaf.set(x, y - step * .3f, x + step * .85f, y + step * .3f); canvas.drawOval(leaf, p);
+                    leaf.set(x, y - step * .3f, x + step * .85f, y + step * .3f);
+                    canvas.drawOval(leaf, p);
                 }
             }
         } else if ("mosaic".equals(pattern)) {
             p.setStyle(Paint.Style.FILL);
-            for (int y = 0; y < 7; y++) for (int x = 0; x < 9; x++) {
-                int seed = (x * 13 + y * 7 + x * y * 3) % 11;
-                if (seed > 5) continue;
-                float cx = left + (x + .5f) * (right - left) / 9f;
-                float cy = top + (y + .5f) * (bottom - top) / 7f;
-                float radius = (1.2f + seed % 3) * unit;
-                if (seed % 2 == 0) canvas.drawCircle(cx, cy, radius, p);
-                else canvas.drawRect(cx - radius, cy - radius, cx + radius, cy + radius, p);
+            int row = 0;
+            for (float y = top + step / 2; y < bottom; y += step, row++) {
+                int column = 0;
+                for (float x = left + step / 2; x < right; x += step, column++) {
+                    int seed = (column * 13 + row * 7 + column * row * 3) % 11;
+                    if (seed > 5) continue;
+                    float radius = (1.2f + seed % 3) * unit;
+                    if (seed % 2 == 0) canvas.drawCircle(x, y, radius, p);
+                    else canvas.drawRect(x - radius, y - radius, x + radius, y + radius, p);
+                }
             }
         }
         canvas.restoreToCount(save);
+    }
+
+    /** Physical repeat sizes; do not apply the UI density profile to motif geometry. */
+    public static float cellDp(String pattern) {
+        if ("scanline".equals(pattern)) return 5f;
+        if ("halftone".equals(pattern)) return 8f;
+        if ("stitch".equals(pattern)) return 12f;
+        if ("grid".equals(pattern) || "circuit".equals(pattern)) return 16f;
+        if ("contour".equals(pattern) || "radial".equals(pattern)
+                || "film".equals(pattern) || "mosaic".equals(pattern)) return 18f;
+        if ("botanical".equals(pattern)) return 24f;
+        return 14f; // rules, dots, diagonal, waves
     }
 
     public static Drawable patternDrawable(Context context, Design design, int color) {
@@ -247,14 +288,19 @@ public final class VisualDesigns {
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final String pattern;
         private final float density;
+        private int alpha = 255;
         PatternDrawable(String pattern, int color, float density) {
-            this.pattern = pattern; this.density = density; paint.setColor(color);
+            this.pattern = pattern; this.density = density; paint.setColor(patternColor(color));
         }
         @Override public void draw(Canvas canvas) {
+            if (alpha == 0) return;
             Rect b = getBounds();
+            int save = alpha == 255 ? canvas.save() : canvas.saveLayerAlpha(new RectF(b), alpha);
             drawPattern(canvas, pattern, new RectF(b), paint, density);
+            canvas.restoreToCount(save);
         }
-        @Override public void setAlpha(int alpha) { paint.setAlpha(alpha); invalidateSelf(); }
+        @Override public void setAlpha(int alpha) { this.alpha = Math.max(0, Math.min(255, alpha)); invalidateSelf(); }
+        @Override public int getAlpha() { return alpha; }
         @Override public void setColorFilter(android.graphics.ColorFilter colorFilter) { paint.setColorFilter(colorFilter); invalidateSelf(); }
         @Override public int getOpacity() { return PixelFormat.TRANSLUCENT; }
     }

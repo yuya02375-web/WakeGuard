@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="WakeGuardAlertDialog" parent="@android:style/Theme.Material.Light.Dialog.Alert">
+        <item name="android:windowBackground">#F8FAFD</item>
+        <item name="android:colorAccent">#3E5C70</item>
+        <item name="android:textColorPrimary">#1E2438</item>
+        <item name="android:textColorSecondary">#4B5266</item>
+    </style>
+    <style name="WakeGuardThemeNoFlash" parent="@style/AppTheme">
+        <item name="android:windowBackground">@color/ignido_midnight</item>
+        <item name="android:windowDisablePreview">true</item>
+        <item name="android:windowContentTransitions">false</item>
+        <item name="android:alertDialogTheme">@style/WakeGuardAlertDialog</item>
+        <item name="android:textColorPrimary">#1E2438</item>
+        <item name="android:textColorSecondary">#4B5266</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:navigationBarColor">@color/ignido_midnight</item>
+        <item name="android:statusBarColor">@color/ignido_midnight</item>
+    </style>
+</resources>
