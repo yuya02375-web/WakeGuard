@@ -216,9 +216,7 @@ public class ThemePickerActivity extends Activity {
         AppThemes.select(this, selectedId);
         AppThemes.setMode(this, selectedMode);
         AppThemes.apply(this);
-        Intent home = new Intent(this, MainActivity.class)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(home);
+        setResult(RESULT_OK);
         finish();
     }
 

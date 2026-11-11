@@ -13,6 +13,7 @@ import java.io.OutputStream;
 
 public class SystemSettingsActivity extends Activity {
     private LinearLayout body;
+    private String appearanceKey;
 
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
@@ -22,6 +23,12 @@ public class SystemSettingsActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
+        String current = appearanceKey();
+        if (appearanceKey != null && !appearanceKey.equals(current)) {
+            appearanceKey = current;
+            recreate();
+            return;
+        }
         renderStatus();
     }
 
@@ -64,15 +71,20 @@ public class SystemSettingsActivity extends Activity {
         addBackupCard();
         addPermissionsCard();
         addOtherSettingsCard();
+        appearanceKey = appearanceKey();
     }
 
     private void addAppCard() {
         LinearLayout card = sectionCard("アプリ設定", null);
         addActionRow(card, localize("アプリの言語", "App language", "앱 언어"), I18n.selectedLanguageLabel(this), this::showLanguageDialog);
         addDivider(card);
-        addActionRow(card, localize("画面デザイン", "App design", "앱 디자인"),
-                AppThemes.current(this).label(this) + "  ·  " + themeModeLabel(AppThemes.mode(this)),
-                () -> Ui.launchNoAnimation(this, new Intent(this, ThemePickerActivity.class)));
+        addActionRow(card, localize("UIスタイル", "UI style", "UI 스타일"),
+                UiProfiles.current(this).label(this),
+                () -> Ui.launchNoAnimation(this, new Intent(this, UiProfilePickerActivity.class)));
+        addDivider(card);
+        addActionRow(card, localize("デザインと配色", "Design and color", "디자인과 색상"),
+                VisualDesigns.current(this).label(this) + "  ·  " + AppThemes.current(this).label(this),
+                () -> Ui.launchNoAnimation(this, new Intent(this, VisualDesignPickerActivity.class)));
         addDivider(card);
         addActionRow(card, localize("時計の詳細設定", "Clock settings", "시계 설정"), localize("表示と文字盤を調整", "Customize clock display and face", "시계 표시와 문자판을 설정"), () ->
                 Ui.launchNoAnimation(this, new Intent(this, ClockSettingsActivity.class)));
@@ -82,6 +94,10 @@ public class SystemSettingsActivity extends Activity {
         if (AppThemes.MODE_DARK.equals(mode)) return localize("ダーク", "Dark", "다크");
         if (AppThemes.MODE_LIGHT.equals(mode)) return localize("ライト", "Light", "라이트");
         return localize("システム", "System", "시스템");
+    }
+
+    private String appearanceKey() {
+        return UiProfiles.id(this) + ":" + VisualDesigns.id(this) + ":" + AppThemes.key(this);
     }
 
     private void addBackupCard() {

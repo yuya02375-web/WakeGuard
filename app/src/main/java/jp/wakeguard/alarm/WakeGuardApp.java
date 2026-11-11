@@ -6,6 +6,8 @@ public class WakeGuardApp extends Application {
     @Override public void onCreate() {
         super.onCreate();
         AppThemes.apply(this);
+        Ui.applyUiProfile(UiProfiles.current(this));
+        Ui.applyVisualDesign(VisualDesigns.current(this));
         BackupVault.installAutoBackup(this);
         new Thread(() -> {
             try { Thread.currentThread().setPriority(Thread.MIN_PRIORITY); WorldCityCatalog.preload(getApplicationContext()); }

@@ -51,7 +51,6 @@ public final class AppThemes {
         public final int horizonLine;
         public final int navHighlight;
         public final int onAccent;
-        public final float cornerScale;
         public final boolean dark;
 
         private Theme(ThemeSpec spec, Scheme scheme, boolean isDark) {
@@ -59,7 +58,6 @@ public final class AppThemes {
             nameJa = spec.nameJa;
             nameEn = spec.nameEn;
             nameKo = spec.nameKo;
-            cornerScale = spec.cornerScale;
             dark = isDark;
             bg = scheme.bg;
             surface = scheme.surface;
@@ -143,7 +141,6 @@ public final class AppThemes {
     private static final class ThemeSpec {
         final String id, nameJa, nameEn, nameKo;
         final Scheme light, dark;
-        final float cornerScale;
         ThemeSpec(String id, String nameJa, String nameEn, String nameKo, Scheme light, Scheme dark) {
             this.id = id;
             this.nameJa = nameJa;
@@ -151,7 +148,6 @@ public final class AppThemes {
             this.nameKo = nameKo;
             this.light = light;
             this.dark = dark;
-            this.cornerScale = cornerScale(id);
         }
     }
 
@@ -305,37 +301,6 @@ public final class AppThemes {
         if (MODE_LIGHT.equalsIgnoreCase(value)) return MODE_LIGHT;
         if (MODE_DARK.equalsIgnoreCase(value)) return MODE_DARK;
         return MODE_SYSTEM;
-    }
-
-    private static float cornerScale(String id) {
-        switch (id) {
-            case "dawn-ink": return 1.00f;
-            case "aurora": return 1.14f;
-            case "evergreen": return .94f;
-            case "dune": return .78f;
-            case "abyss": return 1.20f;
-            case "glacier": return 1.34f;
-            case "sage": return .90f;
-            case "wisteria": return 1.30f;
-            case "sakura": return 1.38f;
-            case "solar": return .82f;
-            case "lunar": return 1.10f;
-            case "carbon": return .74f;
-            case "mint": return 1.26f;
-            case "ruby": return .84f;
-            case "plum": return 1.16f;
-            case "nordic": return 1.04f;
-            case "terminal": return .60f;
-            case "arcade": return 1.42f;
-            case "mono": return .96f;
-            case "blueprint": return .84f;
-            case "lagoon": return 1.30f;
-            case "coffee": return .76f;
-            case "storm": return 1.08f;
-            case "poppy": return 1.22f;
-            case "wax": return .88f;
-            default: return 1.00f;
-        }
     }
 
     private static boolean resolveDark(Context context, String requestedMode) {

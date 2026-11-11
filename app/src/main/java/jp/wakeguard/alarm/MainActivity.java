@@ -14,6 +14,7 @@ import java.util.*;
 
 public class MainActivity extends Activity {
     private LinearLayout list, nextCard;
+    private android.widget.GridLayout tileGrid;
     private TextView nextText,nextMeta,nextStatus;
     private FrameLayout horizonTrack;
     private View horizonDot;
@@ -103,7 +104,38 @@ public class MainActivity extends Activity {
             Button cancelAll=Ui.ghostButton(this,I18n.tr(this,"すべて取消"));cancelAll.setTextColor(Ui.ACCENT_2);cancelAll.setOnClickListener(v->{SnoozeScheduler.cancelAll(this);render();});allSnoozes.addView(cancelAll);
             list.addView(allSnoozes);list.addView(Ui.divider(this));
         }
+        if("tiles".equals(Ui.LAYOUT_MODE)){
+            tileGrid=new android.widget.GridLayout(this);tileGrid.setColumnCount(2);tileGrid.setUseDefaultMargins(false);
+            tileGrid.setPadding(0,Ui.dp(this,2),0,0);list.addView(tileGrid,new LinearLayout.LayoutParams(-1,-2));
+            for(int i=0;i<alarms.size();i++)addAlarmTile(alarms.get(i),i);
+            return;
+        }
+        tileGrid=null;
         for(int i=0;i<alarms.size();i++){addAlarmRow(alarms.get(i));}
+    }
+
+    private void addAlarmTile(AlarmStore.Entry e,int index){
+        LinearLayout tile=Ui.card(this);tile.setPadding(Ui.dp(this,12),Ui.dp(this,11),Ui.dp(this,12),Ui.dp(this,11));
+        tile.setMinimumHeight(Ui.dp(this,154));tile.setClickable(true);tile.setFocusable(true);tile.setOnClickListener(v->edit(e.id));
+        if(e.id>=1000)tile.setOnLongClickListener(v->{confirmDelete(e);return true;});
+        LinearLayout head=Ui.row(this);head.setPadding(0,0,0,Ui.dp(this,4));
+        TextView time=Ui.title(this,String.format(Locale.JAPAN,"%02d:%02d",e.hour,e.minute),28);
+        time.setTextColor(e.enabled?Ui.ACCENT_2:Ui.MUTED_2);time.setIncludeFontPadding(false);head.addView(time,new LinearLayout.LayoutParams(0,-2,1));
+        Switch on=new Switch(this);on.setChecked(e.enabled);Ui.styleSwitch(on,this);head.addView(on);tile.addView(head);
+        String label=(e.label==null||e.label.trim().isEmpty())?I18n.tr(this,"アラーム"):e.label.trim();
+        TextView name=Ui.title(this,label,15);name.setSingleLine(true);name.setEllipsize(android.text.TextUtils.TruncateAt.END);tile.addView(name);
+        TextView schedule=Ui.text(this,repeatText(e.dayMask),12,e.enabled?Ui.ACCENT:Ui.MUTED);schedule.setSingleLine(true);schedule.setEllipsize(android.text.TextUtils.TruncateAt.END);schedule.setPadding(0,Ui.dp(this,3),0,0);tile.addView(schedule);
+        TextView mission=Ui.text(this,AlarmProfiles.missionIcon(e.missionType)+"  "+I18n.tr(this,AlarmProfiles.missionName(e.missionType)),11,Ui.MUTED);mission.setSingleLine(true);mission.setEllipsize(android.text.TextUtils.TruncateAt.END);mission.setPadding(0,Ui.dp(this,5),0,0);tile.addView(mission);
+        long snoozeAt=SnoozeScheduler.scheduledAt(this,e.id);
+        if(snoozeAt>System.currentTimeMillis()){
+            TextView snooze=Ui.text(this,I18n.tr(this,"スヌーズ中")+"  ·  "+relativeText(snoozeAt-System.currentTimeMillis()),11,Ui.ACCENT_2);
+            snooze.setSingleLine(true);snooze.setEllipsize(android.text.TextUtils.TruncateAt.END);snooze.setPadding(0,Ui.dp(this,4),0,0);tile.addView(snooze);
+        }
+        on.setContentDescription(I18n.tr(this,label)+"  "+I18n.tr(this,"アラーム"));
+        on.setOnClickListener(v->{e.enabled=on.isChecked();AlarmProfiles.save(this,e);if(!e.enabled){SnoozeScheduler.cancel(this,e.id);if(e.id>=1000)AlarmScheduler.cancelExtraAlarm(this,e.id);}AlarmScheduler.reschedule(this);render();});
+        android.widget.GridLayout.LayoutParams lp=new android.widget.GridLayout.LayoutParams(
+                android.widget.GridLayout.spec(index/2),android.widget.GridLayout.spec(index%2,1f));
+        lp.width=0;lp.height=-2;lp.setMargins(Ui.dp(this,3),Ui.dp(this,3),Ui.dp(this,3),Ui.dp(this,7));tileGrid.addView(tile,lp);
     }
 
     private void addAlarmRow(AlarmStore.Entry e){
@@ -138,7 +170,13 @@ public class MainActivity extends Activity {
             Button del=Ui.ghostButton(this,I18n.tr(this,"削除"));del.setTextSize(12);del.setTextColor(Ui.DANGER);del.setContentDescription(I18n.tr(this,"アラームを削除"));del.setOnClickListener(v->confirmDelete(e));deleteRow.addView(del);row.addView(deleteRow);
         }
         on.setOnClickListener(v->{e.enabled=on.isChecked();AlarmProfiles.save(this,e);if(!e.enabled){SnoozeScheduler.cancel(this,e.id);if(e.id>=1000)AlarmScheduler.cancelExtraAlarm(this,e.id);}AlarmScheduler.reschedule(this);render();});
-        list.addView(row,Ui.cardParams(this));
+        if("timeline".equals(Ui.LAYOUT_MODE)){
+            LinearLayout event=new LinearLayout(this);event.setOrientation(LinearLayout.HORIZONTAL);event.setGravity(Gravity.TOP);event.setPadding(Ui.dp(this,5),0,0,0);
+            View marker=new View(this);marker.setBackground(Ui.round(Ui.ACCENT_2,9,this));
+            LinearLayout.LayoutParams markerLp=new LinearLayout.LayoutParams(Ui.dp(this,9),Ui.dp(this,9));markerLp.setMargins(0,Ui.dp(this,18),Ui.dp(this,8),0);event.addView(marker,markerLp);
+            LinearLayout.LayoutParams cardLp=new LinearLayout.LayoutParams(0,-2,1);cardLp.bottomMargin=Ui.dp(this,10);event.addView(row,cardLp);
+            list.addView(event,new LinearLayout.LayoutParams(-1,-2));
+        }else list.addView(row,Ui.cardParams(this));
     }
 
     private void confirmDelete(AlarmStore.Entry e){
