@@ -44,7 +44,10 @@ public class MainActivity extends Activity {
     }
 
     private void buildUi(){
-        LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setBackground(Ui.screenGradient(this));root.setClipChildren(false);
+        LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setBackground(Ui.screenGradient(this));
+        // Keep the fixed hero, scrolling list, and footer inside their own viewports.
+        // Allowing overflow here let the list paint through the hero and footer while scrolling.
+        root.setClipChildren(true);root.setClipToPadding(true);
 
         LinearLayout top=new LinearLayout(this);top.setOrientation(LinearLayout.VERTICAL);
         top.setPadding(Ui.dp(this,22),Ui.dp(this,10),Ui.dp(this,22),Ui.dp(this,5));
@@ -52,7 +55,7 @@ public class MainActivity extends Activity {
         TextView title=Ui.title(this,"アラーム",HomeMetrics.HEADER_TITLE_SP);
         title.setPadding(0,Ui.dp(this,3),0,0);top.addView(title);root.addView(top);
 
-        nextCard=new FrameLayout(this);nextCard.setClipChildren(false);nextCard.setClipToPadding(false);
+        nextCard=new FrameLayout(this);nextCard.setClipChildren(true);nextCard.setClipToPadding(true);
         nextCard.setMinimumHeight(Ui.dp(this,HomeMetrics.HERO_HEIGHT_DP));
         nextCard.setBackground(Ui.gradientRound(this,24,Ui.HERO_START,Ui.HERO_END));
         View edge=new View(this);edge.setBackgroundColor(Ui.withAlpha(Ui.HERO_TEXT,31));
@@ -97,15 +100,18 @@ public class MainActivity extends Activity {
             heroMascot=mascot;
             FrameLayout.LayoutParams mascotLp=new FrameLayout.LayoutParams(
                     Ui.dp(this,HomeMetrics.HERO_CHARACTER_DP),Ui.dp(this,HomeMetrics.HERO_CHARACTER_DP),Gravity.TOP|Gravity.END);
-            mascotLp.topMargin=-Ui.dp(this,12);mascotLp.rightMargin=Ui.dp(this,6);
+            mascotLp.topMargin=Ui.dp(this,4);mascotLp.rightMargin=Ui.dp(this,6);
             nextCard.addView(mascot,mascotLp);
         }
         LinearLayout.LayoutParams nextLp=new LinearLayout.LayoutParams(-1,-2);
         nextLp.setMargins(Ui.dp(this,16),Ui.dp(this,4),Ui.dp(this,16),Ui.dp(this,3));root.addView(nextCard,nextLp);
 
         ScrollView sv=new ScrollView(this);sv.setFillViewport(true);sv.setVerticalScrollBarEnabled(false);
+        sv.setClipChildren(true);sv.setClipToPadding(true);
         list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);
-        list.setPadding(Ui.dp(this,18),Ui.dp(this,6),Ui.dp(this,18),Ui.dp(this,16));sv.addView(list);
+        // Leave a little breathing room after the final alarm; the ScrollView clips its
+        // own contents before the fixed add action and navigation are drawn.
+        list.setPadding(Ui.dp(this,18),Ui.dp(this,6),Ui.dp(this,18),Ui.dp(this,24));sv.addView(list);
         root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
 
         Button add=Ui.button(this,"アラームを追加",true);add.setOnClickListener(v->edit(-1));
@@ -131,7 +137,7 @@ public class MainActivity extends Activity {
     private void render(){
         list.removeAllViews();
         list.setGravity(Gravity.TOP);
-        list.setPadding(Ui.dp(this,18),Ui.dp(this,6),Ui.dp(this,18),Ui.dp(this,16));
+        list.setPadding(Ui.dp(this,18),Ui.dp(this,6),Ui.dp(this,18),Ui.dp(this,24));
         boolean hasNext=refreshNext();
         List<AlarmStore.Entry> alarms=AlarmProfiles.all(this);
         alarms.sort(Comparator.comparingInt((AlarmStore.Entry e)->e.hour).thenComparingInt(e->e.minute));
