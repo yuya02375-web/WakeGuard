@@ -191,7 +191,7 @@ public final class MascotArtView extends View {
         float size = Math.min(box.width(), box.height());
         float unitScale = size / 100f;
         boolean fullDetails = density > 0f && size / density >= 64f;
-        p.configure(unitScale, fullDetails);
+        p.configure(unitScale, fullDetails, density);
         canvas.translate(box.centerX() - size * .5f, box.centerY() - size * .5f);
         canvas.scale(unitScale, unitScale);
         if (fullDetails) drawPlate(canvas, p);
@@ -202,7 +202,7 @@ public final class MascotArtView extends View {
         float figureScale = fullDetails ? .9f : .98f;
         canvas.translate(inset, inset);
         canvas.scale(figureScale, figureScale);
-        p.configure(unitScale * figureScale, fullDetails);
+        p.configure(unitScale * figureScale, fullDetails, density);
         if (!fullDetails) drawCompactContrastEdge(canvas, selected, contrastOutline, p);
         switch (selected) {
             case FOX: drawFox(canvas, accent, fullDetails, p); break;
@@ -390,6 +390,7 @@ public final class MascotArtView extends View {
         final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
         final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
         private float unitScale = 1f;
+        private float density = 1f;
         private float minimumStroke = 1.6f;
 
         Painter() {
@@ -399,8 +400,9 @@ public final class MascotArtView extends View {
             stroke.setStrokeJoin(Paint.Join.ROUND);
         }
 
-        void configure(float unitScale, boolean fullDetails) {
+        void configure(float unitScale, boolean fullDetails, float density) {
             this.unitScale = Math.max(.01f, unitScale);
+            this.density = Math.max(.1f, density);
             minimumStroke = fullDetails ? 1.6f : 2.6f;
         }
 
@@ -419,7 +421,7 @@ public final class MascotArtView extends View {
         }
 
         void strokeDp(Canvas canvas, Path path, int color, float widthDp) {
-            stroke(canvas, path, color, widthDp / unitScale);
+            stroke(canvas, path, color, widthDp * density / unitScale);
         }
 
         void hairline(Canvas canvas, Path path, int color) {

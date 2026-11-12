@@ -27,7 +27,7 @@ Status: implementation review for 2.16.0, 2026-11-12. This file replaces the pre
 
 ## Remaining validation
 
-- `git diff --check` passed, and final local `assembleDebug` completed successfully in `../.workbench_logs/WakeGuard/build_assembleDebug_20261112-134926.log` from the workspace root.
+- `git diff --check` passed, and final local `assembleDebug` completed successfully in `../.workbench_logs/WakeGuard/build_assembleDebug_20261112-135358.log` from the workspace root.
 - The GitHub stable artifact signature and checksum are verified separately after the committed workflow run; this source review does not claim that check.
 - No Android device/emulator is connected; 56 dp and dark-hero screenshots are not verified.
 
