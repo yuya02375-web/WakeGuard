@@ -96,7 +96,22 @@ public final class DesignSets {
                     "brutalist", "cassette-deck", "storm", "robot"),
             p("tidal-owl", "潮だまりのフクロウ", "Tidepool Owl", "조수 웅덩이 부엉이",
                     "小さなモザイクと青緑。ゆったりしたカードでまとめます。", "Tidepool mosaic and sea-glass tones with roomy cards.", "조수 웅덩이 모자이크와 바다 유리빛의 여유로운 카드입니다.",
-                    "spacious", "tidepool", "lagoon", "owl")
+                    "spacious", "tidepool", "lagoon", "owl"),
+            p("mountain-dragon", "山嶺のドラゴン", "Alpine Dragon", "산맥의 드래곤",
+                    "幾重もの山並みと森の緑。朝の時刻をたどるタイムラインです。", "Layered mountain ridges, evergreen tones, and a timeline for the climb toward morning.", "겹겹의 산맥과 숲의 녹색, 아침을 향해가는 타임라인입니다.",
+                    "timeline", "landscape-mountain", "evergreen", "dragon"),
+            p("forest-owl-sage", "森の観測者", "Forest Watcher", "숲의 관찰자",
+                    "深い森の景色とセージ色。観察ノートのように静かな一覧です。", "A quiet field-notes layout framed by a deep forest and sage palette.", "깊은 숲 풍경과 세이지 색상으로 꾸민 조용한 관찰 노트입니다.",
+                    "field-notes", "landscape-forest", "sage", "owl"),
+            p("volcano-robot", "火山基地ロボット", "Volcano Outpost", "화산 기지 로봇",
+                    "火山の稜線と溶岩色。素早く扱えるコマンドデッキです。", "A volcanic horizon and ruby lava glow in a quick-access command deck.", "화산 능선과 루비빛 용암을 담은 빠른 명령 패널입니다.",
+                    "command", "landscape-volcano", "ruby", "robot"),
+            p("dunes-fox", "砂丘を渡るキツネ", "Dune Wanderer", "사구를 걷는 여우",
+                    "風紋の砂丘と砂色の配色。広々としたマガジン風レイアウトです。", "Wind-shaped dunes and warm sand tones in a spacious magazine layout.", "바람결 모래언덕과 따뜻한 모래색을 담은 여유로운 매거진 레이아웃입니다.",
+                    "magazine", "landscape-dunes", "dune", "fox"),
+            p("cloud-sea-owl", "雲海の朝を告げるフクロウ", "Cloud-Sea Dawn", "구름 바다의 아침을 알리는 부엉이",
+                    "重なる雲海と琥珀色の朝。予定をたどるプランナーです。", "An amber dawn above a sea of clouds, arranged as a calm day planner.", "겹겹의 구름 바다와 호박빛 아침을 담은 차분한 플래너입니다.",
+                    "planner", "landscape-cloud-sea", "solar", "owl")
     ));
 
     private DesignSets() {}

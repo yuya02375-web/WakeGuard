@@ -2,9 +2,14 @@ package jp.wakeguard.alarm;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.RectF;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
+import android.graphics.drawable.GradientDrawable;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -79,11 +84,13 @@ public final class DesignSetPickerActivity extends Activity {
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(Ui.dp(this, 14), Ui.dp(this, 13), Ui.dp(this, 14), Ui.dp(this, 13));
         card.setBackground(Ui.roundStroke(Ui.SURFACE, active ? Ui.ACCENT_2 : Ui.BORDER, 18, this));
+        AppThemes.Theme setTheme = AppThemes.get(this, preset.themeId);
 
         LinearLayout heading = Ui.row(this);
         heading.setGravity(Gravity.CENTER_VERTICAL);
         if (!"none".equals(preset.mascotId)) {
             MascotArtView mascot = new MascotArtView(this, preset.mascotId);
+            mascot.setMascotColors(setTheme.accent, setTheme.accent2, setTheme.text);
             heading.addView(mascot, new LinearLayout.LayoutParams(Ui.dp(this, 56), Ui.dp(this, 56)));
         } else {
             TextView mark = Ui.title(this, "✦", 30);
@@ -102,6 +109,13 @@ public final class DesignSetPickerActivity extends Activity {
 
         TextView description = Ui.text(this, preset.description(this), 12, Ui.MUTED);
         card.addView(description, Ui.gapTop(this, 7));
+        VisualDesigns.Design visual = VisualDesigns.get(preset.visualDesignId);
+        if (visual != null && visual.pattern.startsWith("landscape-")) {
+            View preview = new LandscapePreview(this, visual.pattern, setTheme);
+            LinearLayout.LayoutParams previewParams = new LinearLayout.LayoutParams(-1, Ui.dp(this, 76));
+            previewParams.topMargin = Ui.dp(this, 10);
+            card.addView(preview, previewParams);
+        }
         addSwatches(card, preset);
 
         LinearLayout actions = Ui.row(this);
@@ -162,6 +176,44 @@ public final class DesignSetPickerActivity extends Activity {
         palette.setPadding(Ui.dp(this, 2), Ui.dp(this, 8), 0, 0);
         swatches.addView(palette);
         card.addView(swatches);
+    }
+
+    private final class LandscapePreview extends View {
+        private final String pattern;
+        private final AppThemes.Theme theme;
+        private final Paint border = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+        LandscapePreview(Context context, String pattern, AppThemes.Theme theme) {
+            super(context);
+            this.pattern = pattern;
+            this.theme = theme;
+            GradientDrawable fill = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                    new int[]{theme.bg, theme.surface});
+            fill.setCornerRadius(Ui.dp(DesignSetPickerActivity.this, 13));
+            setBackground(fill);
+            setContentDescription(pattern.replace('-', ' ') + " landscape preview");
+        }
+
+        @Override protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            RectF bounds = new RectF(0, 0, getWidth(), getHeight());
+            if (bounds.isEmpty()) return;
+            float radius = Ui.dp(DesignSetPickerActivity.this, 13);
+            int save = canvas.save();
+            Path clip = new Path();
+            clip.addRoundRect(bounds, radius, radius, Path.Direction.CW);
+            canvas.clipPath(clip);
+            String scene = VisualDesigns.landscapeSceneId(pattern);
+            LandscapeArt.draw(canvas, scene, bounds,
+                    LandscapeArt.paletteFromTheme(theme.heroStart, theme.heroEnd, theme.surface,
+                            theme.accent, theme.accent2, theme.text, theme.heroText),
+                    getResources().getDisplayMetrics().density);
+            border.setStyle(Paint.Style.STROKE);
+            border.setStrokeWidth(Ui.dp(DesignSetPickerActivity.this, 1));
+            border.setColor(VisualDesigns.withAlpha(theme.accent, 0x66));
+            canvas.drawRoundRect(bounds, radius, radius, border);
+            canvas.restoreToCount(save);
+        }
     }
 
     private void addPartButton(LinearLayout parent, DesignSets.Preset preset, DesignSets.Part part, String text) {

@@ -255,6 +255,14 @@ public final class Ui {
             Path clip = new Path();
             clip.addRoundRect(bounds, radius, radius, Path.Direction.CW);
             canvas.clipPath(clip);
+            String scene = VisualDesigns.landscapeSceneId(DESIGN_PATTERN);
+            if (scene != null) {
+                LandscapeArt.Palette palette = LandscapeArt.paletteFromTheme(
+                        HERO_START, HERO_END, SURFACE, ACCENT, ACCENT_2, TEXT, HERO_TEXT);
+                LandscapeArt.draw(canvas, scene, bounds, palette, density);
+                canvas.restoreToCount(save);
+                return;
+            }
             Paint ink = new Paint(Paint.ANTI_ALIAS_FLAG);
             ink.setColor(withAlpha(HERO_TEXT, 36));
             ink.setStyle(Paint.Style.STROKE);

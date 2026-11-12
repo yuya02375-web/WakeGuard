@@ -304,7 +304,17 @@ public class VisualDesignPickerActivity extends Activity {
             int save = canvas.save(); canvas.clipPath(clip);
             paint.setStyle(Paint.Style.STROKE); paint.setStrokeWidth(dp(0.8f));
             paint.setColor(VisualDesigns.withAlpha(Ui.ACCENT_2, 48));
-            VisualDesigns.drawPattern(canvas, pattern, bounds, paint, getResources().getDisplayMetrics().density);
+            String scene = VisualDesigns.landscapeSceneId(pattern);
+            if (scene == null) {
+                VisualDesigns.drawPattern(canvas, pattern, bounds, paint,
+                        getResources().getDisplayMetrics().density);
+            } else {
+                AppThemes.Theme theme = AppThemes.current(VisualDesignPickerActivity.this);
+                LandscapeArt.draw(canvas, scene, bounds,
+                        LandscapeArt.paletteFromTheme(theme.heroStart, theme.heroEnd, theme.surface,
+                                theme.accent, theme.accent2, theme.text, theme.heroText),
+                        getResources().getDisplayMetrics().density);
+            }
             canvas.restoreToCount(save);
         }
     }

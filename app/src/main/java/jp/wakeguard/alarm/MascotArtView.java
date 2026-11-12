@@ -249,7 +249,7 @@ public final class MascotArtView extends View {
             if (cached != null && !cached.isRecycled()) return cached;
 
             BitmapFactory.Options options = new BitmapFactory.Options();
-            // 1254px source art becomes 627px, enough for the 120dp hero on dense screens.
+            // 1024px source art becomes 512px, enough for the 120dp hero on dense screens.
             options.inSampleSize = 2;
             options.inScaled = false;
             options.inPreferredConfig = Bitmap.Config.ARGB_8888;
@@ -262,10 +262,10 @@ public final class MascotArtView extends View {
 
     private static int drawableFor(Mascot mascot) {
         switch (mascot) {
-            case FOX: return R.drawable.mascot_fox_premium_v1;
-            case OWL: return R.drawable.mascot_owl_premium_v1;
-            case ROBOT: return R.drawable.mascot_robot_premium_v1;
-            default: return R.drawable.mascot_dragon_premium_v1;
+            case FOX: return R.drawable.mascot_fox_premium_v2;
+            case OWL: return R.drawable.mascot_owl_premium_v2;
+            case ROBOT: return R.drawable.mascot_robot_premium_v2;
+            default: return R.drawable.mascot_dragon_premium_v2;
         }
     }
 

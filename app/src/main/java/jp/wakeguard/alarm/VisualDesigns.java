@@ -44,6 +44,11 @@ public final class VisualDesigns {
         d("ocean-current", "nature", s("海流図", "Ocean Currents", "해류 지도"), s("波の曲線と水平のリズムで、海の流れを感じるデザイン。", "Wave lines and horizontal rhythm bring the movement of ocean currents.", "파도 곡선과 수평 리듬으로 바다의 흐름을 담았습니다."), "waves", "sans", "outline", 0.018f, 0.76f),
         d("topographic-map", "nature", s("地形図", "Topographic Map", "지형도"), s("重なる等高線が、山道の地図のような表情をつくります。", "Nested contour paths lend the interface the character of a hiking map.", "겹치는 등고선이 산길 지도 같은 표정을 만듭니다."), "contour", "mono", "double-border", 0.012f, 0.38f),
         d("tidepool", "nature", s("潮だまり", "Tide Pool", "바위 웅덩이"), s("大小のモザイク粒子で、波打ち際の小さな世界を表現。", "A mosaic of small forms evokes the miniature world of a tide pool.", "크고 작은 모자이크 무늬로 조수 웅덩이의 작은 세계를 표현합니다."), "mosaic", "sans", "raised", 0.055f, 1.24f),
+        d("landscape-mountain", "nature", s("山の稜線", "Mountain Layers", "산의 능선"), s("幾重もの山並みと朝霧を重ね、静かな高地の景色を描きます。", "Layered ridgelines and a veil of morning mist bring a quiet alpine horizon.", "겹겹의 산 능선과 아침 안개로 고요한 산악 풍경을 그립니다."), "landscape-mountain", "serif", "outline", 0.025f, 0.5f),
+        d("landscape-forest", "nature", s("森の天蓋", "Forest Canopy", "숲의 캐노피"), s("樹冠のシルエットと木漏れ日で、深い森の奥行きを表現。", "Overlapping treetops and scattered sunlight create the depth of an old forest.", "겹친 나무 꼭대기와 햇살 무늬로 오래된 숲의 깊이를 담았습니다."), "landscape-forest", "sans", "raised", 0.035f, 0.9f),
+        d("landscape-volcano", "nature", s("火山の夜明け", "Volcanic Dawn", "화산의 새벽"), s("火口の輪郭と流れる溶岩が、夜明け前の火山を浮かび上がらせます。", "A crater silhouette and branching lava paths capture a volcano before sunrise.", "분화구의 실루엣과 갈라지는 용암의 흐름으로 동트기 전 화산을 담았습니다."), "landscape-volcano", "condensed", "double-border", 0.04f, 0.28f),
+        d("landscape-dunes", "nature", s("砂丘の稜線", "Dune Lines", "사구의 능선"), s("風が刻む砂丘の曲線と長い影で、広い砂漠を描きます。", "Wind-shaped dune curves and long shadows open onto a vast desert.", "바람이 빚은 모래 언덕의 곡선과 긴 그림자로 넓은 사막을 그립니다."), "landscape-dunes", "serif", "flat", 0.02f, 1.12f),
+        d("landscape-cloud-sea", "nature", s("雲海の朝", "Cloud-Sea Sunrise", "구름 바다의 아침"), s("幾重にも重なる雲と昇る光で、山頂から望む朝を描きます。", "Layered cloud banks and rising light open a sunrise from above the clouds.", "겹겹의 구름과 떠오르는 빛으로 구름 위에서 맞는 아침을 그립니다."), "landscape-cloud-sea", "serif", "raised", 0.035f, 1.0f),
         d("halftone-pop", "retro", s("ハーフトーン・ポップ", "Halftone Pop", "하프톤 팝"), s("網点と太い見出しで、古いコミックの印刷感を再現。", "Halftone dots and bold display lettering recall vintage comic printing.", "망점과 굵은 제목 글꼴로 오래된 만화 인쇄 느낌을 냅니다."), "halftone", "condensed", "double-border", 0.06f, 0.28f),
         d("scanline-vhs", "retro", s("ビデオテープ", "VHS Scanline", "비디오테이프"), s("走査線と詰まった文字が、アナログ映像の雰囲気を添えます。", "Scanlines and condensed type bring the texture of analog video.", "주사선과 좁은 글꼴로 아날로그 영상의 분위기를 더합니다."), "scanline", "mono", "wire", 0.018f, 0.22f),
         d("vapor-grid", "retro", s("ネオン格子", "Vapor Grid", "네온 격자"), s("遠近感のある格子と広い字間で、夜のデジタル風景に。", "A receding grid and airy lettering suggest a retro-futurist horizon.", "멀어지는 격자와 넓은 자간으로 복고풍 미래 풍경을 만듭니다."), "grid", "sans", "raised", 0.075f, 0.9f),
@@ -122,6 +127,15 @@ public final class VisualDesigns {
     public static void drawPattern(Canvas canvas, String pattern, RectF bounds, Paint source, float density) {
         if (canvas == null || bounds == null || bounds.isEmpty() || source == null
                 || pattern == null || "none".equals(pattern)) return;
+        String scene = landscapeSceneId(pattern);
+        if (scene != null) {
+            int alpha = (source.getColor() >>> 24) & 0xFF;
+            LandscapeArt.Palette palette = LandscapeArt.paletteFromTheme(
+                    withAlpha(Ui.BG, alpha), withAlpha(Ui.BG_2, alpha), withAlpha(Ui.SURFACE, alpha),
+                    withAlpha(source.getColor(), alpha), withAlpha(Ui.ACCENT_2, alpha),
+                    withAlpha(Ui.TEXT, alpha), withAlpha(Ui.HERO_TEXT, alpha));
+            if (LandscapeArt.draw(canvas, scene, bounds, palette, density)) return;
+        }
         float unit = Float.isNaN(density) || Float.isInfinite(density) || density <= 0f ? 1f : density;
         float step = cellDp(pattern) * unit;
         Paint p = new Paint(source);
@@ -237,6 +251,16 @@ public final class VisualDesigns {
             }
         }
         canvas.restoreToCount(save);
+    }
+
+    /** Maps catalog pattern IDs to the stable scene IDs used by the landscape renderer. */
+    public static String landscapeSceneId(String pattern) {
+        if ("landscape-mountain".equals(pattern)) return LandscapeArt.MOUNTAIN_RIDGE;
+        if ("landscape-forest".equals(pattern)) return LandscapeArt.FOREST;
+        if ("landscape-volcano".equals(pattern)) return LandscapeArt.VOLCANIC_NIGHT;
+        if ("landscape-dunes".equals(pattern)) return LandscapeArt.DUNES;
+        if ("landscape-cloud-sea".equals(pattern)) return LandscapeArt.CLOUD_SEA;
+        return null;
     }
 
     /** Physical repeat sizes; do not apply the UI density profile to motif geometry. */
