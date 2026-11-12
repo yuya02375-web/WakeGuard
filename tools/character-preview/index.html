@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>キャラクター案（幾何学・プレビュー）</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:24px;background:#1b2230;color:#e9eef6;font-family:"Yu Gothic UI","Hiragino Sans","Meiryo",system-ui,sans-serif}
+h1{font-size:20px;margin:0 0 8px}
+.note{color:#9fb0c6;font-size:13px;line-height:1.7;margin:0 0 20px;max-width:900px}
+.grid{display:grid;grid-template-columns:150px repeat(4,minmax(0,1fr));gap:12px;align-items:center}
+.head{margin-bottom:6px;color:#9fb0c6;font-size:13px;text-align:center}
+.head div:first-child{text-align:left}
+.row{margin-bottom:12px;--shade:color-mix(in srgb,var(--body) 72%,#000);--light:color-mix(in srgb,var(--body) 42%,#fff);--ink:#1b2230}
+.name{font-size:15px;font-weight:700}
+.name small{display:block;font-size:12px;font-weight:400;color:#9fb0c6;margin-top:3px}
+.tile{background:#232b3a;border:1px solid #334055;border-radius:16px;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;padding:10px}
+.tile svg{width:100%;height:100%;display:block}
+.hidden-defs{position:absolute;width:0;height:0;overflow:hidden}
+.p-glacier{--body:#7cbdf7;--acc:#91c8f8}
+.p-lunar{--body:#aebbf9;--acc:#bbc6fa}
+.p-sakura{--body:#f38eb5;--acc:#f5a0c1}
+.p-evergreen{--body:#79c78a;--acc:#8ed09d}
+.p-ruby{--body:#ff737f;--acc:#ff8993}
+.p-terminal{--body:#5ddd94;--acc:#77e2a5}
+</style>
+</head>
+<body>
+
+<svg class="hidden-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<defs>
+
+<symbol id="owl" viewBox="0 0 120 120">
+<polygon points="36,40 40,14 56,26" style="fill:var(--body)"/>
+<polygon points="84,40 80,14 64,26" style="fill:var(--body)"/>
+<ellipse cx="60" cy="64" rx="38" ry="42" style="fill:var(--body)"/>
+<ellipse cx="25" cy="76" rx="9" ry="19" transform="rotate(15 25 76)" style="fill:var(--shade)"/>
+<ellipse cx="95" cy="76" rx="9" ry="19" transform="rotate(-15 95 76)" style="fill:var(--shade)"/>
+<ellipse cx="60" cy="87" rx="22" ry="16" style="fill:var(--light)"/>
+<rect x="39" y="100" width="12" height="9" rx="3" ry="3" style="fill:var(--shade)"/>
+<rect x="69" y="100" width="12" height="9" rx="3" ry="3" style="fill:var(--shade)"/>
+<circle cx="46" cy="49" r="11" style="fill:var(--ink)"/>
+<circle cx="74" cy="49" r="11" style="fill:var(--ink)"/>
+<circle cx="42" cy="45" r="3.5" style="fill:var(--light)"/>
+<circle cx="78" cy="45" r="3.5" style="fill:var(--light)"/>
+<polygon points="54,58 66,58 60,68" style="fill:var(--shade)"/>
+<polygon points="50,72 70,72 60,82" style="fill:var(--shade)"/>
+</symbol>
+
+<symbol id="fox" viewBox="0 0 120 120">
+<path d="M74 104C98 112 106 94 100 72C94 80 84 82 80 90Z" style="fill:var(--body)"/>
+<path d="M101.84 87.41C102.13 82.75 101.5 77.5 100 72C98.5 74 96.75 75.63 94.91 77.06Z" style="fill:var(--light)"/>
+<ellipse cx="60" cy="95" rx="24" ry="14" style="fill:var(--body)"/>
+<polygon points="32,50 36,16 60,36" style="fill:var(--body)"/>
+<polygon points="88,50 84,16 60,36" style="fill:var(--body)"/>
+<circle cx="60" cy="60" r="30" style="fill:var(--body)"/>
+<path d="M60 84C50 84 40 76 40 68C40 64 46 63 52 64Q60 66 68 64C74 63 80 64 80 68C80 76 70 84 60 84Z" style="fill:var(--light)"/>
+<circle cx="46" cy="51" r="5" style="fill:var(--ink)"/>
+<circle cx="74" cy="51" r="5" style="fill:var(--ink)"/>
+<circle cx="47.6" cy="49.4" r="1.6" style="fill:var(--light)"/>
+<circle cx="75.6" cy="49.4" r="1.6" style="fill:var(--light)"/>
+<circle cx="60" cy="79" r="4" style="fill:var(--ink)"/>
+<polygon points="50,87 70,87 60,99" style="fill:var(--shade)"/>
+<rect x="40" y="97" width="14" height="12" rx="5" ry="5" style="fill:var(--shade)"/>
+<rect x="66" y="97" width="14" height="12" rx="5" ry="5" style="fill:var(--shade)"/>
+</symbol>
+
+<symbol id="robot" viewBox="0 0 120 120">
+<rect x="58" y="18" width="4" height="16" rx="2" ry="2" style="fill:var(--shade)"/>
+<circle cx="60" cy="18" r="5" style="fill:var(--acc)"/>
+<rect x="21" y="66" width="12" height="26" rx="5" ry="5" style="fill:var(--shade)"/>
+<rect x="87" y="66" width="12" height="26" rx="5" ry="5" style="fill:var(--shade)"/>
+<rect x="38" y="90" width="14" height="18" rx="5" ry="5" style="fill:var(--shade)"/>
+<rect x="68" y="90" width="14" height="18" rx="5" ry="5" style="fill:var(--shade)"/>
+<rect x="31" y="58" width="58" height="38" rx="6" ry="6" style="fill:var(--body)"/>
+<rect x="47" y="69" width="26" height="16" rx="4" ry="4" style="fill:var(--light)"/>
+<circle cx="83" cy="77" r="4.5" style="fill:var(--shade)"/>
+<rect x="36" y="32" width="48" height="30" rx="8" ry="8" style="fill:var(--body)"/>
+<rect x="41" y="40" width="13" height="13" rx="3" ry="3" style="fill:var(--ink)"/>
+<rect x="66" y="40" width="13" height="13" rx="3" ry="3" style="fill:var(--ink)"/>
+<circle cx="47.5" cy="46.5" r="2.5" style="fill:var(--light)"/>
+<circle cx="72.5" cy="46.5" r="2.5" style="fill:var(--light)"/>
+</symbol>
+
+<symbol id="dragon" viewBox="0 0 120 120">
+<path d="M32 74C20 70 14 66 15 57C14 72 18 90 32 94Z" style="fill:var(--body)"/>
+<rect x="29" y="97" width="14" height="12" rx="6" ry="6" style="fill:var(--shade)"/>
+<rect x="65" y="97" width="14" height="12" rx="6" ry="6" style="fill:var(--shade)"/>
+<polygon points="34,66 40,40 52,60" style="fill:var(--shade)"/>
+<polygon points="44,64 52,42 62,58" style="fill:var(--shade)"/>
+<polygon points="64,42 74,33 60,17" style="fill:var(--shade)"/>
+<polygon points="80,35 90,38 82,16" style="fill:var(--shade)"/>
+<ellipse cx="54" cy="82" rx="35" ry="25" style="fill:var(--body)"/>
+<ellipse cx="78" cy="48" rx="20" ry="18" style="fill:var(--body)"/>
+<ellipse cx="94" cy="55" rx="7" ry="6" style="fill:var(--body)"/>
+<ellipse cx="68" cy="84" rx="13" ry="12" style="fill:var(--light)"/>
+<circle cx="84" cy="44" r="5.5" style="fill:var(--ink)"/>
+<circle cx="86" cy="42" r="2" style="fill:var(--light)"/>
+</symbol>
+
+</defs>
+</svg>
+
+<h1>キャラクター案（幾何学・プレビュー）</h1>
+<p class="note">体の色は、セットの配色（ダーク側の色）から作っています。形は、円・楕円・角丸の四角・三角と、単純な曲線だけで描いています。線の縁取りや影のぼかしは使っていません。</p>
+
+<div class="grid head"><div></div><div>フクロウ</div><div>キツネ</div><div>ロボット</div><div>ドラゴン</div></div>
+
+<div class="grid row p-glacier">
+<div class="name">氷河<small>天空のドラゴン のセット</small></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#owl"/></svg></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#fox"/></svg></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#robot"/></svg></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#dragon"/></svg></div>
+</div>
+
+<div class="grid row p-lunar">
+<div class="name">月夜<small>月夜の観測所 のセット</small></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#owl"/></svg></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#fox"/></svg></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#robot"/></svg></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#dragon"/></svg></div>
+</div>
+
+<div class="grid row p-sakura">
+<div class="name">桜<small>桜キツネ のセット</small></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#owl"/></svg></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#fox"/></svg></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#robot"/></svg></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#dragon"/></svg></div>
+</div>
+
+<div class="grid row p-evergreen">
+<div class="name">深い森<small>森のフクロウ のセット</small></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#owl"/></svg></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#fox"/></svg></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#robot"/></svg></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#dragon"/></svg></div>
+</div>
+
+<div class="grid row p-ruby">
+<div class="name">ルビー<small>コミック・ドラゴン のセット</small></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#owl"/></svg></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#fox"/></svg></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#robot"/></svg></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#dragon"/></svg></div>
+</div>
+
+<div class="grid row p-terminal">
+<div class="name">レトロ端末<small>アーケード・ロボ のセット</small></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#owl"/></svg></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#fox"/></svg></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#robot"/></svg></div>
+<div class="tile"><svg viewBox="0 0 120 120"><use href="#dragon"/></svg></div>
+</div>
+
+</body>
+</html>

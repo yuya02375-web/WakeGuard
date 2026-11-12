@@ -1,0 +1,31 @@
+name: Render character preview
+
+on:
+  push:
+    paths:
+      - 'tools/character-preview/**'
+      - '.github/workflows/render-character-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Render the preview page to PNG
+        shell: bash
+        run: |
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          OUT="$GITHUB_WORKSPACE/character-preview.png"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars --window-size=1280,1400 --screenshot="$OUT" "file://$GITHUB_WORKSPACE/tools/character-preview/index.html"
+          test -s "$OUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: character-preview-png
+          path: character-preview.png
