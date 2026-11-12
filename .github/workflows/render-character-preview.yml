@@ -22,7 +22,7 @@ jobs:
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
           test -n "$CHROME"
           OUT="$GITHUB_WORKSPACE/character-preview.png"
-          "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars --window-size=1280,1400 --screenshot="$OUT" "file://$GITHUB_WORKSPACE/tools/character-preview/index.html"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars --window-size=1280,1900 --screenshot="$OUT" "file://$GITHUB_WORKSPACE/tools/character-preview/index.html"
           test -s "$OUT"
 
       - uses: actions/upload-artifact@v4
