@@ -603,7 +603,7 @@ public final class MascotArtView extends View {
             owlBreastBars.moveTo(45, 68); owlBreastBars.quadTo(52, 70, 60, 68);
             owlFace.moveTo(36, 34); owlFace.quadTo(40, 28, 48, 31); owlFace.quadTo(58, 25, 67, 33);
             owlFace.cubicTo(72, 45, 66, 55, 54, 58); owlFace.cubicTo(42, 56, 36, 47, 36, 34); owlFace.close();
-            owlFaceFold.moveTo(53, 31); owlFace.quadTo(55, 40, 53, 51);
+            owlFaceFold.moveTo(53, 31); owlFaceFold.quadTo(55, 40, 53, 51);
             owlNearDisk.moveTo(37, 39); owlNearDisk.quadTo(43, 33, 49, 39); owlNearDisk.quadTo(48, 48, 42, 49); owlNearDisk.close();
             owlFarDisk.moveTo(54, 37); owlFarDisk.quadTo(61, 32, 66, 38); owlFarDisk.quadTo(64, 45, 58, 46); owlFarDisk.close();
             owlBrow.moveTo(36, 37); owlBrow.quadTo(42, 31, 49, 37);

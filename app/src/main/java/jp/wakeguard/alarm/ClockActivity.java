@@ -274,7 +274,7 @@ public class ClockActivity extends Activity {
 
     private void showMode(String next) {
         mode = "timer".equals(next)||"stopwatch".equals(next)?next:"world";
-        body.removeAllViews();
+        body.removeAllViews();body.setPadding(Ui.dp(this,20),Ui.dp(this,8),Ui.dp(this,20),Ui.dp(this,28));
         worldRows.clear();
         if(stickyWorld!=null){stickyWorld.removeAllViews();stickyWorld.setVisibility("world".equals(mode)?View.VISIBLE:View.GONE);}
         if(screenTitle!=null) screenTitle.setText(I18n.tr(this,"時計"));
@@ -792,7 +792,7 @@ public class ClockActivity extends Activity {
         HorizontalScrollView chipScroll=new HorizontalScrollView(this);chipScroll.setHorizontalScrollBarEnabled(false);LinearLayout chips=new LinearLayout(this);chips.setOrientation(LinearLayout.HORIZONTAL);chips.setPadding(0,Ui.dp(this,10),0,Ui.dp(this,7));chipScroll.addView(chips);box.addView(chipScroll,new LinearLayout.LayoutParams(-1,-2));
         for(String code:new String[]{"JP","KR","US","GB","AU","CA"}){
             String label=countryName(code,I18n.locale(this));if(label==null||label.isEmpty())continue;
-            TextView chip=new TextView(this);chip.setText(label);chip.setTextColor(Ui.ACCENT);chip.setTextSize(12);chip.setGravity(Gravity.CENTER);chip.setPadding(Ui.dp(this,12),Ui.dp(this,7),Ui.dp(this,12),Ui.dp(this,7));chip.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));chip.setClickable(true);chip.setOnClickListener(v->search.setText(label));
+            TextView chip=new TextView(this);chip.setText(label);chip.setTextColor(Ui.ACCENT);chip.setTextSize(12);chip.setGravity(Gravity.CENTER);chip.setPadding(Ui.dp(this,12),Ui.dp(this,7),Ui.dp(this,12),Ui.dp(this,7));chip.setMinHeight(Ui.dp(this,48));chip.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));chip.setClickable(true);chip.setOnClickListener(v->search.setText(label));
             LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-2,-2);cp.setMargins(0,0,Ui.dp(this,8),0);chips.addView(chip,cp);
         }
 
@@ -801,7 +801,7 @@ public class ClockActivity extends Activity {
 
         ListView list=new ListView(this);list.setBackgroundColor(Color.TRANSPARENT);list.setDivider(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));list.setDividerHeight(Ui.dp(this,8));list.setClipToPadding(false);list.setPadding(0,0,0,Ui.dp(this,6));box.addView(list,new LinearLayout.LayoutParams(-1,0,1));
         TextView hybridHint=text("日本語・English・한국어の都市名を高速オフライン検索。正式なIANAタイムゾーンも検索します",10,Ui.MUTED_2);hybridHint.setGravity(Gravity.CENTER);hybridHint.setPadding(0,Ui.dp(this,4),0,Ui.dp(this,5));box.addView(hybridHint);
-        Button google=Ui.button(this,"Googleで確認（アプリ内）",false);google.setOnClickListener(v->openGoogleCountrySearch(search.getText().toString()));box.addView(google,new LinearLayout.LayoutParams(-1,Ui.dp(this,46)));
+        Button google=Ui.button(this,"Googleで確認（アプリ内）",false);google.setOnClickListener(v->openGoogleCountrySearch(search.getText().toString()));box.addView(google,new LinearLayout.LayoutParams(-1,Ui.dp(this,48)));
         TextView googleHint=text("GoogleはIGNIDO Wakeの上に開きます。上の検索欄を残したまま確認でき、文字をコピーしてツールバーのボタンを押すか、選択した文字をIGNIDO Wakeへ直接渡せます",10,Ui.MUTED_2);googleHint.setGravity(Gravity.CENTER);googleHint.setPadding(0,Ui.dp(this,3),0,Ui.dp(this,6));box.addView(googleHint);
         Button cancel=Ui.button(this,"閉じる",false);cancel.setOnClickListener(v->dialog.dismiss());box.addView(cancel,new LinearLayout.LayoutParams(-1,Ui.dp(this,50)));
         dialog.setContentView(box);
@@ -882,8 +882,8 @@ public class ClockActivity extends Activity {
                 else{for(WorldCityCatalog.Entry e:WorldCityCatalog.search(this,q,52)){out.add(WorldCityCatalog.encode(e));if(out.size()>=limit)break;}}
                 for(String id:results){if(out.size()>=limit)break;out.add(id);}
                 SearchResult result=new SearchResult(out,new ArrayList<>(guessed),titleKey);
-                handler.post(()->{if(generation!=searchGeneration.get()||zonePickerDialog!=dialog)return;filtered.clear();filtered.addAll(result.zones);adapter.notifyDataSetChanged();suggestionChips.removeAllViews();suggestionTitle.setText(I18n.tr(this,result.title));int chipCount=0;for(String code:result.codes){if(chipCount>=6)break;String label=countryLabelCache.get(code);if(label==null||label.isEmpty())label=countryName(code,I18n.locale(this));if(label==null||label.isEmpty())continue;TextView chip=new TextView(this);chip.setText(label);chip.setTextColor(Ui.ACCENT);chip.setTextSize(12);chip.setTypeface(null,Typeface.BOLD);chip.setPadding(Ui.dp(this,11),Ui.dp(this,6),Ui.dp(this,11),Ui.dp(this,6));chip.setBackground(Ui.roundStroke(Ui.SURFACE_3,Ui.BORDER,13,this));final String chipLabel=label;chip.setOnClickListener(v->search.setText(chipLabel));LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-2,-2);cp.setMargins(0,0,Ui.dp(this,7),0);suggestionChips.addView(chip,cp);chipCount++;}
-                    if(q.isEmpty()){for(String code:new String[]{"US","KR","JP","GB","FR","DE","AU","CA"}){String label=countryLabelCache.get(code);if(label==null||label.isEmpty())label=countryName(code,I18n.locale(this));TextView chip=new TextView(this);chip.setText(label);chip.setTextColor(Ui.ACCENT);chip.setTextSize(12);chip.setPadding(Ui.dp(this,11),Ui.dp(this,6),Ui.dp(this,11),Ui.dp(this,6));chip.setBackground(Ui.roundStroke(Ui.SURFACE_3,Ui.BORDER,13,this));final String chipLabel=label;chip.setOnClickListener(v->search.setText(chipLabel));LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-2,-2);cp.setMargins(0,0,Ui.dp(this,7),0);suggestionChips.addView(chip,cp);}}
+                handler.post(()->{if(generation!=searchGeneration.get()||zonePickerDialog!=dialog)return;filtered.clear();filtered.addAll(result.zones);adapter.notifyDataSetChanged();suggestionChips.removeAllViews();suggestionTitle.setText(I18n.tr(this,result.title));int chipCount=0;for(String code:result.codes){if(chipCount>=6)break;String label=countryLabelCache.get(code);if(label==null||label.isEmpty())label=countryName(code,I18n.locale(this));if(label==null||label.isEmpty())continue;TextView chip=new TextView(this);chip.setText(label);chip.setTextColor(Ui.ACCENT);chip.setTextSize(12);chip.setTypeface(null,Typeface.BOLD);chip.setGravity(Gravity.CENTER);chip.setPadding(Ui.dp(this,11),Ui.dp(this,6),Ui.dp(this,11),Ui.dp(this,6));chip.setMinHeight(Ui.dp(this,48));chip.setBackground(Ui.roundStroke(Ui.SURFACE_3,Ui.BORDER,13,this));final String chipLabel=label;chip.setOnClickListener(v->search.setText(chipLabel));LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-2,-2);cp.setMargins(0,0,Ui.dp(this,7),0);suggestionChips.addView(chip,cp);chipCount++;}
+                    if(q.isEmpty()){for(String code:new String[]{"US","KR","JP","GB","FR","DE","AU","CA"}){String label=countryLabelCache.get(code);if(label==null||label.isEmpty())label=countryName(code,I18n.locale(this));TextView chip=new TextView(this);chip.setText(label);chip.setTextColor(Ui.ACCENT);chip.setTextSize(12);chip.setGravity(Gravity.CENTER);chip.setPadding(Ui.dp(this,11),Ui.dp(this,6),Ui.dp(this,11),Ui.dp(this,6));chip.setMinHeight(Ui.dp(this,48));chip.setBackground(Ui.roundStroke(Ui.SURFACE_3,Ui.BORDER,13,this));final String chipLabel=label;chip.setOnClickListener(v->search.setText(chipLabel));LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-2,-2);cp.setMargins(0,0,Ui.dp(this,7),0);suggestionChips.addView(chip,cp);}}
                     suggestionTitle.setVisibility(q.isEmpty()||chipCount>0?View.VISIBLE:View.GONE);suggestionScroll.setVisibility(q.isEmpty()||chipCount>0?View.VISIBLE:View.GONE);
                 });
             });
@@ -909,7 +909,7 @@ public class ClockActivity extends Activity {
     private void buildStopwatch() {
         stopwatchStage=new FrameLayout(this);
         stopwatchDisplay=text("00:00:00.00",46,Ui.TEXT);
-        stopwatchDisplay.setTypeface(Typeface.MONOSPACE,Typeface.NORMAL); stopwatchDisplay.setGravity(Gravity.CENTER); stopwatchDisplay.setPadding(0,Ui.dp(this,18),0,Ui.dp(this,14));
+        stopwatchDisplay.setTypeface(Typeface.MONOSPACE,Typeface.NORMAL); stopwatchDisplay.setGravity(Gravity.CENTER); stopwatchDisplay.setPadding(0,Ui.dp(this,18),0,Ui.dp(this,14));stopwatchDisplay.setSingleLine(true);stopwatchDisplay.setAutoSizeTextTypeUniformWithConfiguration(24,46,1,android.util.TypedValue.COMPLEX_UNIT_SP);
         stopwatchAnalog=new ClockFaceActivity.AnalogFace(this);
         stopwatchAnalog.configure(p().getBoolean("analog_numbers",true),p().getBoolean("analog_ticks",true),p().getBoolean("analog_seconds",true),p().getInt("analog_number_scale",1));
         stopwatchStage.addView(stopwatchDisplay,new FrameLayout.LayoutParams(-1,-1));
@@ -930,7 +930,7 @@ public class ClockActivity extends Activity {
         LinearLayout importRow=new LinearLayout(this);importRow.setGravity(Gravity.CENTER_VERTICAL);importRow.setPadding(0,Ui.dp(this,6),0,0);
         stopwatchImport=Ui.button(this,"時間記録に追加",false);stopwatchImport.setOnClickListener(v->importStoppedStopwatch());importRow.addView(stopwatchImport,new LinearLayout.LayoutParams(0,Ui.dp(this,48),1));
         stopwatchLapImport=Ui.ghostButton(this,"ラップから追加");stopwatchLapImport.setOnClickListener(v->showLapImportPicker());importRow.addView(stopwatchLapImport,new LinearLayout.LayoutParams(0,Ui.dp(this,48),1));body.addView(importRow);
-        Button timeLog=Ui.ghostButton(this,"時間記録を開く");timeLog.setOnClickListener(v->startActivity(new Intent(this,TimeLogActivity.class)));LinearLayout.LayoutParams tlp=new LinearLayout.LayoutParams(-1,Ui.dp(this,46));tlp.setMargins(0,Ui.dp(this,4),0,0);body.addView(timeLog,tlp);
+        Button timeLog=Ui.ghostButton(this,"時間記録を開く");timeLog.setOnClickListener(v->startActivity(new Intent(this,TimeLogActivity.class)));LinearLayout.LayoutParams tlp=new LinearLayout.LayoutParams(-1,Ui.dp(this,48));tlp.setMargins(0,Ui.dp(this,4),0,0);body.addView(timeLog,tlp);
         lapList=text("",15,Ui.MUTED); lapList.setTypeface(Typeface.MONOSPACE); lapList.setPadding(0,Ui.dp(this,18),0,Ui.dp(this,8)); body.addView(lapList); renderLaps();
         applyStopwatchFaceMode();updateStopwatch();
     }
@@ -1066,7 +1066,7 @@ public class ClockActivity extends Activity {
         String[] presetNames={"30秒","1分","3分","5分","10分","30分","1時間"}; long[] presetMs={30000L,60000L,180000L,300000L,600000L,1800000L,3600000L};
         for(int i=0;i<presetNames.length;i++){final long value=presetMs[i];TextView a=timerTextAction(presetNames[i],13,Ui.TEXT);a.setOnClickListener(v->setQuickDuration(value));presets.addView(a);} presetsScroll.addView(presets);body.addView(presetsScroll,Ui.gapTop(this,2));
 
-        TextView adjustLabel=text("細かく調整  ▾",14,Ui.MUTED);adjustLabel.setClickable(true);adjustLabel.setPadding(0,Ui.dp(this,8),0,Ui.dp(this,8)); body.addView(adjustLabel,Ui.gapTop(this,8));
+        TextView adjustLabel=text("細かく調整  ▾",14,Ui.MUTED);adjustLabel.setClickable(true);adjustLabel.setPadding(0,Ui.dp(this,8),0,Ui.dp(this,8));adjustLabel.setMinHeight(Ui.dp(this,48));adjustLabel.setGravity(Gravity.CENTER_VERTICAL|Gravity.START); body.addView(adjustLabel,Ui.gapTop(this,8));
         HorizontalScrollView adjustScroll=new HorizontalScrollView(this);adjustScroll.setHorizontalScrollBarEnabled(false);LinearLayout adjust=new LinearLayout(this);
         String[] labels={"−1秒","＋1秒","−10秒","＋10秒","−30秒","＋30秒","−1分","＋1分","−5分","＋5分","−10分","＋10分","−1時間","＋1時間"}; long[] deltas={-1000L,1000L,-10000L,10000L,-30000L,30000L,-60000L,60000L,-300000L,300000L,-600000L,600000L,-3600000L,3600000L};
         for(int i=0;i<labels.length;i++){final long delta=deltas[i];TextView a=timerTextAction(labels[i],13,Ui.TEXT);a.setOnClickListener(v->adjustQuickDuration(delta));adjust.addView(a);} adjustScroll.addView(adjust);body.addView(adjustScroll,Ui.gapTop(this,2));
@@ -1124,7 +1124,7 @@ public class ClockActivity extends Activity {
                 android.content.res.ColorStateList.valueOf(0x33FFFFFF),
                 Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,12,this),
                 Ui.round(android.graphics.Color.WHITE,12,this)));
-        t.setMinHeight(Ui.dp(this,44));
+        t.setMinHeight(Ui.dp(this,48));
         return t;
     }
 

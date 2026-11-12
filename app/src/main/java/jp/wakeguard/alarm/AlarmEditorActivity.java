@@ -245,7 +245,7 @@ public class AlarmEditorActivity extends Activity {
 
         HorizontalScrollView hsv=new HorizontalScrollView(this);hsv.setHorizontalScrollBarEnabled(false);LinearLayout presets=new LinearLayout(this);
         int[] sec={30,60,180,300,600,900,1800,3600};String[] labels={"30秒","1分","3分","5分","10分","15分","30分","1時間"};
-        for(int i=0;i<sec.length;i++){final int value=sec[i];Button b=Ui.ghostButton(this,labels[i]);b.setBackground(Ui.round(Ui.SURFACE_2,12,this));b.setOnClickListener(v->{if(full)draft.fullStopDurationSec=value;else draft.ringDurationSec=value;renderAutoStop();d.dismiss();});LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-2,Ui.dp(this,44));bp.setMargins(0,0,Ui.dp(this,6),0);presets.addView(b,bp);}
+        for(int i=0;i<sec.length;i++){final int value=sec[i];Button b=Ui.ghostButton(this,labels[i]);b.setBackground(Ui.round(Ui.SURFACE_2,12,this));b.setOnClickListener(v->{if(full)draft.fullStopDurationSec=value;else draft.ringDurationSec=value;renderAutoStop();d.dismiss();});LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-2,Ui.dp(this,48));bp.setMargins(0,0,Ui.dp(this,6),0);presets.addView(b,bp);}
         hsv.addView(presets);box.addView(hsv,Ui.gapTop(this,12));
 
         box.addView(Ui.sectionHeader(this,"カスタム"),Ui.gapTop(this,10));

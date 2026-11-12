@@ -229,7 +229,7 @@ public class AlarmActivity extends Activity {
             frame.addView(stop,stopLp);stop.bringToFront();
             if(!Prefs.sessionIsTest(this)){FrameLayout.LayoutParams snoozeLp=new FrameLayout.LayoutParams(Ui.dp(this,140),Ui.dp(this,48),Gravity.TOP|Gravity.START);snoozeLp.setMargins(Ui.dp(this,16),Ui.dp(this,28),0,0);frame.addView(snooze,snoozeLp);snooze.bringToFront();}
         }
-        setContentView(frame);if(alarmVideoMode)startAlarmVideo();
+        setContentView(frame);Ui.applySystemBarInsets(this,frame);if(alarmVideoMode)startAlarmVideo();
     }
     private String alarmMediaRaw(){String x=AlarmProfiles.soundUri(this,Prefs.activeAlarmId(this));return x==null?"":x;}
     private boolean isVideoAlarm(){String raw=alarmMediaRaw();String name=AlarmProfiles.soundName(this,Prefs.activeAlarmId(this));if(raw.trim().isEmpty())return false;try{if(raw.startsWith("content:")){String t=getContentResolver().getType(android.net.Uri.parse(raw));if(t!=null&&t.toLowerCase(java.util.Locale.ROOT).startsWith("video/"))return true;}}catch(Throwable ignored){}String x=raw.toLowerCase(java.util.Locale.ROOT);if(x.endsWith(".mp4")||x.endsWith(".m4v")||x.endsWith(".3gp")||x.endsWith(".3gpp")||x.endsWith(".webm")||x.endsWith(".mkv")||x.endsWith(".ts"))return true;String n=name==null?"":name.toLowerCase(java.util.Locale.ROOT);return n.endsWith(".mp4")||n.endsWith(".m4v")||n.endsWith(".3gp")||n.endsWith(".3gpp")||n.endsWith(".webm")||n.endsWith(".mkv")||n.endsWith(".ts");}

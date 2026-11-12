@@ -84,7 +84,7 @@ public class MainActivity extends Activity {
         View horizonLine=new View(this);horizonLine.setBackgroundColor(Ui.HORIZON_LINE);
         FrameLayout.LayoutParams lineLp=new FrameLayout.LayoutParams(-1,Ui.dp(this,1),Gravity.CENTER_VERTICAL);
         horizonTrack.addView(horizonLine,lineLp);
-        horizonDot=new View(this);horizonDot.setBackground(Ui.round(Ui.ACCENT_2,8,this));
+        horizonDot=new View(this);horizonDot.setBackground(Ui.round(Ui.HERO_TEXT,8,this));
         FrameLayout.LayoutParams dotLp=new FrameLayout.LayoutParams(Ui.dp(this,8),Ui.dp(this,8),Gravity.START|Gravity.CENTER_VERTICAL);
         horizonTrack.addView(horizonDot,dotLp);
         LinearLayout.LayoutParams trackLp=new LinearLayout.LayoutParams(-1,Ui.dp(this,10));
