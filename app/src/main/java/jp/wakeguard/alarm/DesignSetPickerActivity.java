@@ -90,7 +90,7 @@ public final class DesignSetPickerActivity extends Activity {
         heading.setGravity(Gravity.CENTER_VERTICAL);
         if (!"none".equals(preset.mascotId)) {
             MascotArtView mascot = new MascotArtView(this, preset.mascotId);
-            mascot.setMascotColors(setTheme.accent, setTheme.accent2, setTheme.text);
+            mascot.setMascotColors(setTheme.accent, setTheme.accent2, Ui.TEXT);
             heading.addView(mascot, new LinearLayout.LayoutParams(Ui.dp(this, 56), Ui.dp(this, 56)));
         } else {
             TextView mark = Ui.title(this, "✦", 30);

@@ -13,6 +13,7 @@ Status: implementation review for 2.16.0, 2026-11-12. This file replaces the pre
 
 - Large illustrations use a low-contrast paper plate; 56 dp catalog previews omit the common frame and enlarge the art so the selected design card supplies the background.
 - Repeated paper-colored rims were removed from character parts. Pigment blocks and species-specific ink contours now define the forms, reducing the shared sticker look.
+- Compact previews add one outline pass over cached unioned silhouettes, with matched strokes for disconnected limbs. The set picker remains on the current UI surface, so its mascot edge uses `Ui.TEXT`, while hero placements use `Ui.HERO_TEXT`; internal strokes stay dark ink.
 - The dragon uses a long neck, radial frill, rounded snout, and repaired tail-tip path instead of generic wings and horn spikes. The fox has a folded far ear and low tail sweep. The owl keeps unequal features and a perched pose. The robot uses brass/steel/copper roles, an unequal bell pair, twelve full-size dial ticks, and near-6:45 hands.
 - Dot radii use a device-pixel minimum; this avoids the 1.8-unit floor that nearly erased the dragon's pupil in 56 dp previews.
 - Body pigments do not follow the selected UI palette. Palette color stays on each figure's small badge/accessory.
@@ -26,7 +27,7 @@ Status: implementation review for 2.16.0, 2026-11-12. This file replaces the pre
 
 ## Remaining validation
 
-- `git diff --check` passed, and final local `assembleDebug` completed successfully in `../.workbench_logs/WakeGuard/build_assembleDebug_20261112-133045.log` from the workspace root.
+- `git diff --check` passed, and final local `assembleDebug` completed successfully in `../.workbench_logs/WakeGuard/build_assembleDebug_20261112-134926.log` from the workspace root.
 - The GitHub stable artifact signature and checksum are verified separately after the committed workflow run; this source review does not claim that check.
 - No Android device/emulator is connected; 56 dp and dark-hero screenshots are not verified.
 

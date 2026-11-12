@@ -96,6 +96,7 @@ public class MainActivity extends Activity {
         nextCard.addView(emptyHero,new FrameLayout.LayoutParams(-1,-2));
         if(!"none".equals(mascotId)){
             MascotArtView mascot=new MascotArtView(this,mascotId);
+            mascot.setMascotColors(Ui.ACCENT,Ui.ACCENT_2,Ui.HERO_TEXT);
             mascot.setClickable(false);mascot.setFocusable(false);
             heroMascot=mascot;
             FrameLayout.LayoutParams mascotLp=new FrameLayout.LayoutParams(
@@ -201,6 +202,7 @@ public class MainActivity extends Activity {
             content.addView(symbol,new LinearLayout.LayoutParams(Ui.dp(this,56),Ui.dp(this,56)));
         }else{
             MascotArtView mascot=new MascotArtView(this,mascotId);
+            mascot.setMascotColors(Ui.ACCENT,Ui.ACCENT_2,onHero?Ui.HERO_TEXT:Ui.TEXT);
             mascot.setClickable(false);mascot.setFocusable(false);
             content.addView(mascot,new LinearLayout.LayoutParams(
                     Ui.dp(this,HomeMetrics.EMPTY_CHARACTER_DP),Ui.dp(this,HomeMetrics.EMPTY_CHARACTER_DP)));

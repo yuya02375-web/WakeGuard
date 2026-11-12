@@ -66,6 +66,7 @@ public final class MascotArtView extends View {
     private Mascot mascot = Mascot.DRAGON;
     private boolean mascotVisible = true;
     private int primaryOverride = Color.TRANSPARENT;
+    private int outlineOverride = Color.TRANSPARENT;
 
     public MascotArtView(Context context) { this(context, (AttributeSet) null); }
 
@@ -113,14 +114,16 @@ public final class MascotArtView extends View {
         setMascot(Mascot.fromId(id));
     }
 
-    /** Palette colors are limited to one small accessory; outline is retained for compatibility. */
+    /** Palette colors stay on one accessory; the outline color is used only as a compact silhouette edge. */
     public void setMascotColors(int primary, int secondary, int outline) {
         primaryOverride = primary;
+        outlineOverride = outline;
         invalidate();
     }
 
     public void clearMascotColors() {
         primaryOverride = Color.TRANSPARENT;
+        outlineOverride = Color.TRANSPARENT;
         invalidate();
     }
 
@@ -141,7 +144,8 @@ public final class MascotArtView extends View {
         drawingBox.set(getPaddingLeft(), getPaddingTop(),
                 getPaddingLeft() + width, getPaddingTop() + height);
         int accent = primaryOverride != Color.TRANSPARENT ? primaryOverride : Ui.ACCENT;
-        drawMascot(canvas, mascot, drawingBox, accent,
+        int contrastOutline = outlineOverride != Color.TRANSPARENT ? outlineOverride : Ui.TEXT;
+        drawMascot(canvas, mascot, drawingBox, accent, contrastOutline,
                 getResources().getDisplayMetrics().density, painter);
     }
 
@@ -149,7 +153,7 @@ public final class MascotArtView extends View {
     public static void drawCharacter(Canvas canvas, String characterId, RectF box, int accent) {
         Mascot selected = mascotForDrawing(characterId);
         if (selected == null) return;
-        drawMascot(canvas, selected, box, accent,
+        drawMascot(canvas, selected, box, accent, Ui.TEXT,
                 Resources.getSystem().getDisplayMetrics().density, threadPainter());
     }
 
@@ -161,7 +165,7 @@ public final class MascotArtView extends View {
         float density = context == null
                 ? Resources.getSystem().getDisplayMetrics().density
                 : context.getResources().getDisplayMetrics().density;
-        drawMascot(canvas, selected, box, accent, density, threadPainter());
+        drawMascot(canvas, selected, box, accent, Ui.TEXT, density, threadPainter());
     }
 
     private static Painter threadPainter() {
@@ -179,7 +183,7 @@ public final class MascotArtView extends View {
     }
 
     private static void drawMascot(Canvas canvas, Mascot selected, RectF box,
-                                   int accent, float density, Painter p) {
+                                   int accent, int contrastOutline, float density, Painter p) {
         if (canvas == null || selected == null || box == null
                 || box.width() <= 0f || box.height() <= 0f) return;
         int save = canvas.save();
@@ -199,6 +203,7 @@ public final class MascotArtView extends View {
         canvas.translate(inset, inset);
         canvas.scale(figureScale, figureScale);
         p.configure(unitScale * figureScale, fullDetails);
+        if (!fullDetails) drawCompactContrastEdge(canvas, selected, contrastOutline, p);
         switch (selected) {
             case FOX: drawFox(canvas, accent, fullDetails, p); break;
             case OWL: drawOwl(canvas, accent, fullDetails, p); break;
@@ -207,6 +212,31 @@ public final class MascotArtView extends View {
         }
         canvas.restoreToCount(figureSave);
         canvas.restoreToCount(save);
+    }
+
+    /** One theme-aware outer contour keeps small figures legible without outlining every part. */
+    private static void drawCompactContrastEdge(Canvas canvas, Mascot selected, int color, Painter p) {
+        switch (selected) {
+            case FOX:
+                p.strokeDp(canvas, ART.foxCompactSilhouette, color, 5f);
+                break;
+            case OWL:
+                p.strokeDp(canvas, ART.owlCompactSilhouette, color, 5f);
+                p.strokeDp(canvas, ART.owlBranch, color, 8.5f);
+                p.strokeDp(canvas, ART.owlFeet, color, 8.5f);
+                break;
+            case ROBOT:
+                p.strokeDp(canvas, ART.robotCompactSilhouette, color, 5f);
+                p.strokeDp(canvas, ART.robotFarArm, color, 8.5f);
+                p.strokeDp(canvas, ART.robotLegs, color, 8.5f);
+                p.strokeDp(canvas, ART.robotWindingKey, color, 8.5f);
+                break;
+            default:
+                p.strokeDp(canvas, ART.dragonCompactSilhouette, color, 5f);
+                p.strokeDp(canvas, ART.dragonTail, color, 8.5f);
+                p.strokeDp(canvas, ART.dragonTailTip, color, 8.5f);
+                break;
+        }
     }
 
     /** A restrained, slightly irregular field-note plate shared by all species. */
@@ -388,6 +418,10 @@ public final class MascotArtView extends View {
             canvas.drawPath(path, stroke);
         }
 
+        void strokeDp(Canvas canvas, Path path, int color, float widthDp) {
+            stroke(canvas, path, color, widthDp / unitScale);
+        }
+
         void hairline(Canvas canvas, Path path, int color) {
             stroke.setColor(color);
             stroke.setStrokeWidth(Math.max(.01f, 1f / unitScale));
@@ -414,6 +448,7 @@ public final class MascotArtView extends View {
     private static final class Art {
         final Path plate = new Path();
         final Path plateInnerRule = new Path();
+        final Path dragonCompactSilhouette = new Path();
         final Path dragonTail = new Path();
         final Path dragonTailTip = new Path();
         final Path dragonBackFoot = path(37, 76, 48, 77, 50, 89, 35, 90, 32, 85);
@@ -433,6 +468,7 @@ public final class MascotArtView extends View {
         final Path dragonTagRidge = path(62, 66, 64, 63, 66, 65, 68, 62);
 
         final Path foxTail = new Path();
+        final Path foxCompactSilhouette = new Path();
         final Path foxTailTip = path(12, 83, 14, 88, 20, 86, 26, 81, 22, 77);
         final Path foxTailHatch = new Path();
         final Path foxTailHatch2 = new Path();
@@ -451,6 +487,7 @@ public final class MascotArtView extends View {
         final Path foxScarf = path(48, 47, 61, 50, 69, 45, 65, 55, 56, 59, 48, 53);
 
         final Path owlBranch = new Path();
+        final Path owlCompactSilhouette = new Path();
         final Path owlBody = new Path();
         final Path owlFarWing = new Path();
         final Path owlNearWing = new Path();
@@ -467,6 +504,7 @@ public final class MascotArtView extends View {
         final Path owlPinMark = path(54, 69, 60, 69);
 
         final Path robotFarArm = path(38, 58, 27, 68, 29, 76);
+        final Path robotCompactSilhouette = new Path();
         final Path robotBody = new Path();
         final Path robotChest = path(48, 57, 72, 59, 75, 77, 47, 78);
         final Path robotHead = new Path();
@@ -594,6 +632,26 @@ public final class MascotArtView extends View {
             robotNearArm.moveTo(73, 60); robotNearArm.lineTo(84, 66); robotNearArm.lineTo(78, 76); robotNearArm.close();
             robotLegs.moveTo(51, 80); robotLegs.lineTo(49, 89); robotLegs.lineTo(44, 91);
             robotLegs.moveTo(68, 80); robotLegs.lineTo(71, 89); robotLegs.lineTo(78, 90);
+
+            addUnion(dragonCompactSilhouette, dragonFrill, dragonBackFoot, dragonBody,
+                    dragonFarFoot, dragonNearFoot, dragonNeck, dragonHead, dragonJaw);
+            addUnion(foxCompactSilhouette, foxTail, foxTailTip, foxBody, foxFarLeg,
+                    foxNearLeg, foxFarEar, foxNearEar, foxHead);
+            addUnion(owlCompactSilhouette, owlBody, owlFarWing, owlNearWing);
+            addUnion(robotCompactSilhouette, robotBody, robotHead, robotBellLeft,
+                    robotBellRight, robotNearArm);
+        }
+
+        private static void addUnion(Path target, Path... parts) {
+            for (Path part : parts) {
+                if (target.isEmpty()) {
+                    target.set(part);
+                    continue;
+                }
+                Path combined = new Path();
+                if (combined.op(target, part, Path.Op.UNION)) target.set(combined);
+                else target.addPath(part);
+            }
         }
     }
 }
