@@ -8,8 +8,8 @@ public final class HomeMetrics {
     public static final int HERO_SIDE_DP=18;
     public static final int HERO_TOP_DP=14;
     public static final int HERO_TIME_SP=50;
-    public static final int HERO_CHARACTER_DP=96;
-    public static final int EMPTY_CHARACTER_DP=72;
+
+
     public static final int ALARM_TIME_SP=34;
     public static final int TILE_MIN_HEIGHT_DP=132;
     public static final int NAV_TAB_HEIGHT_DP=64;

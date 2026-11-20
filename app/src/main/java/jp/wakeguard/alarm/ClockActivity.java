@@ -353,13 +353,15 @@ public class ClockActivity extends Activity {
     private void buildWorldOverview(){
         LinkedHashSet<String> zones=loadZones();
         LinearLayout localCard=Ui.card(this);
-        localCard.setBackground(Ui.gradientRound(this,26,Ui.SURFACE,Ui.SURFACE_2));
+        localCard.setBackground(Ui.gradientRound(this,26,Ui.HERO_START,Ui.HERO_END));
         localCard.setPadding(Ui.dp(this,22),Ui.dp(this,19),Ui.dp(this,22),Ui.dp(this,19));
-        localCard.addView(Ui.overline(this,"現在の時刻"));
+        TextView localEyebrow=Ui.overline(this,"現在の時刻");localEyebrow.setTextColor(Ui.HERO_TEXT);localCard.addView(localEyebrow);
         overviewLocalTime=Ui.title(this,"--:--",52);
+        overviewLocalTime.setTextColor(Ui.HERO_TEXT);
         overviewLocalTime.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));
         localCard.addView(overviewLocalTime,Ui.gapTop(this,4));
         overviewLocalDate=Ui.text(this,"",13,Ui.MUTED);
+        overviewLocalDate.setTextColor(Ui.HERO_TEXT);
         localCard.addView(overviewLocalDate,Ui.gapTop(this,3));
         body.addView(localCard,Ui.cardParams(this));
         TextView citiesHeader=Ui.sectionHeader(this,"登録した都市");

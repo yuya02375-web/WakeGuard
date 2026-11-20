@@ -47,7 +47,7 @@ public final class StreakTracker {
         Prefs.totalWakeups(c,Prefs.totalWakeups(c)+1);
         Prefs.lastSuccessEpochDay(c,epochDay);
         Prefs.addSuccessDay(c,day);
-        StreakGrowth.onWakeSuccess(c);
+
         StreakProtection.onSuccessfulWake(c,next);
         try{WidgetSuite.refreshAll(c);}catch(Throwable ignored){}
     }

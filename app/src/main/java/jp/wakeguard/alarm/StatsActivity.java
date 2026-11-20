@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
@@ -25,9 +26,10 @@ import java.util.Set;
 public class StatsActivity extends Activity {
     private YearMonth month=YearMonth.now();
     private LinearLayout body;
-    private TextView currentValue,streakUnit,bestValue,totalValue,monthTitle,monthSummary,growthLevel,growthForm,protectionValue,protectionMetricValue;
+    private LinearLayout recentWeek;
+    private TextView currentValue,streakUnit,bestValue,totalValue,monthTitle,monthSummary,protectionValue,protectionMetricValue;
     private GridLayout calendar;
-    private StreakCompanionView companion;
+
     private Switch protectionAuto;
     private boolean updatingProtection=false;
 
@@ -39,14 +41,14 @@ public class StatsActivity extends Activity {
             Ui.finishNoAnimation(this);
             return;
         }
-        StreakGrowth.ensure(this);
+
         StreakProtection.ensure(this);
         buildUi();
         refresh();
     }
 
-    @Override protected void onResume(){super.onResume();if(companion!=null)companion.onResume();refresh();}
-    @Override protected void onPause(){if(companion!=null)companion.onPause();super.onPause();}
+    @Override protected void onResume(){super.onResume();refresh();}
+    @Override protected void onPause(){super.onPause();}
 
     private void buildUi(){
         LinearLayout root=new LinearLayout(this);
@@ -76,7 +78,7 @@ public class StatsActivity extends Activity {
         setContentView(root);
         Ui.applySystemBarInsets(this,root);
 
-        addGrowthCard();
+        addStreakCard();
         addMetrics();
         addProtectionCard();
         addCalendar();
@@ -121,40 +123,40 @@ public class StatsActivity extends Activity {
         Ui.finishNoAnimation(this);
     }
 
-    private void addGrowthCard(){
-        LinearLayout card=new LinearLayout(this);
-        card.setGravity(Gravity.CENTER_VERTICAL);
-        card.setPadding(Ui.dp(this,14),Ui.dp(this,14),Ui.dp(this,18),Ui.dp(this,14));
-        card.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,24,this));
+    private void addStreakCard(){
+        LinearLayout card=Ui.card(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(Ui.dp(this,20),Ui.dp(this,17),Ui.dp(this,20),Ui.dp(this,17));
+        card.setBackground(Ui.gradientRound(this,22,Ui.HERO_START,Ui.HERO_END));
 
-        companion=new StreakCompanionView(this);
-        companion.setBackground(Ui.round(Ui.HERO_START,20,this));
-        LinearLayout.LayoutParams companionLp=new LinearLayout.LayoutParams(Ui.dp(this,118),Ui.dp(this,150));
-        companionLp.setMargins(0,0,Ui.dp(this,12),0);
-        card.addView(companion,companionLp);
-
-        LinearLayout copy=new LinearLayout(this);
-        copy.setOrientation(LinearLayout.VERTICAL);
-        copy.setGravity(Gravity.CENTER_VERTICAL);
         TextView eyebrow=Ui.overline(this,"現在のストリーク");
-        copy.addView(eyebrow);
+        eyebrow.setTextColor(Ui.HERO_TEXT);
+        card.addView(eyebrow);
         LinearLayout streakRow=new LinearLayout(this);
         streakRow.setGravity(Gravity.BOTTOM);
         currentValue=Ui.title(this,"0",52);
         currentValue.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));
+        currentValue.setTextColor(Ui.HERO_TEXT);
         currentValue.setSingleLine(true);
         currentValue.setPadding(0,Ui.dp(this,2),0,Ui.dp(this,4));
         streakRow.addView(currentValue);
-        streakUnit=Ui.text(this,"日数単位",16,Ui.TEXT);
+        streakUnit=Ui.text(this,streakUnitLabel(0),16,Ui.HERO_TEXT);
         streakUnit.setPadding(Ui.dp(this,3),0,0,Ui.dp(this,9));
         streakRow.addView(streakUnit);
-        copy.addView(streakRow);
-        growthLevel=Ui.title(this,"Lv.1",16);
-        copy.addView(growthLevel);
-        growthForm=Ui.text(this,"火種",13,Ui.MUTED);
-        growthForm.setPadding(0,Ui.dp(this,3),0,0);
-        copy.addView(growthForm);
-        card.addView(copy,new LinearLayout.LayoutParams(0,-2,1));
+        card.addView(streakRow);
+        LinearLayout weekHeading=new LinearLayout(this);
+        weekHeading.setGravity(Gravity.CENTER_VERTICAL);
+        weekHeading.setPadding(0,Ui.dp(this,8),0,Ui.dp(this,7));
+        TextView weekLabel=Ui.text(this,"直近7日",12,Ui.HERO_TEXT);
+        weekLabel.setTypeface(null,Typeface.BOLD);
+        weekHeading.addView(weekLabel,new LinearLayout.LayoutParams(0,-2,1));
+        TextView weekLegend=Ui.text(this,"● "+I18n.tr(this,"成功")+"   ○ "+I18n.tr(this,"保護"),9,Ui.withAlpha(Ui.HERO_TEXT,0xCC));
+        weekLegend.setGravity(Gravity.CENTER_VERTICAL);
+        weekHeading.addView(weekLegend);
+        card.addView(weekHeading);
+        recentWeek=new LinearLayout(this);
+        recentWeek.setOrientation(LinearLayout.HORIZONTAL);
+        card.addView(recentWeek,new LinearLayout.LayoutParams(-1,Ui.dp(this,57)));
         LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);
         lp.setMargins(0,0,0,Ui.dp(this,14));
         body.addView(card,lp);
@@ -171,10 +173,9 @@ public class StatsActivity extends Activity {
     }
 
     private TextView addMetric(LinearLayout row,String label,String value){
-        LinearLayout cell=new LinearLayout(this);
+        LinearLayout cell=Ui.card(this);
         cell.setOrientation(LinearLayout.VERTICAL);
         cell.setPadding(Ui.dp(this,11),Ui.dp(this,12),Ui.dp(this,8),Ui.dp(this,12));
-        cell.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,16,this));
         TextView name=Ui.text(this,label,12,Ui.MUTED);
         cell.addView(name);
         TextView number=Ui.title(this,value,18);
@@ -193,7 +194,6 @@ public class StatsActivity extends Activity {
         body.addView(header);
 
         LinearLayout card=Ui.card(this);
-        card.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,20,this));
         LinearLayout balance=Ui.row(this);
         balance.setPadding(0,0,0,Ui.dp(this,8));
         TextView label=Ui.title(this,"保護日",16);
@@ -215,10 +215,10 @@ public class StatsActivity extends Activity {
             refreshProtection();
         });
         card.addView(protectionAuto,new LinearLayout.LayoutParams(-1,-2));
-        TextView rule=Ui.text(this,"毎月1日に2日分回復し、最大3日まで持てます。起きられなかった対象日に1日だけ自動使用してストリークを守ります。保護日は成功回数や成長Lvには加算されません。",12,Ui.MUTED);
+        TextView rule=Ui.text(this,I18n.tr(this,"毎月1日に2日分回復し、最大3日まで持てます。起きられなかった対象日に1日だけ自動使用してストリークを守ります。保護日はストリークを維持しますが、成功回数には加算されません。"),13,Ui.MUTED);
         rule.setPadding(0,Ui.dp(this,6),0,0);
         card.addView(rule);
-        TextView bonus=Ui.text(this,"30日連続で実際に起床成功するごとに、保護日を1日追加します（最大3日）。",12,Ui.MUTED);
+        TextView bonus=Ui.text(this,"30日連続で実際に起床成功するごとに、保護日を1日追加します（最大3日）。",13,Ui.MUTED);
         bonus.setPadding(0,Ui.dp(this,7),0,0);
         card.addView(bonus);
         LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);
@@ -246,7 +246,6 @@ public class StatsActivity extends Activity {
 
         LinearLayout card=Ui.card(this);
         card.setPadding(Ui.dp(this,8),Ui.dp(this,9),Ui.dp(this,8),Ui.dp(this,12));
-        card.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,20,this));
         calendar=new GridLayout(this);
         calendar.setColumnCount(7);
         calendar.setUseDefaultMargins(false);
@@ -265,7 +264,7 @@ public class StatsActivity extends Activity {
         legend.addView(gap,new LinearLayout.LayoutParams(Ui.dp(this,18),1));
         addLegendItem(legend,false,"保護");
         body.addView(legend);
-        TextView note=Ui.text(this,"成功した本番アラームの日だけ成長します。保護日はストリークだけを維持し、テストアラームは記録しません。",12,Ui.MUTED);
+        TextView note=Ui.text(this,I18n.tr(this,"起床に成功した本番アラームを記録します。保護日はストリークだけを維持し、テストアラームは記録しません。"),12,Ui.MUTED);
         note.setPadding(Ui.dp(this,6),Ui.dp(this,8),Ui.dp(this,6),0);
         body.addView(note);
     }
@@ -324,20 +323,66 @@ public class StatsActivity extends Activity {
 
     private void refresh(){
         if(currentValue==null)return;
-        StreakGrowth.ensure(this);
         StreakProtection.ensure(this);
         int streak=StreakTracker.displayCurrent(this);
-        long level=StreakGrowth.level(this);
         currentValue.setText(String.valueOf(streak));
+        streakUnit.setText(streakUnitLabel(streak));
         bestValue.setText(I18n.tr(this,Prefs.bestStreak(this)+"日"));
         totalValue.setText(I18n.tr(this,Prefs.totalWakeups(this)+"回"));
-        growthLevel.setText("Lv."+level);
-        growthForm.setText(StreakGrowth.appearanceDescriptor(this,level,streak));
-        companion.setGrowth(level,streak);
+        renderRecentWeek();
         refreshProtection();
         renderCalendar();
     }
 
+    private void renderRecentWeek(){
+        if(recentWeek==null)return;
+        recentWeek.removeAllViews();
+        LocalDate today=LocalDate.now();
+        Set<String> protectedDays=StreakProtection.protectedDays(this);
+        DateTimeFormatter weekdayFormat=DateTimeFormatter.ofPattern("EE",I18n.locale(this));
+        DateTimeFormatter dateFormat=DateTimeFormatter.ofPattern(I18n.datePattern(this,"short"),I18n.locale(this));
+        for(int offset=6;offset>=0;offset--){
+            LocalDate date=today.minusDays(offset);
+            boolean success=Prefs.wasSuccessful(this,date);
+            boolean protectedDay=!success&&protectedDays.contains(date.toString());
+            LinearLayout cell=new LinearLayout(this);
+            cell.setOrientation(LinearLayout.VERTICAL);
+            cell.setGravity(Gravity.CENTER);
+            int edge=Ui.withAlpha(Ui.HERO_TEXT,date.equals(today)?0x90:0x38);
+            cell.setBackground(Ui.roundStroke(Ui.withAlpha(Ui.HERO_TEXT,date.equals(today)?0x24:0x12),edge,11,this));
+
+            TextView weekday=Ui.text(this,date.format(weekdayFormat),9,Ui.HERO_TEXT);
+            weekday.setGravity(Gravity.CENTER);
+            cell.addView(weekday,new LinearLayout.LayoutParams(-1,-2));
+            TextView number=Ui.text(this,String.valueOf(date.getDayOfMonth()),11,Ui.HERO_TEXT);
+            number.setGravity(Gravity.CENTER);
+            number.setTypeface(null,date.equals(today)?Typeface.BOLD:Typeface.NORMAL);
+            cell.addView(number,new LinearLayout.LayoutParams(-1,-2));
+
+            View marker=new View(this);
+            GradientDrawable dot=new GradientDrawable();
+            dot.setShape(GradientDrawable.OVAL);
+            if(success)dot.setColor(Ui.HERO_TEXT);
+            else if(protectedDay){dot.setColor(android.graphics.Color.TRANSPARENT);dot.setStroke(Ui.dp(this,1),Ui.HERO_TEXT);}
+            else dot.setColor(Ui.withAlpha(Ui.HERO_TEXT,0x48));
+            marker.setBackground(dot);
+            LinearLayout.LayoutParams markerParams=new LinearLayout.LayoutParams(Ui.dp(this,6),Ui.dp(this,6));
+            markerParams.topMargin=Ui.dp(this,2);
+            cell.addView(marker,markerParams);
+            String state=success?"、"+I18n.tr(this,"成功"):(protectedDay?"、"+I18n.tr(this,"保護"):"");
+            if(date.equals(today))state+="、"+I18n.tr(this,"今日");
+            cell.setContentDescription(date.format(dateFormat)+state);
+            LinearLayout.LayoutParams cellParams=new LinearLayout.LayoutParams(0,-1,1);
+            cellParams.setMargins(Ui.dp(this,2),0,Ui.dp(this,2),0);
+            recentWeek.addView(cell,cellParams);
+        }
+    }
+
+    private String streakUnitLabel(int streak) {
+        String language = I18n.language(this);
+        if ("en".equals(language)) return streak == 1 ? "day" : "days";
+        return "ko".equals(language) ? "일" : "日";
+    }
     private void refreshProtection(){
         if(protectionValue==null||protectionMetricValue==null)return;
         String available=StreakProtection.available(this)+" / "+StreakProtection.MAX_DAYS;

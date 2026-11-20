@@ -1,6 +1,6 @@
-# WakeGuard 2.13.0 art direction: Moonlit Paper
+# WakeGuard 2.13.0 art direction: Moonlit Paper (historical)
 
-Owner: art_director. Status: proposal for agreement. Scope: presentation only. No alarm logic, no saved IDs. Reference device: 360 x 800 dp.
+Historical specification from the 2.13.0 design phase. The character and mascot direction described below was removed from the app on 2026-11-19; remaining details are retained as release history.
 
 ## 1. Direction
 

@@ -67,19 +67,19 @@ public final class AppThemes {
                     : (isDark ? mix(scheme.accent, Color.WHITE, .16f) : mix(scheme.accent, Color.BLACK, .12f));
 
             if ("dawn-ink".equals(id) && !isDark) {
-                // Keep Dawn Ink's paper surfaces, while deriving emphasis from the
-                // selected accent so a blue palette never inherits coral.
-                bg2 = 0xFFEDE5DA;
-                surface2 = 0xFFF2EAE1;
-                surface3 = 0xFFE8DED2;
-                border = 0xFFD4C8BA;
+                // Keep the default palette crisp and cool: clear paper surfaces,
+                // an ink-blue action color, and restrained neutral dividers.
+                bg2 = 0xFFE7EEF2;
+                surface2 = 0xFFEDF3F6;
+                surface3 = 0xFFE5EDF1;
+                border = 0xFFD2DEE4;
                 borderHot = withAlpha(accent2, 0x70);
                 cyan = 0xFF277C83;
                 blue = 0xFF3E66A0;
                 violet = 0xFF71599C;
                 pink = 0xFFAA526C;
-                muted = 0xFF56636D;
-                muted2 = 0xFF5B5F69;
+                muted = 0xFF52636D;
+                muted2 = 0xFF5B6870;
                 success = 0xFF2E745A;
                 danger = 0xFFAD3F36;
                 heroStart = accent;
@@ -155,8 +155,8 @@ public final class AppThemes {
     // 25 themes: the existing Dawn Ink default plus 24 distinct visual directions.
     private static final ThemeSpec[] SPECS = {
         new ThemeSpec("dawn-ink", "夜明けのインク", "Dawn Ink", "새벽 잉크",
-            new Scheme(0xFFF6F2EB, 0xFFFFFCF7, 0xFF252E36, 0xFF3E5C70),
-            new Scheme(0xFF101820, 0xFF1B272E, 0xFFEDF1F0, 0xFF9AB6C6)),
+            new Scheme(0xFFF2F6F8, 0xFFFCFDFE, 0xFF1A2D3B, 0xFF286F8F),
+            new Scheme(0xFF0D1821, 0xFF15242E, 0xFFEAF3F6, 0xFF78B9D0)),
         new ThemeSpec("aurora", "オーロラ", "Aurora", "오로라",
             new Scheme(0xFFEEF7FA, 0xFFFFFFFF, 0xFF18313B, 0xFF007E9E),
             new Scheme(0xFF0C1A20, 0xFF152A33, 0xFFE7F7FA, 0xFF55C9D9)),

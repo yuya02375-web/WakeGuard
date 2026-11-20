@@ -13,25 +13,24 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-/** Shared navigation and commit bar for the five appearance screens. */
+/** Shared navigation and commit bar for the four appearance screens. */
 public final class AppearanceChrome {
     public static final int SETS = 0;
     public static final int UI_STYLE = 1;
     public static final int MOTIF = 2;
     public static final int COLOR = 3;
-    public static final int CHARACTER = 4;
 
     private static final String[][] TITLES = {
             {"デザインセット", "Design sets", "디자인 세트"},
             {"UIスタイル", "UI style", "UI 스타일"},
             {"模様・文字", "Motif & type", "무늬·글꼴"},
-            {"色・モード", "Color & mode", "색상·모드"},
-            {"キャラクター", "Character", "캐릭터"}
+            {"色・モード", "Color & mode", "색상·모드"}
+
     };
     @SuppressWarnings("unchecked")
     private static final Class<? extends Activity>[] SCREENS = new Class[] {
             DesignSetPickerActivity.class, UiProfilePickerActivity.class,
-            VisualDesignPickerActivity.class, ThemePickerActivity.class, MascotPickerActivity.class
+            VisualDesignPickerActivity.class, ThemePickerActivity.class
     };
 
     private AppearanceChrome() {}
@@ -49,7 +48,12 @@ public final class AppearanceChrome {
     public static LinearLayout header(Activity activity, int selectedTab, String subtitle) {
         LinearLayout header = new LinearLayout(activity);
         header.setOrientation(LinearLayout.VERTICAL);
-        header.setPadding(Ui.dp(activity, 16), 0, Ui.dp(activity, 16), 0);
+        header.setPadding(Ui.dp(activity, 18), Ui.dp(activity, 8), Ui.dp(activity, 18), Ui.dp(activity, 4));
+
+        TextView eyebrow = Ui.overline(activity,
+                local(activity, "WAKEGUARD  ·  APPEARANCE", "WAKEGUARD  ·  APPEARANCE", "WAKEGUARD  ·  APPEARANCE"));
+        eyebrow.setTextColor(Ui.ACCENT_2);
+        header.addView(eyebrow, new LinearLayout.LayoutParams(-1, -2));
 
         LinearLayout bar = new LinearLayout(activity);
         bar.setGravity(Gravity.CENTER_VERTICAL);
@@ -61,11 +65,11 @@ public final class AppearanceChrome {
             back.setImageDrawable(arrow);
         }
         back.setPadding(Ui.dp(activity, 12), Ui.dp(activity, 12), Ui.dp(activity, 12), Ui.dp(activity, 12));
-        back.setBackground(Ui.round(Ui.SURFACE_2, 24, activity));
+        back.setBackground(Ui.roundStroke(Ui.SURFACE_2, Ui.BORDER, 24, activity));
         back.setContentDescription(I18n.tr(activity, "戻る"));
         back.setOnClickListener(v -> Ui.finishNoAnimation(activity));
         bar.addView(back, new LinearLayout.LayoutParams(Ui.dp(activity, 48), Ui.dp(activity, 48)));
-        TextView heading = Ui.title(activity, title(activity, selectedTab), 26);
+        TextView heading = Ui.title(activity, title(activity, selectedTab), 25);
         heading.setSingleLine(true);
         heading.setEllipsize(TextUtils.TruncateAt.END);
         heading.setGravity(Gravity.CENTER_VERTICAL);
@@ -75,8 +79,10 @@ public final class AppearanceChrome {
 
         if (subtitle != null && !subtitle.isEmpty()) {
             TextView detail = Ui.text(activity, subtitle, 13, Ui.MUTED);
-            detail.setSingleLine(true);
+            detail.setMaxLines(2);
             detail.setEllipsize(TextUtils.TruncateAt.END);
+            detail.setLineSpacing(Ui.dp(activity, 2), 1.04f);
+            detail.setPadding(Ui.dp(activity, 1), 0, Ui.dp(activity, 1), Ui.dp(activity, 5));
             header.addView(detail, new LinearLayout.LayoutParams(-1, -2));
         }
 
@@ -96,7 +102,8 @@ public final class AppearanceChrome {
             chip.setSingleLine(true);
             chip.setTypeface(null, active ? Typeface.BOLD : Typeface.NORMAL);
             chip.setPadding(Ui.dp(activity, 12), 0, Ui.dp(activity, 12), 0);
-            chip.setBackground(Ui.round(active ? Ui.ACCENT_2 : Ui.SURFACE_2, 18, activity));
+            chip.setBackground(active ? Ui.round(Ui.ACCENT_2, 18, activity)
+                    : Ui.roundStroke(Ui.SURFACE_2, Ui.BORDER, 18, activity));
             target.addView(chip, new LinearLayout.LayoutParams(-2, Ui.dp(activity, 36)));
             target.setContentDescription(title(activity, index));
             target.setSelected(active);
@@ -104,7 +111,6 @@ public final class AppearanceChrome {
             target.setOnClickListener(v -> {
                 if (destination == selectedTab) return;
                 Ui.launchNoAnimation(activity, new Intent(activity, SCREENS[destination]));
-                Ui.finishNoAnimation(activity);
             });
             tabs.addView(target, new LinearLayout.LayoutParams(-2, Ui.dp(activity, 48)));
             if (active) selectedView = target;
@@ -129,6 +135,7 @@ public final class AppearanceChrome {
             setGravity(Gravity.CENTER_VERTICAL);
             setPadding(Ui.dp(activity, 16), Ui.dp(activity, 8), Ui.dp(activity, 16), Ui.dp(activity, 8));
             setBackgroundColor(Ui.SURFACE);
+            if (android.os.Build.VERSION.SDK_INT >= 21) setElevation(Ui.dp(activity, 8));
             summary = Ui.text(activity, "", 12, Ui.MUTED);
             summary.setMaxLines(2);
             summary.setEllipsize(TextUtils.TruncateAt.END);
