@@ -115,10 +115,20 @@ public class AlarmActivity extends Activity {
         i.setAction(null);
     }
 
+    private void finishStaleAlarmScreen(){
+        try{getWindow().getDecorView().setVisibility(View.INVISIBLE);}catch(Throwable ignored){}
+        try{finishAndRemoveTask();}catch(Throwable ignored){finish();}
+    }
+
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
         handleLaunchIntent(getIntent());
         if (isFinishing()) return;
+        if(!Prefs.active(this)){
+            android.util.Log.i("IGNIDO_ALARM","Discarded stale alarm screen before drawing");
+            finishStaleAlarmScreen();
+            return;
+        }
         setVolumeControlStream(AudioManager.STREAM_ALARM);
         try { setShowWhenLocked(true); } catch (Throwable ignored) {}
         try { setTurnScreenOn(true); } catch (Throwable ignored) {}
@@ -132,7 +142,7 @@ public class AlarmActivity extends Activity {
         render();
     }
 
-    @Override protected void onNewIntent(Intent intent) { super.onNewIntent(intent); setIntent(intent); handleLaunchIntent(intent); try { refreshUiForActiveSession(); } catch (Throwable ignored) {} }
+    @Override protected void onNewIntent(Intent intent) { super.onNewIntent(intent); setIntent(intent); handleLaunchIntent(intent); if(isFinishing())return; if(!Prefs.active(this)){finishStaleAlarmScreen();return;} try { refreshUiForActiveSession(); } catch (Throwable ignored) {} }
 
     private void refreshUiForActiveSession(){
         if(!Prefs.active(this)){render();return;}
@@ -205,7 +215,7 @@ public class AlarmActivity extends Activity {
             root.addView(missionCard,missionParams);buildMission(type);
         }
 
-        int snoozeMinutes=AlarmProfiles.snoozeMinutes(this,Prefs.activeAlarmId(this));Button snooze=Ui.button(this,"スヌーズ "+snoozeMinutes+"分",false);snooze.setContentDescription(I18n.tr(this,"スヌーズ "+snoozeMinutes+"分"));snooze.setOnClickListener(v->{try{startService(new Intent(this,AlarmService.class).setAction(AlarmService.ACTION_SNOOZE));}catch(Throwable ignored){}try{finishAndRemoveTask();}catch(Throwable ignored){finish();}});if(Prefs.sessionIsTest(this)||snoozeMinutes<=0)snooze.setVisibility(View.GONE);
+        int snoozeMinutes=AlarmProfiles.snoozeMinutes(this,Prefs.activeAlarmId(this));Button snooze=Ui.button(this,"スヌーズ "+snoozeMinutes+"分",false);snooze.setContentDescription(I18n.tr(this,"スヌーズ "+snoozeMinutes+"分"));snooze.setOnClickListener(v->{boolean wasActive=Prefs.active(this);Prefs.active(this,false);try{startService(new Intent(this,AlarmService.class).setAction(AlarmService.ACTION_SNOOZE));}catch(Throwable t){Prefs.active(this,wasActive);try{Prefs.lastAlarmError(this,"SnoozeService: "+t.getClass().getSimpleName());}catch(Throwable ignored){}return;}finishStaleAlarmScreen();});if(Prefs.sessionIsTest(this)||snoozeMinutes<=0)snooze.setVisibility(View.GONE);
         stop = Ui.button(this, "NONE".equals(type)?"アラームを停止":"ミッションを完了してください", true); stop.setContentDescription(I18n.tr(this,"NONE".equals(type)?"アラームを停止":"ミッションを完了してください"));stop.setEnabled("NONE".equals(type));stop.setVisibility(View.VISIBLE);stop.setMinHeight(Ui.dp(this,"NONE".equals(type)?68:64));stop.setTextSize("NONE".equals(type)?17:14);
         stop.setOnClickListener(v -> { String current=sessionType();if("NONE".equals(current))Prefs.missionComplete(this,true);if("NONE".equals(current)||missionDone()) { try { startService(new Intent(this, AlarmService.class).setAction(AlarmService.ACTION_STOP)); } catch (Throwable ignored) {} try { finishAndRemoveTask(); } catch (Throwable ignored) { finish(); } } });
         if(directVideoStop){
@@ -318,7 +328,7 @@ public class AlarmActivity extends Activity {
     private boolean missionDone(){ String t=sessionType();if("NONE".equals(t)){if(!Prefs.missionComplete(this))Prefs.missionComplete(this,true);return true;} if("STEPS".equals(t))return Prefs.stepSensorAvailable(this)&&Prefs.currentSteps(this)>=AlarmProfiles.steps(this,Prefs.activeAlarmId(this)); return Prefs.missionComplete(this); }
 
     private void render() {
-        if(!Prefs.active(this)){try{finishAndRemoveTask();}catch(Throwable ignored){finish();}return;}
+        if(!Prefs.active(this)){finishStaleAlarmScreen();return;}
         if (stop == null) return; String type=sessionType();int target=targetCount();boolean done=missionDone();
         if("NONE".equals(type)){Prefs.missionComplete(this,true);stop.setVisibility(View.VISIBLE);stop.setEnabled(true);stop.setAlpha(1f);stop.setText(I18n.tr(this,"アラームを停止"));stop.setContentDescription(I18n.tr(this,"アラームを停止"));stop.bringToFront();if(count!=null)count.setText(I18n.tr(this,"解除できます"));if(feedback!=null)feedback.setText(I18n.tr(this,"下の停止ボタンを押してください"));syncVideoState();return;}
         if(count==null)return;
@@ -329,7 +339,7 @@ public class AlarmActivity extends Activity {
     }
 
     @Override protected void onStart() { super.onStart(); activityStarted=true;visible=true;if(Prefs.active(this))syncVideoState(); }
-    @Override protected void onResume() { super.onResume(); if(!Prefs.active(this)){android.util.Log.w("IGNIDO_ALARM", "Alarm screen finished because alarm_active=false");try{finishAndRemoveTask();}catch(Throwable ignored){finish();}return;} visible = true; android.util.Log.i("IGNIDO_ALARM", "Ring screen resumed alarmId="+Prefs.activeAlarmId(this));render();syncVideoState(); }
+    @Override protected void onResume() { super.onResume(); if(!Prefs.active(this)){android.util.Log.w("IGNIDO_ALARM", "Alarm screen finished because alarm_active=false");finishStaleAlarmScreen();return;} visible = true; android.util.Log.i("IGNIDO_ALARM", "Ring screen resumed alarmId="+Prefs.activeAlarmId(this));render();syncVideoState(); }
     @Override protected void onPause() { /* Keep alarm video alive across OEM/keyguard pause transitions. */ super.onPause(); }
     @Override protected void onStop() { activityStarted=false;visible=false;if(alarmVideoMode&&alarmVideoPlayer!=null){try{alarmVideoPlayer.setPlayWhenReady(false);alarmVideoPlayer.pause();}catch(Throwable ignored){}if(Prefs.active(this)&&!Prefs.sessionSilenced(this))notifyVideoService(AlarmService.ACTION_VIDEO_FALLBACK);}super.onStop(); }
     @Override public void onWindowFocusChanged(boolean hasFocus){super.onWindowFocusChanged(hasFocus);if(hasFocus&&activityStarted)syncVideoState();}
