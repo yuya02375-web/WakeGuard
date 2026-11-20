@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - codex/restore-v295
+      - codex/wakeguard-visual-refresh-2.17.0
     paths:
       - '.github/workflows/build-v298-stable-apk.yml'
       - 'app/**'
