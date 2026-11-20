@@ -292,7 +292,7 @@ public class TimeLogActivity extends Activity {
     private void clearPendingImport(){pendingImportDurationMs=0L;pendingImportEndWallMs=0L;pendingImportLabel="ストップウォッチ";if(streakSegment!=null)streakSegment.setEnabled(true);}
 
     private void showFolderDialog(Folder existing){
-        EditText name=new EditText(this);name.setHint(I18n.tr(this,"例：勉強、バイト、運動"));name.setSingleLine(true);name.setText(existing==null?"":existing.name);name.setSelectAllOnFocus(true);
+        EditText name=new EditText(this);name.setHint(I18n.tr(this,"例：勉強、バイト、運動"));name.setTextSize(17);name.setSingleLine(true);name.setText(existing==null?"":existing.name);name.setSelectAllOnFocus(true);name.setPadding(Ui.dp(this,14),Ui.dp(this,9),Ui.dp(this,14),Ui.dp(this,9));Ui.styleInput(name,this,Ui.SURFACE_2,14);
         AlertDialog d=new AlertDialog.Builder(this).setTitle(I18n.tr(this,existing==null?"フォルダーを作成":"フォルダー名を変更")).setView(name).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"保存"),null).create();
         d.setOnShowListener(x->d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{String n=name.getText().toString().trim();if(n.isEmpty()){name.setError(I18n.tr(this,"名前を入力してください"));return;}if(existing==null){Folder created=new Folder(UUID.randomUUID().toString(),n,System.currentTimeMillis());folders.add(created);save();d.dismiss();if(pendingImportDurationMs>0L)addPendingImport(created);else showFolders();}else{existing.name=n;save();d.dismiss();showFolder(existing.id);}}));d.show();
     }

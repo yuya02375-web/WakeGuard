@@ -55,7 +55,14 @@ public class MainActivity extends Activity {
 
         LinearLayout top=new LinearLayout(this);top.setOrientation(LinearLayout.VERTICAL);
         top.setPadding(Ui.dp(this,22),Ui.dp(this,10),Ui.dp(this,22),Ui.dp(this,5));
-        top.addView(Ui.overline(this,"IGNIDO  /  WAKE"));
+        LinearLayout brandLine=new LinearLayout(this);brandLine.setGravity(Gravity.CENTER_VERTICAL);
+        TextView brand=Ui.overline(this,"IGNIDO  /  WAKE");
+        brandLine.addView(brand,new LinearLayout.LayoutParams(0,-2,1));
+        String today=LocalDate.now().format(DateTimeFormatter.ofPattern("M/d · EEE",I18n.locale(this)));
+        TextView date=Ui.text(this,today,11,Ui.MUTED_2);date.setGravity(Gravity.CENTER);
+        date.setSingleLine(true);date.setPadding(Ui.dp(this,10),Ui.dp(this,5),Ui.dp(this,10),Ui.dp(this,5));
+        date.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,11,this));
+        brandLine.addView(date,new LinearLayout.LayoutParams(-2,-2));top.addView(brandLine);
         TextView title=Ui.title(this,"アラーム",HomeMetrics.HEADER_TITLE_SP);
         title.setPadding(0,Ui.dp(this,3),0,0);top.addView(title);root.addView(top);
 
@@ -108,7 +115,12 @@ public class MainActivity extends Activity {
         list.setPadding(Ui.dp(this,18),Ui.dp(this,6),Ui.dp(this,18),Ui.dp(this,24));sv.addView(list);
         root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
 
-        Button add=Ui.button(this,"アラームを追加",true);add.setOnClickListener(v->edit(-1));
+        Button add=Ui.button(this,"アラームを追加",true);
+        android.graphics.drawable.Drawable addIcon=getDrawable(R.drawable.ic_v292_action_add).mutate();
+        addIcon.setTint(Ui.ON_ACCENT);int addIconSize=Ui.dp(this,20);
+        addIcon.setBounds(0,0,addIconSize,addIconSize);
+        add.setCompoundDrawablePadding(Ui.dp(this,8));add.setCompoundDrawables(addIcon,null,null,null);
+        add.setOnClickListener(v->edit(-1));
         LinearLayout action=new LinearLayout(this);action.setPadding(Ui.dp(this,18),Ui.dp(this,5),Ui.dp(this,18),Ui.dp(this,5));
         action.addView(add,new LinearLayout.LayoutParams(-1,-2));root.addView(action);
         root.addView(bottomNav());
@@ -238,7 +250,7 @@ public class MainActivity extends Activity {
 
     private void addAlarmRow(AlarmStore.Entry e){
         LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.VERTICAL);
-        row.setPadding(Ui.dp(this,14),Ui.dp(this,10),Ui.dp(this,14),Ui.dp(this,10));
+        row.setPadding(Ui.dp(this,16),Ui.dp(this,12),Ui.dp(this,16),Ui.dp(this,12));
         row.setBackground(Ui.alarmCard(this,e.enabled));
         if(Build.VERSION.SDK_INT>=21)row.setElevation(Ui.cardElevationPx(this));
         row.setOnClickListener(v->edit(e.id));
@@ -249,6 +261,11 @@ public class MainActivity extends Activity {
         time.setTextColor(e.enabled?Ui.ACCENT_2:Ui.MUTED_2);
         time.setTypeface(android.graphics.Typeface.create("sans-serif-light",android.graphics.Typeface.NORMAL));
         time.setIncludeFontPadding(false);
+        android.graphics.drawable.GradientDrawable statusDot=new android.graphics.drawable.GradientDrawable();
+        statusDot.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        statusDot.setColor(e.enabled?Ui.ACCENT_2:Ui.MUTED_2);
+        int statusDotSize=Ui.dp(this,6);statusDot.setBounds(0,0,statusDotSize,statusDotSize);
+        time.setCompoundDrawablePadding(Ui.dp(this,8));time.setCompoundDrawables(statusDot,null,null,null);
         LinearLayout details=new LinearLayout(this);details.setOrientation(LinearLayout.VERTICAL);
         details.setPadding(Ui.dp(this,12),0,Ui.dp(this,5),0);
         String label=(e.label==null||e.label.trim().isEmpty())?"アラーム":e.label.trim();
@@ -261,10 +278,17 @@ public class MainActivity extends Activity {
         long now=System.currentTimeMillis();
         long next=AlarmScheduler.nextTriggerMillis(this,e);
         String remaining=(e.enabled&&next>now)?String.format(I18n.locale(this),I18n.tr(this,"あと %s"),relativeText(next-now)):"";
-        String scheduleLine=scheduleText+(remaining.isEmpty()?"":"  ·  "+remaining);
-        TextView schedule=Ui.text(this,scheduleLine,12,e.enabled?Ui.ACCENT:Ui.MUTED_2);
+        if(!remaining.isEmpty()){
+            TextView countdown=Ui.text(this,remaining,11,Ui.ACCENT_2);
+            countdown.setSingleLine(true);countdown.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            LinearLayout.LayoutParams countdownLp=new LinearLayout.LayoutParams(-1,-2);
+            countdownLp.topMargin=Ui.dp(this,2);details.addView(countdown,countdownLp);
+        }
+        TextView schedule=Ui.text(this,scheduleText,11.5f,e.enabled?Ui.ACCENT_2:Ui.MUTED_2);
         schedule.setSingleLine(true);schedule.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        schedule.setPadding(0,Ui.dp(this,2),0,0);
+        schedule.setMaxWidth(Ui.dp(this,260));
+        schedule.setPadding(Ui.dp(this,8),Ui.dp(this,4),Ui.dp(this,8),Ui.dp(this,4));
+        schedule.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,9,this));
         first.addView(time,new LinearLayout.LayoutParams(-2,-2));
         first.addView(details,new LinearLayout.LayoutParams(0,-2,1));
         Switch on=new Switch(this);on.setChecked(e.enabled);Ui.styleSwitch(on,this);
@@ -282,14 +306,14 @@ public class MainActivity extends Activity {
 
         LinearLayout scheduleRow=new LinearLayout(this);
         scheduleRow.setGravity(Gravity.CENTER_VERTICAL);
-        scheduleRow.setPadding(Ui.dp(this,2),Ui.dp(this,5),0,0);
-        scheduleRow.addView(schedule,new LinearLayout.LayoutParams(-1,-2));
+        scheduleRow.setPadding(Ui.dp(this,2),Ui.dp(this,7),0,0);
+        scheduleRow.addView(schedule,new LinearLayout.LayoutParams(-2,-2));
         row.addView(scheduleRow);
 
         String missionText=I18n.tr(this,AlarmProfiles.missionName(e.missionType))+
                 "  ·  "+I18n.tr(this,AlarmProfiles.missionSummary(this,e.id));
         LinearLayout missionRow=new LinearLayout(this);missionRow.setGravity(Gravity.CENTER_VERTICAL);
-        missionRow.setPadding(Ui.dp(this,2),0,0,0);
+        missionRow.setPadding(Ui.dp(this,2),Ui.dp(this,4),0,0);
         TextView missionIcon=Ui.text(this,AlarmProfiles.missionIcon(e.missionType),11,e.enabled?Ui.ACCENT_2:Ui.MUTED);
         missionIcon.setGravity(Gravity.CENTER);missionIcon.setTypeface(null,android.graphics.Typeface.BOLD);
         missionIcon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
@@ -326,10 +350,10 @@ public class MainActivity extends Activity {
             LinearLayout.LayoutParams markerLp=new LinearLayout.LayoutParams(Ui.dp(this,9),Ui.dp(this,9));
             markerLp.setMargins(0,Ui.dp(this,18),Ui.dp(this,8),0);event.addView(marker,markerLp);
             LinearLayout.LayoutParams cardLp=new LinearLayout.LayoutParams(0,-2,1);
-            cardLp.bottomMargin=Ui.dp(this,8);event.addView(row,cardLp);
+            cardLp.bottomMargin=Ui.dp(this,10);event.addView(row,cardLp);
             list.addView(event,new LinearLayout.LayoutParams(-1,-2));
         }else{
-            LinearLayout.LayoutParams cardLp=Ui.cardParams(this);cardLp.bottomMargin=Ui.dp(this,8);
+            LinearLayout.LayoutParams cardLp=Ui.cardParams(this);cardLp.bottomMargin=Ui.dp(this,10);
             list.addView(row,cardLp);
         }
     }

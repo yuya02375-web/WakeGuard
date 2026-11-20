@@ -24,6 +24,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.WindowInsets;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -141,16 +142,53 @@ public final class Ui {
         return d;
     }
 
+    /** Apply a theme-aware input style with readable text, hint, and boundary colors. */
+    public static void styleInput(EditText field, Activity a, int surfaceColor, float radiusDp) {
+        if (field == null || a == null) return;
+        int surface = surfaceColor;
+        int ink = readableColor(TEXT, surface, 4.5);
+        int hint = readableColor(MUTED_2, surface, 4.5);
+        int edge = readableColor(BORDER, surface, 2.0);
+        field.setTextColor(ink);
+        field.setHintTextColor(hint);
+        field.setBackground(roundStroke(surface, edge, radiusDp, a));
+        if (Build.VERSION.SDK_INT >= 21) {
+            try { field.setBackgroundTintList(null); } catch (Throwable ignored) {}
+        }
+    }
+
+    private static int readableColor(int preferred, int background, double minimumContrast) {
+        if (contrastRatio(preferred, background) >= minimumContrast) return preferred;
+        int black = Color.BLACK, white = Color.WHITE;
+        return contrastRatio(black, background) >= contrastRatio(white, background) ? black : white;
+    }
+
+    private static double contrastRatio(int foreground, int background) {
+        double first = luminance(foreground), second = luminance(background);
+        return (Math.max(first, second) + .05) / (Math.min(first, second) + .05);
+    }
+
+    private static double luminance(int color) {
+        double red = linear(Color.red(color) / 255.0);
+        double green = linear(Color.green(color) / 255.0);
+        double blue = linear(Color.blue(color) / 255.0);
+        return .2126 * red + .7152 * green + .0722 * blue;
+    }
+
+    private static double linear(double channel) {
+        return channel <= .04045 ? channel / 12.92 : Math.pow((channel + .055) / 1.055, 2.4);
+    }
+
     public static Drawable alarmCard(Activity a, boolean active) {
-        GradientDrawable base = round(active ? SURFACE : SURFACE_2, 18, a);
+        GradientDrawable base = round(active ? SURFACE : SURFACE_2, 20, a);
         if ("flat".equals(UI_CARD_MODE) && "flat".equals(DESIGN_CARD)) {
             base.setStroke(0, Color.TRANSPARENT);
         } else {
             base.setStroke(dp(a, 1), active ? BORDER_HOT : BORDER);
         }
-        Drawable surface = patterned(a, base, true, 18f * CORNER_SCALE);
+        Drawable surface = patterned(a, base, true, 20f * CORNER_SCALE);
         return new android.graphics.drawable.RippleDrawable(
-                ColorStateList.valueOf(withAlpha(ACCENT, 0x20)), surface, round(Color.WHITE, 18, a));
+                ColorStateList.valueOf(withAlpha(ACCENT, 0x20)), surface, round(Color.WHITE, 20, a));
     }
 
     public static Drawable rippleBackground(Activity a, float radiusDp) {
@@ -165,7 +203,7 @@ public final class Ui {
     }
 
     public static int cardElevationPx(Activity a) {
-        return "elevated".equals(UI_CARD_MODE) || "raised".equals(DESIGN_CARD) ? touchDp(a, 3) : 0;
+        return "elevated".equals(UI_CARD_MODE) || "raised".equals(DESIGN_CARD) ? touchDp(a, 4) : 0;
     }
 
     public static GradientDrawable gradient(Activity a, int... colors) {
@@ -321,10 +359,19 @@ public final class Ui {
         b.setText(I18n.tr(a,s)); b.setAllCaps(false); b.setTextSize(15);
         b.setTypeface(designTypeface(Typeface.BOLD));
         b.setTextColor(accent ? ON_ACCENT : TEXT);
-        b.setBackground(new android.graphics.drawable.RippleDrawable(ColorStateList.valueOf(withAlpha(TEXT, 0x1A)), accent ? round(ACCENT_2, 14, a) : roundStroke(SURFACE_2, BORDER, 14, a), null));
-        b.setMinHeight(touchDp(a, 54));
+        Drawable shape;
+        if (accent) {
+            GradientDrawable primary = round(ACCENT_2, 17, a);
+            primary.setStroke(dp(a, 1), withAlpha(ON_ACCENT, 0x30));
+            shape = primary;
+        } else {
+            shape = roundStroke(SURFACE_2, BORDER, 17, a);
+        }
+        b.setBackground(new android.graphics.drawable.RippleDrawable(
+                ColorStateList.valueOf(withAlpha(TEXT, 0x1A)), shape, round(Color.WHITE, 17, a)));
+        b.setMinHeight(touchDp(a, 56));
         b.setPadding(dp(a,16),0,dp(a,16),0);
-        if (Build.VERSION.SDK_INT >= 21) b.setElevation(0);
+        if (Build.VERSION.SDK_INT >= 21) b.setElevation(accent ? dp(a, 1) : 0);
         return b;
     }
 
@@ -343,11 +390,11 @@ public final class Ui {
     public static LinearLayout card(Activity a) {
         LinearLayout l = new LinearLayout(a);
         l.setOrientation(LinearLayout.VERTICAL);
-        l.setPadding(dp(a,18),dp(a,17),dp(a,18),dp(a,17));
-        GradientDrawable surface = round(SURFACE, 18, a);
+        l.setPadding(dp(a,20),dp(a,18),dp(a,20),dp(a,18));
+        GradientDrawable surface = round(SURFACE, 20, a);
         if ("flat".equals(UI_CARD_MODE) && "flat".equals(DESIGN_CARD)) surface.setStroke(0, Color.TRANSPARENT);
         else surface.setStroke(dp(a, 1), BORDER);
-        l.setBackground(patterned(a, surface, true, 18f * CORNER_SCALE));
+        l.setBackground(patterned(a, surface, true, 20f * CORNER_SCALE));
         if (Build.VERSION.SDK_INT >= 21) l.setElevation(cardElevationPx(a));
         return l;
     }
@@ -391,7 +438,7 @@ public final class Ui {
     }
 
     public static TextView sectionHeader(Activity a, String s) {
-        TextView v = text(a, s, 14, MUTED);
+        TextView v = text(a, s, 15, TEXT);
         v.setTypeface(null, Typeface.BOLD);
         if (Build.VERSION.SDK_INT >= 21) v.setLetterSpacing(0.008f);
         v.setPadding(0, dp(a,8), 0, dp(a,8));

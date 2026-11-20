@@ -18,7 +18,7 @@ import java.util.List;
 public final class VisualDesigns {
     private static final String PREF = "wake_guard";
     private static final String KEY = "app_visual_design_id";
-    private static final String DEFAULT_ID = "paper-craft";
+    private static final String DEFAULT_ID = "landscape-mountain";
 
     private VisualDesigns() {}
 
@@ -44,7 +44,7 @@ public final class VisualDesigns {
         d("ocean-current", "nature", s("海流図", "Ocean Currents", "해류 지도"), s("波の曲線と水平のリズムで、海の流れを感じるデザイン。", "Wave lines and horizontal rhythm bring the movement of ocean currents.", "파도 곡선과 수평 리듬으로 바다의 흐름을 담았습니다."), "waves", "sans", "outline", 0.018f, 0.76f),
         d("topographic-map", "nature", s("地形図", "Topographic Map", "지형도"), s("重なる等高線が、山道の地図のような表情をつくります。", "Nested contour paths give the interface the feel of a hiking map.", "겹치는 등고선이 산길 지도 같은 표정을 만듭니다."), "contour", "mono", "double-border", 0.012f, 0.38f),
         d("tidepool", "nature", s("潮だまり", "Tide Pool", "바위 웅덩이"), s("大小のモザイク粒子で、波打ち際の小さな世界を表現。", "A mosaic of small forms evokes the miniature world of a tide pool.", "크고 작은 모자이크 무늬로 조수 웅덩이의 작은 세계를 표현합니다."), "mosaic", "sans", "raised", 0.055f, 1.24f),
-        d("landscape-mountain", "nature", s("山の稜線", "Mountain Layers", "산의 능선"), s("幾重もの山並みと朝霧を重ね、静かな高地の景色を描きます。", "Layered ridgelines and a veil of morning mist bring a quiet alpine horizon.", "겹겹의 산 능선과 아침 안개로 고요한 산악 풍경을 그립니다."), "landscape-mountain", "serif", "outline", 0.025f, 0.5f),
+        d("landscape-mountain", "nature", s("山の稜線", "Mountain Layers", "산의 능선"), s("幾重もの山並みと朝霧を重ね、静かな高地の景色を描きます。", "Layered ridgelines and a veil of morning mist bring a quiet alpine horizon.", "겹겹의 산 능선과 아침 안개로 고요한 산악 풍경을 그립니다."), "landscape-mountain", "serif", "outline", 0.025f, 0.96f),
         d("landscape-forest", "nature", s("森の天蓋", "Forest Canopy", "숲의 캐노피"), s("樹冠のシルエットと木漏れ日で、深い森の奥行きを表現。", "Overlapping treetops and scattered sunlight create the depth of an old forest.", "겹친 나무 꼭대기와 햇살 무늬로 오래된 숲의 깊이를 담았습니다."), "landscape-forest", "sans", "raised", 0.035f, 0.9f),
         d("landscape-volcano", "nature", s("火山の夜明け", "Volcanic Dawn", "화산의 새벽"), s("火口の輪郭と流れる溶岩が、夜明け前の火山を浮かび上がらせます。", "A crater silhouette and branching lava paths capture a volcano before sunrise.", "분화구의 실루엣과 갈라지는 용암의 흐름으로 동트기 전 화산을 담았습니다."), "landscape-volcano", "condensed", "double-border", 0.04f, 0.28f),
         d("landscape-dunes", "nature", s("砂丘の稜線", "Dune Lines", "사구의 능선"), s("風が刻む砂丘の曲線と長い影で、広い砂漠を描きます。", "Wind-shaped dune curves and long shadows open onto a vast desert.", "바람이 빚은 모래 언덕의 곡선과 긴 그림자로 넓은 사막을 그립니다."), "landscape-dunes", "serif", "flat", 0.02f, 1.12f),

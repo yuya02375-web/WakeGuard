@@ -45,6 +45,7 @@ public final class StreakTracker {
         Prefs.streak(c,next);
         if(next>oldBest){Prefs.bestStreak(c,next);if(oldBest>0)Prefs.pendingRecordStreak(c,next);}
         Prefs.totalWakeups(c,Prefs.totalWakeups(c)+1);
+        StreakGrowth.onWakeSuccess(c);
         Prefs.lastSuccessEpochDay(c,epochDay);
         Prefs.addSuccessDay(c,day);
 

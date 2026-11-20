@@ -27,8 +27,9 @@ public class StatsActivity extends Activity {
     private YearMonth month=YearMonth.now();
     private LinearLayout body;
     private LinearLayout recentWeek;
-    private TextView currentValue,streakUnit,bestValue,totalValue,monthTitle,monthSummary,protectionValue,protectionMetricValue;
+    private TextView currentValue,streakUnit,bestValue,totalValue,monthTitle,monthSummary,growthLevel,growthForm,protectionValue,protectionMetricValue;
     private GridLayout calendar;
+    private StreakCompanionView companion;
 
     private Switch protectionAuto;
     private boolean updatingProtection=false;
@@ -42,13 +43,14 @@ public class StatsActivity extends Activity {
             return;
         }
 
+        StreakGrowth.ensure(this);
         StreakProtection.ensure(this);
         buildUi();
         refresh();
     }
 
-    @Override protected void onResume(){super.onResume();refresh();}
-    @Override protected void onPause(){super.onPause();}
+    @Override protected void onResume(){super.onResume();if(companion!=null)companion.onResume();refresh();}
+    @Override protected void onPause(){if(companion!=null)companion.onPause();super.onPause();}
 
     private void buildUi(){
         LinearLayout root=new LinearLayout(this);
@@ -132,9 +134,20 @@ public class StatsActivity extends Activity {
         TextView eyebrow=Ui.overline(this,"現在のストリーク");
         eyebrow.setTextColor(Ui.HERO_TEXT);
         card.addView(eyebrow);
+        LinearLayout highlight=new LinearLayout(this);
+        highlight.setGravity(Gravity.CENTER_VERTICAL);
+        highlight.setPadding(0,Ui.dp(this,6),0,Ui.dp(this,4));
+        companion=new StreakCompanionView(this);
+        companion.setBackground(Ui.round(Ui.SURFACE_2,18,this));
+        LinearLayout.LayoutParams companionLp=new LinearLayout.LayoutParams(Ui.dp(this,86),Ui.dp(this,94));
+        companionLp.setMargins(0,0,Ui.dp(this,12),0);
+        highlight.addView(companion,companionLp);
+        LinearLayout streakCopy=new LinearLayout(this);
+        streakCopy.setOrientation(LinearLayout.VERTICAL);
+        streakCopy.setGravity(Gravity.CENTER_VERTICAL);
         LinearLayout streakRow=new LinearLayout(this);
         streakRow.setGravity(Gravity.BOTTOM);
-        currentValue=Ui.title(this,"0",52);
+        currentValue=Ui.title(this,"0",48);
         currentValue.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));
         currentValue.setTextColor(Ui.HERO_TEXT);
         currentValue.setSingleLine(true);
@@ -143,7 +156,17 @@ public class StatsActivity extends Activity {
         streakUnit=Ui.text(this,streakUnitLabel(0),16,Ui.HERO_TEXT);
         streakUnit.setPadding(Ui.dp(this,3),0,0,Ui.dp(this,9));
         streakRow.addView(streakUnit);
-        card.addView(streakRow);
+        streakCopy.addView(streakRow);
+        growthLevel=Ui.text(this,"Lv.1",13,Ui.HERO_TEXT);
+        growthLevel.setTypeface(null,Typeface.BOLD);
+        growthLevel.setPadding(0,Ui.dp(this,1),0,0);
+        streakCopy.addView(growthLevel);
+        growthForm=Ui.text(this,"火種",12,Ui.HERO_TEXT);
+        growthForm.setAlpha(.86f);
+        growthForm.setPadding(0,Ui.dp(this,2),0,0);
+        streakCopy.addView(growthForm);
+        highlight.addView(streakCopy,new LinearLayout.LayoutParams(0,-2,1));
+        card.addView(highlight);
         LinearLayout weekHeading=new LinearLayout(this);
         weekHeading.setGravity(Gravity.CENTER_VERTICAL);
         weekHeading.setPadding(0,Ui.dp(this,8),0,Ui.dp(this,7));
@@ -323,12 +346,17 @@ public class StatsActivity extends Activity {
 
     private void refresh(){
         if(currentValue==null)return;
+        StreakGrowth.ensure(this);
         StreakProtection.ensure(this);
         int streak=StreakTracker.displayCurrent(this);
+        long level=StreakGrowth.level(this);
         currentValue.setText(String.valueOf(streak));
         streakUnit.setText(streakUnitLabel(streak));
         bestValue.setText(I18n.tr(this,Prefs.bestStreak(this)+"日"));
         totalValue.setText(I18n.tr(this,Prefs.totalWakeups(this)+"回"));
+        growthLevel.setText("Lv."+level);
+        growthForm.setText(StreakGrowth.appearanceDescriptor(this,level,streak));
+        companion.setGrowth(level,streak);
         renderRecentWeek();
         refreshProtection();
         renderCalendar();

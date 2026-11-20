@@ -242,7 +242,7 @@ public class VisualDesignPickerActivity extends Activity {
         typeRow.addView(treatment, treatmentParams);
         sample.addView(typeRow, new LinearLayout.LayoutParams(-1, dp(24)));
 
-        LinearLayout.LayoutParams sampleParams = new LinearLayout.LayoutParams(-1, dp(180));
+        LinearLayout.LayoutParams sampleParams = new LinearLayout.LayoutParams(-1, dp(196));
         sampleParams.topMargin = dp(10);
         card.addView(sample, sampleParams);
 
