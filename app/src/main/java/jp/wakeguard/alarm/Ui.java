@@ -476,21 +476,21 @@ public final class Ui {
         boolean compact = "compact".equals(NAV_MODE);
         boolean labels = "labels".equals(NAV_MODE);
         b.setText(compact ? "" : ("ストップウォッチ".equals(name)? I18n.tr(a,"計測"):I18n.tr(a,name)));
-        b.setTextSize(labels ? 12.5f : 11.5f);
+        b.setTextSize(labels ? 12.5f : 12f);
         b.setTextColor(active?ACCENT_2:MUTED);
         b.setTypeface(designTypeface(active?Typeface.BOLD:Typeface.NORMAL));
-        b.setBackground(new NavigationIndicatorDrawable(a,b,active));
         b.setSelected(active);
         b.setContentDescription(I18n.tr(a,name)+(active?" · "+I18n.tr(a,"選択中"):""));
         int id=navIcon(name,active);
         Drawable icon=a.getDrawable(id).mutate();
         icon.setTint(active?ACCENT_2:MUTED);
-        int iconSize = touchDp(a, labels ? 0 : 22);
+        int iconSize = touchDp(a, labels ? 0 : 24);
         if (labels || iconSize == 0) b.setCompoundDrawables(null,null,null,null);
         else {
             icon.setBounds(0,0,iconSize,iconSize);
             b.setCompoundDrawables(null,icon,null,null);
         }
+        b.setBackground(new NavigationIndicatorDrawable(a,b,active));
     }
 
     /** Only the icon gets the M3 indicator, never the text below it. */
@@ -525,8 +525,8 @@ public final class Ui {
                 float half=Math.min(r.width()/2f-4*density,18*density);
                 c.drawRoundRect(cx-half,cy-18*density,cx+half,cy+18*density,18*density,18*density,paint);
             } else {
-                float cx=r.exactCenterX(),cy=iconCenterY(r),halfHeight=15.5f*density;
-                float half=Math.min(r.width()/2f-3*density,27*density);
+                float cx=r.exactCenterX(),cy=iconCenterY(r),halfHeight=16*density;
+                float half=Math.min(r.width()/2f-3*density,28*density);
                 c.drawRoundRect(cx-half,cy-halfHeight,cx+half,cy+halfHeight,16*density,16*density,paint);
             }
         }
@@ -538,8 +538,8 @@ public final class Ui {
     private static int navIcon(String name, boolean active) {
         if("アラーム".equals(name)) return active?R.drawable.ic_v292_nav_alarm_fill:R.drawable.ic_v292_nav_alarm_outline;
         if("時計".equals(name)) return active?R.drawable.ic_v292_nav_world_fill:R.drawable.ic_v292_nav_world_outline;
-        if("記録".equals(name)) return active?R.drawable.ic_v292_nav_streak_fill:R.drawable.ic_v292_nav_streak_outline;
-        if("設定".equals(name)) return R.drawable.ic_v292_action_settings;
+        if("記録".equals(name)) return active?R.drawable.ic_v292_nav_calendar_fill:R.drawable.ic_v292_nav_calendar_outline;
+        if("設定".equals(name)) return active?R.drawable.ic_v292_nav_settings_fill:R.drawable.ic_v292_nav_settings_outline;
         if("タイマー".equals(name)) return R.drawable.ic_v293_timer;
         if("ストップウォッチ".equals(name)) return active?R.drawable.ic_v292_nav_stopwatch_fill:R.drawable.ic_v292_nav_stopwatch_outline;
         return active?R.drawable.ic_v292_nav_streak_fill:R.drawable.ic_v292_nav_streak_outline;
