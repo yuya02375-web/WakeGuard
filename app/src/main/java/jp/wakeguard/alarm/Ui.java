@@ -524,7 +524,7 @@ public final class Ui {
 
     private static int navIcon(String name, boolean active) {
         if("アラーム".equals(name)) return active?R.drawable.ic_v292_nav_alarm_fill:R.drawable.ic_v292_nav_alarm_outline;
-        if("時計".equals(name)) return active?R.drawable.ic_v292_nav_world_fill:R.drawable.ic_v292_nav_world_outline;
+        if("時計".equals(name)) return active?R.drawable.ic_v292_nav_clock_fill:R.drawable.ic_v292_nav_clock_outline;
         if("記録".equals(name)) return active?R.drawable.ic_v292_nav_streak_fill:R.drawable.ic_v292_nav_streak_outline;
         if("設定".equals(name)) return R.drawable.ic_v292_action_settings;
         if("タイマー".equals(name)) return R.drawable.ic_v293_timer;
