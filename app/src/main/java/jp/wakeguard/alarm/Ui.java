@@ -479,7 +479,7 @@ public final class Ui {
         b.setTextSize(labels ? 12.5f : 11.5f);
         b.setTextColor(active?ACCENT_2:MUTED);
         b.setTypeface(designTypeface(active?Typeface.BOLD:Typeface.NORMAL));
-        b.setBackground(new NavigationIndicatorDrawable(a,active));
+        b.setBackground(new NavigationIndicatorDrawable(a,b,active));
         b.setSelected(active);
         b.setContentDescription(I18n.tr(a,name)+(active?" · "+I18n.tr(a,"選択中"):""));
         int id=navIcon(name,active);
@@ -496,10 +496,23 @@ public final class Ui {
     /** Only the icon gets the M3 indicator, never the text below it. */
     private static final class NavigationIndicatorDrawable extends Drawable {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Button button;
         private final boolean selected;
         private final float density;
         private final String mode;
-        NavigationIndicatorDrawable(Activity a,boolean selected){this.selected=selected;this.density=a.getResources().getDisplayMetrics().density;this.mode=NAV_MODE;}
+        NavigationIndicatorDrawable(Activity a,Button button,boolean selected){this.button=button;this.selected=selected;this.density=a.getResources().getDisplayMetrics().density;this.mode=NAV_MODE;}
+        private float iconCenterY(Rect r){
+            if(button==null||button.getHeight()<=0)return r.exactCenterY();
+            Drawable icon=button.getCompoundDrawables()[1];
+            if(icon==null||icon.getBounds().height()<=0)return r.exactCenterY();
+            android.text.Layout textLayout=button.getLayout();
+            int labelHeight=button.getText()!=null&&button.getText().length()>0&&textLayout!=null?textLayout.getHeight():0;
+            float iconHeight=icon.getBounds().height();
+            float blockHeight=iconHeight+(labelHeight>0?button.getCompoundDrawablePadding()+labelHeight:0);
+            float contentHeight=button.getHeight()-button.getPaddingTop()-button.getPaddingBottom();
+            float top=button.getPaddingTop()+Math.max(0f,(contentHeight-blockHeight)/2f);
+            return r.top+top+iconHeight/2f;
+        }
         @Override public void draw(Canvas c){
             if(!selected)return;
             Rect r=getBounds();
@@ -508,13 +521,13 @@ public final class Ui {
                 float y=r.bottom-2*density;
                 c.drawRoundRect(r.left+8*density,y,r.right-8*density,r.bottom,1*density,1*density,paint);
             } else if ("compact".equals(mode)) {
-                float cx=r.exactCenterX(),cy=r.exactCenterY();
+                float cx=r.exactCenterX(),cy=iconCenterY(r);
                 float half=Math.min(r.width()/2f-4*density,18*density);
                 c.drawRoundRect(cx-half,cy-18*density,cx+half,cy+18*density,18*density,18*density,paint);
             } else {
-                float cx=r.exactCenterX(),top=r.top+3*density;
+                float cx=r.exactCenterX(),cy=iconCenterY(r),halfHeight=15.5f*density;
                 float half=Math.min(r.width()/2f-3*density,27*density);
-                c.drawRoundRect(cx-half,top,cx+half,top+31*density,16*density,16*density,paint);
+                c.drawRoundRect(cx-half,cy-halfHeight,cx+half,cy+halfHeight,16*density,16*density,paint);
             }
         }
         @Override public void setAlpha(int a){paint.setAlpha(a);}
