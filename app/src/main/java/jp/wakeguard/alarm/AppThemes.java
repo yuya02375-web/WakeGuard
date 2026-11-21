@@ -62,9 +62,9 @@ public final class AppThemes {
             bg = scheme.bg;
             surface = scheme.surface;
             text = scheme.text;
-            accent = scheme.accent;
-            accent2 = scheme.accent2 != 0 ? scheme.accent2
-                    : (isDark ? mix(scheme.accent, Color.WHITE, .16f) : mix(scheme.accent, Color.BLACK, .12f));
+            accent = accessibleTextColor(scheme.accent, bg, surface);
+            accent2 = accessibleTextColor(scheme.accent2 != 0 ? scheme.accent2
+                    : (isDark ? mix(accent, Color.WHITE, .16f) : mix(accent, Color.BLACK, .12f)), bg, surface);
 
             if ("dawn-ink".equals(id) && !isDark) {
                 // Keep the default palette crisp and cool: clear paper surfaces,
@@ -78,8 +78,8 @@ public final class AppThemes {
                 blue = 0xFF3E66A0;
                 violet = 0xFF71599C;
                 pink = 0xFFAA526C;
-                muted = 0xFF52636D;
-                muted2 = 0xFF5B6870;
+                muted = accessibleTextColor(0xFF52636D, bg, surface, surface2, surface3);
+                muted2 = accessibleTextColor(0xFF5B6870, bg, surface, surface2, surface3);
                 success = 0xFF2E745A;
                 danger = 0xFFAD3F36;
                 heroStart = accent;
@@ -101,8 +101,8 @@ public final class AppThemes {
                 violet = mix(isDark ? 0xFFC6A9F0 : 0xFF71599C, accent, .12f);
                 pink = mix(isDark ? 0xFFE99DB5 : 0xFFAA526C, accent, .12f);
 
-                muted = mix(text, bg, .23f);
-                muted2 = mix(text, bg, .35f);
+                muted = accessibleTextColor(mix(text, bg, .23f), bg, surface, surface2, surface3);
+                muted2 = accessibleTextColor(mix(text, bg, .35f), bg, surface, surface2, surface3);
                 success = isDark ? 0xFF79D59B : 0xFF286B4D;
                 danger = isDark ? 0xFFFF8F98 : 0xFFA52C39;
 
@@ -338,6 +338,27 @@ public final class AppThemes {
                 Math.round(Color.red(from) * (1f - t) + Color.red(to) * t),
                 Math.round(Color.green(from) * (1f - t) + Color.green(to) * t),
                 Math.round(Color.blue(from) * (1f - t) + Color.blue(to) * t));
+    }
+
+    /** Keep muted labels and accent text readable on every standard app surface. */
+    private static int accessibleTextColor(int preferred, int... backgrounds) {
+        if (minimumContrast(preferred, backgrounds) >= 4.5) return preferred;
+        int target = minimumContrast(Color.BLACK, backgrounds) >= minimumContrast(Color.WHITE, backgrounds)
+                ? Color.BLACK : Color.WHITE;
+        if (minimumContrast(target, backgrounds) < 4.5) return target;
+        float low = 0f, high = 1f;
+        for (int i = 0; i < 18; i++) {
+            float middle = (low + high) * .5f;
+            if (minimumContrast(mix(preferred, target, middle), backgrounds) >= 4.5) high = middle;
+            else low = middle;
+        }
+        return mix(preferred, target, high);
+    }
+
+    private static double minimumContrast(int foreground, int... backgrounds) {
+        double result = Double.MAX_VALUE;
+        for (int background : backgrounds) result = Math.min(result, contrastRatio(foreground, background));
+        return result;
     }
 
     private static int withAlpha(int color, int alpha) { return (alpha << 24) | (color & 0x00FFFFFF); }
