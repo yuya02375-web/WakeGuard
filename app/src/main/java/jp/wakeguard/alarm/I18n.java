@@ -81,7 +81,10 @@ public final class I18n {
         put("リセット","Reset","초기화"); put("ラップ","Lap","랩"); put("ラップはまだありません","No laps yet","아직 랩이 없습니다");
         put("経過時間","Elapsed time","경과 시간"); put("残り時間","Time remaining","남은 시간"); put("終了","Finished","종료");
         put("一時停止中","Paused","일시정지 중"); put("もう一度","Again","다시"); put("今回だけ","One-time","이번만");
-        put("保存したタイマーはありません","No saved timers","저장된 타이머가 없습니다"); put("タイマーを作成","Create timer","타이머 만들기");
+        put("保存したタイマーはありません","No saved timers","저장된 타이머가 없습니다"); put("このフォルダーには保存したタイマーがありません","No saved timers in this folder","이 폴더에는 저장된 타이머가 없습니다."); put("保存したタイマー","Saved timers","저장된 타이머"); put("保存タイマー","Saved timers","저장된 타이머");
+        put("フォルダーを選ぶと、その中だけ表示します","Choose a folder to view its timers.","폴더를 선택하면 그 폴더의 타이머만 표시합니다."); put("フォルダーの操作","Folder actions","폴더 작업"); put("フォルダーを検索","Search folders","폴더 검색");
+        put("フォルダーが見つかりません","No folders found","폴더를 찾을 수 없습니다.");
+        put("タイマーを作成","Create timer","타이머 만들기");
         put("名前（任意）","Name (optional)","이름(선택)"); put("時間","Time","시간"); put("このタイマーを保存","Save this timer","이 타이머 저장");
         put("この時間を保存","Save this duration","이 시간 저장"); put("すぐ使う","Quick start","바로 사용"); put("よく使う時間","Common durations","자주 쓰는 시간");
         put("時間を設定してください","Set a duration","시간을 설정하세요"); put("時間を入力してください","Enter a duration","시간을 입력하세요");
