@@ -23,6 +23,7 @@ public class MainActivity extends Activity {
     private TextView nextText,nextMeta;
     private FrameLayout nextCard;
     private LinearLayout heroContent, emptyHero;
+    private View sunriseAccent;
 
     private FrameLayout horizonTrack;
     private View horizonDot;
@@ -70,8 +71,10 @@ public class MainActivity extends Activity {
         nextCard.setMinimumHeight(Ui.dp(this,HomeMetrics.HERO_HEIGHT_DP));
         nextCard.setBackground(Ui.gradientRound(this,24,Ui.HERO_START,Ui.HERO_END));
         if ("none".equals(Ui.DESIGN_PATTERN) || "rules".equals(Ui.DESIGN_PATTERN)) {
-            nextCard.addView(new SunriseAccentView(this),
-                    new FrameLayout.LayoutParams(Ui.dp(this,136),-1,Gravity.END|Gravity.CENTER_VERTICAL));
+            sunriseAccent=new SunriseAccentView(this);
+            nextCard.addView(sunriseAccent,
+                    new FrameLayout.LayoutParams(Ui.dp(this,136),Ui.dp(this,HomeMetrics.HERO_HEIGHT_DP),
+                            Gravity.END|Gravity.CENTER_VERTICAL));
         }
         View edge=new View(this);edge.setBackgroundColor(Ui.withAlpha(Ui.HERO_TEXT,31));
         FrameLayout.LayoutParams edgeLp=new FrameLayout.LayoutParams(-1,Ui.dp(this,1),Gravity.TOP);
@@ -104,7 +107,7 @@ public class MainActivity extends Activity {
         emptyHero.setMinimumHeight(Ui.dp(this,HomeMetrics.HERO_EMPTY_HEIGHT_DP));
         emptyHero.setVisibility(View.GONE);
         nextCard.addView(emptyHero,new FrameLayout.LayoutParams(-1,-2));
-        LinearLayout.LayoutParams nextLp=new LinearLayout.LayoutParams(-1,-2);
+        LinearLayout.LayoutParams nextLp=new LinearLayout.LayoutParams(-1,Ui.dp(this,HomeMetrics.HERO_HEIGHT_DP));
         nextLp.setMargins(Ui.dp(this,16),Ui.dp(this,4),Ui.dp(this,16),Ui.dp(this,3));root.addView(nextCard,nextLp);
 
         ScrollView sv=new ScrollView(this);sv.setFillViewport(true);sv.setVerticalScrollBarEnabled(false);
@@ -373,7 +376,14 @@ public class MainActivity extends Activity {
     }
 
     private void showEmptyHero(boolean empty){
-        nextCard.setMinimumHeight(Ui.dp(this,empty?HomeMetrics.HERO_EMPTY_HEIGHT_DP:HomeMetrics.HERO_HEIGHT_DP));
+        int height=Ui.dp(this,empty?HomeMetrics.HERO_EMPTY_HEIGHT_DP:HomeMetrics.HERO_HEIGHT_DP);
+        nextCard.setMinimumHeight(height);
+        LinearLayout.LayoutParams cardParams=(LinearLayout.LayoutParams)nextCard.getLayoutParams();
+        if(cardParams.height!=height){cardParams.height=height;nextCard.setLayoutParams(cardParams);}
+        if(sunriseAccent!=null){
+            FrameLayout.LayoutParams accentParams=(FrameLayout.LayoutParams)sunriseAccent.getLayoutParams();
+            if(accentParams.height!=height){accentParams.height=height;sunriseAccent.setLayoutParams(accentParams);}
+        }
         heroContent.setVisibility(empty?View.GONE:View.VISIBLE);
         emptyHero.setVisibility(empty?View.VISIBLE:View.GONE);
 

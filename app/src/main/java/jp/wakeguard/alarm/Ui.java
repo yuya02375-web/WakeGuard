@@ -166,6 +166,10 @@ public final class Ui {
         return contrastRatio(black, background) >= contrastRatio(white, background) ? black : white;
     }
 
+    public static int readableTextColor(int preferred, int background) {
+        return readableColor(preferred, background, 4.5);
+    }
+
     private static double contrastRatio(int foreground, int background) {
         double first = luminance(foreground), second = luminance(background);
         return (Math.max(first, second) + .05) / (Math.min(first, second) + .05);

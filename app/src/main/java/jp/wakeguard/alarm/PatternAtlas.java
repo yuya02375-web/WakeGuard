@@ -45,10 +45,10 @@ final class PatternAtlas {
         Rect src = new Rect(Math.round(sourceLeft), Math.round(sourceTop),
                 Math.round(sourceRight), Math.round(sourceBottom));
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG | Paint.DITHER_FLAG);
-        // Keep the main screen texture quiet, while letting the selection cards show the
-        // actual artwork at full strength. Picker previews pass an opaque source color.
+        // Keep the motif restrained on live screens, while letting selection cards show
+        // the artwork at full strength. Picker previews pass an opaque source color.
         paint.setAlpha(sourceAlpha >= 192 ? 220
-                : sourceAlpha <= 0 ? 0 : Math.max(72, Math.min(140, sourceAlpha)));
+                : sourceAlpha <= 0 ? 0 : Math.max(24, Math.min(112, sourceAlpha)));
         int save = canvas.save();
         canvas.clipRect(bounds);
         canvas.drawBitmap(bitmap, src, bounds, paint);

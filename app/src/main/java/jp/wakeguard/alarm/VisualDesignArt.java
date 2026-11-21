@@ -12,9 +12,10 @@ final class VisualDesignArt {
     static boolean draw(Canvas canvas, String id, RectF bounds, Paint source) {
         if (canvas == null || id == null || bounds == null || bounds.isEmpty() || source == null) return false;
         if (VisualDesigns.landscapeSceneId(id) != null) return false;
-        int ink = VisualDesigns.withAlpha(source.getColor(), 0x62);
-        int mid = VisualDesigns.withAlpha(source.getColor(), 0x3C);
-        int wash = VisualDesigns.withAlpha(source.getColor(), 0x1D);
+        int sourceAlpha = (source.getColor() >>> 24) & 0xFF;
+        int ink = VisualDesigns.withAlpha(source.getColor(), sourceAlpha * 0x62 / 0xFF);
+        int mid = VisualDesigns.withAlpha(source.getColor(), sourceAlpha * 0x3C / 0xFF);
+        int wash = VisualDesigns.withAlpha(source.getColor(), sourceAlpha * 0x1D / 0xFF);
         float s = Math.max(.55f, Math.min(bounds.width(), bounds.height()) / 140f);
         float l = bounds.left, t = bounds.top, w = bounds.width(), h = bounds.height();
         Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -256,7 +257,7 @@ final class VisualDesignArt {
     }
     private static void drawBubbles(Canvas c, Paint p, float x, float y, float w, float h, float s, int a, int b, int wash) {
         float[][] q={{.68f,.24f,7},{.85f,.19f,4},{.95f,.34f,8},{.75f,.52f,4},{.88f,.68f,7},{.69f,.82f,3}};
-        for(int i=0;i<q.length;i++){float cx=x+w*q[i][0],cy=y+h*q[i][1],r=q[i][2]*s;p.setStyle(Paint.Style.FILL);p.setColor(i%2==0?wash:b);c.drawCircle(cx,cy,r,p);ring(c,p,new RectF(cx-r,cy-r,cx+r,cy+r),a,.8f*s);p.setStyle(Paint.Style.FILL);p.setColor(VisualDesigns.withAlpha(0xFFFFFFFF,0x42));c.drawCircle(cx-r*.32f,cy-r*.32f,Math.max(1,s),p);}
+        for(int i=0;i<q.length;i++){float cx=x+w*q[i][0],cy=y+h*q[i][1],r=q[i][2]*s;p.setStyle(Paint.Style.FILL);p.setColor(i%2==0?wash:b);c.drawCircle(cx,cy,r,p);ring(c,p,new RectF(cx-r,cy-r,cx+r,cy+r),a,.8f*s);p.setStyle(Paint.Style.FILL);p.setColor(VisualDesigns.withAlpha(0xFFFFFFFF,((a>>>24)&0xFF)*0x42/0x62));c.drawCircle(cx-r*.32f,cy-r*.32f,Math.max(1,s),p);}
     }
     private static void drawTiles(Canvas c, Paint p, float x, float y, float w, float h, float s, int a, int b, int wash) {
         for(int row=0;row<3;row++)for(int col=0;col<3;col++){float cx=x+w*(.68f+col*.10f),cy=y+h*(.27f+row*.23f),r=4.3f*s;int k=(row+col)%3;if(k==0)polygon(c,p,new float[]{cx,cy-r,cx+r,cy,cx,cy+r,cx-r,cy},wash);else if(k==1){p.setStyle(Paint.Style.FILL);p.setColor(b);c.drawCircle(cx,cy,r*.62f,p);}else fill(c,p,new RectF(cx-r,cy-r,cx+r,cy+r),a);}

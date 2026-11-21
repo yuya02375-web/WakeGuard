@@ -345,7 +345,54 @@ public class VisualDesignPickerActivity extends Activity {
                             getResources().getDisplayMetrics().density);
                 }
             }
+            drawAlarmPreview(canvas, bounds);
             canvas.restoreToCount(save);
+        }
+
+        private void drawAlarmPreview(Canvas canvas, RectF bounds) {
+            float density = getResources().getDisplayMetrics().density;
+            float inset = dp(9);
+            float panelHeight = dp(55);
+            RectF panel = new RectF(bounds.left + inset, bounds.bottom - inset - panelHeight,
+                    bounds.right - inset, bounds.bottom - inset);
+            Paint overlay = new Paint(Paint.ANTI_ALIAS_FLAG);
+            overlay.setColor(0xE6121A22);
+            canvas.drawRoundRect(panel, dp(12), dp(12), overlay);
+            overlay.setStyle(Paint.Style.STROKE);
+            overlay.setStrokeWidth(Math.max(1f, density * .7f));
+            overlay.setColor(0x55FFFFFF);
+            canvas.drawRoundRect(panel, dp(12), dp(12), overlay);
+
+            Paint text = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
+            text.setColor(Color.WHITE);
+            text.setTypeface(VisualDesigns.typeface(VisualDesignPickerActivity.this, design, true));
+            text.setTextSize(dp(20));
+            canvas.drawText("07:30", panel.left + dp(11), panel.bottom - dp(10), text);
+            text.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+            text.setTextSize(dp(9));
+            text.setColor(0xFFDCE7EC);
+            canvas.drawText(local("毎日  ·  アラーム", "Every day  ·  Alarm", "매일  ·  알람"),
+                    panel.left + dp(77), panel.bottom - dp(15), text);
+
+            float trackRight = panel.right - dp(11);
+            float trackCenterY = panel.centerY();
+            RectF track = new RectF(trackRight - dp(29), trackCenterY - dp(8),
+                    trackRight, trackCenterY + dp(8));
+            overlay.setStyle(Paint.Style.FILL);
+            overlay.setColor(Ui.ACCENT_2);
+            canvas.drawRoundRect(track, dp(8), dp(8), overlay);
+            overlay.setColor(Color.WHITE);
+            canvas.drawCircle(track.right - dp(8), trackCenterY, dp(5.5f), overlay);
+
+            RectF tag = new RectF(bounds.left + inset, bounds.top + inset,
+                    bounds.left + inset + dp(96), bounds.top + inset + dp(23));
+            overlay.setColor(0xD9F5F7F6);
+            canvas.drawRoundRect(tag, dp(12), dp(12), overlay);
+            text.setColor(0xFF17232A);
+            text.setTextSize(dp(9));
+            text.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+            canvas.drawText(local("画面プレビュー", "SCREEN PREVIEW", "화면 미리보기"),
+                    tag.left + dp(9), tag.centerY() + dp(3), text);
         }
     }
 
