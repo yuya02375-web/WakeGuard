@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 31173)
+Total output lines: 1511
+
 package jp.wakeguard.alarm;
 
 import android.app.*;
@@ -259,7 +262,7 @@ public class ClockActivity extends Activity {
         recordsTab=Ui.bottomTab(this,"記録","records".equals(selected));
         settingsTab=Ui.bottomTab(this,"設定","settings".equals(selected));
         LinearLayout[] tabs={alarmTab,clockTab,recordsTab,settingsTab};
-        for(Button tab:tabs)nav.addView(tab,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));
+        for(LinearLayout tab:tabs)nav.addView(tab,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));
         alarmTab.setOnClickListener(v->navigateRoot("alarm"));
         clockTab.setOnClickListener(v->showMode(mode));
         recordsTab.setOnClickListener(v->navigateRoot("records"));
@@ -846,35 +849,7 @@ public class ClockActivity extends Activity {
         list.setAdapter(adapter);
 
         final ExecutorService searchExecutor=Executors.newSingleThreadExecutor();final AtomicInteger searchGeneration=new AtomicInteger();final Runnable[] pendingSearch=new Runnable[1];final java.util.concurrent.atomic.AtomicBoolean indexReady=new java.util.concurrent.atomic.AtomicBoolean(false);final String[] queuedQuery=new String[]{""};
-        final class SearchResult { final ArrayList<String> zones,codes; final String title; SearchResult(ArrayList<String> z,ArrayList<String> c,String t){zones=z;codes=c;title=t;} }
-        final Runnable buildIndex=()->{
-            ArrayList<String> built=fastSelectableZones();LinkedHashSet<String> uniqueCodes=new LinkedHashSet<>();
-            for(String id:built){String code=countryCodeForZone(id);countryCache.put(id,code);if(!code.isEmpty()){uniqueCodes.add(code);zonesByCountry.computeIfAbsent(code,k->new ArrayList<>()).add(id);}cityCache.put(id,normalizeSearch(lightweightCityName(id)));}
-            for(String code:uniqueCodes){String local=countryName(code,I18n.locale(this)),ja=countryName(code,Locale.JAPAN),ko=countryName(code,Locale.KOREA),en=countryName(code,Locale.ENGLISH);countryLabelCache.put(code,local);ArrayList<String> terms=new ArrayList<>();for(String x:new String[]{code,local,ja,ko,en}){String n=normalizeSearch(x);if(!n.isEmpty()&&!terms.contains(n))terms.add(n);}String aliases=normalizeSearch(countryAliases(code));if(!aliases.isEmpty()){if(!terms.contains(aliases))terms.add(aliases);for(String x:aliases.split("\\s+"))if(x.length()>1&&!terms.contains(x))terms.add(x);}countryTermsCache.put(code,terms);}
-            for(String id:built){String code=countryCache.getOrDefault(id,"");StringBuilder b=new StringBuilder(id).append(' ').append(lightweightCityName(id)).append(' ').append(code);for(String term:countryTermsCache.getOrDefault(code,new ArrayList<>()))b.append(' ').append(term);searchCache.put(id,normalizeSearch(b.toString()));}
-            all.addAll(built);indexReady.set(true);
-        };
-        searchExecutor.execute(buildIndex);
-        final java.util.function.Consumer<String> requestSearch=(raw)->{
-            final String q=normalizeSearch(raw);queuedQuery[0]=q;final int generation=searchGeneration.incrementAndGet();
-            searchExecutor.execute(()->{
-                if(!indexReady.get()){return;}
-                if(generation!=searchGeneration.get())return;
-                LinkedHashSet<String> results=new LinkedHashSet<>();ArrayList<String> guessed=new ArrayList<>();String titleKey="おすすめ";LinkedHashSet<String> regionCodes=regionCountryCodes(q);ArrayList<String> onlineCodes=onlineHintCache.get(q);if(onlineCodes==null)onlineCodes=new ArrayList<>();
-                if(q.isEmpty()){
-                    for(String id:featuredZones())if(all.contains(id))results.add(id);
-                }else{
-                    ArrayList<String> direct=new ArrayList<>();for(String id:all){String cached=searchCache.get(id);if(cached!=null&&cached.contains(q))direct.add(id);}
-                    direct.sort((a,b)->{String ca=normalizeSearch(countryLabelCache.getOrDefault(countryCache.getOrDefault(a,""),"")),cb=normalizeSearch(countryLabelCache.getOrDefault(countryCache.getOrDefault(b,""),""));boolean ae=ca.equals(q),be=cb.equals(q);if(ae!=be)return ae?-1:1;String aa=cityCache.getOrDefault(a,""),bb=cityCache.getOrDefault(b,"");boolean as=aa.startsWith(q),bs=bb.startsWith(q);if(as!=bs)return as?-1:1;return aa.compareTo(bb);});
-                    results.addAll(direct);
-                    if(!onlineCodes.isEmpty()){for(String code:onlineCodes){if(!guessed.contains(code))guessed.add(code);ArrayList<String> zs=zonesByCountry.get(code);if(zs==null)continue;int n=0;for(String id:zs){results.add(id);if(++n>=12||results.size()>=90)break;}if(results.size()>=90)break;}}
-                    if(!regionCodes.isEmpty()){
-                        titleKey="地域からの候補";for(String code:regionCodes){ArrayList<String> zs=zonesByCountry.get(code);if(zs==null)continue;int n=0;for(String id:zs){results.add(id);if(++n>=4||results.size()>=80)break;}if(results.size()>=80)break;}guessed.addAll(regionCodes);
-                    }else{
-                        HashMap<String,Integer> scores=new HashMap<>();ArrayList<String> codes=new ArrayList<>(countryTermsCache.keySet());int threshold=Math.max(2,q.length()/3);
-                        for(String code:codes){int best=999;for(String term:countryTermsCache.getOrDefault(code,new ArrayList<>())){if(term.equals(q)){best=0;break;}if(term.contains(q))best=Math.min(best,1);else if(term.startsWith(q)||q.startsWith(term))best=Math.min(best,1+Math.abs(term.length()-q.length())/3);if(q.length()>=2)best=Math.min(best,editDistance(q,term));}scores.put(code,best);}
-                        codes.sort(Comparator.comparingInt(c->scores.getOrDefault(c,999)));for(String code:codes){int score=scores.getOrDefault(code,999);if(score<=threshold||guessed.size()<2){guessed.add(code);if(guessed.size()>=4)break;}}
-                        boolean exactCountry=false;for(String c:guessed){for(String term:countryTermsCache.getOrDefault(c,new ArrayList<>()))if(term.equals(q)){exactCountry=true;break;}if(exactCountry)break;}
+        final class SearchResult { final Ar…1173 tokens truncated…getOrDefault(c,new ArrayList<>()))if(term.equals(q)){exactCountry=true;break;}if(exactCountry)break;}
                         titleKey=exactCountry?"関連する国":"もしかして";
                         if(direct.size()<35){for(String code:guessed){ArrayList<String> zs=zonesByCountry.get(code);if(zs==null)continue;int n=0;for(String id:zs){results.add(id);if(++n>=8||results.size()>=90)break;}if(results.size()>=90)break;}}
                         if(q.length()>=2&&direct.size()<12){ArrayList<String> candidates=new ArrayList<>(all);HashMap<String,Integer> dists=new HashMap<>();for(String id:candidates){String n=cityCache.getOrDefault(id,"");dists.put(id,n.contains(q)?0:editDistance(q,n));}candidates.sort(Comparator.comparingInt(id->dists.getOrDefault(id,999)));int lim=0;for(String id:candidates){int d=dists.getOrDefault(id,999);if(d<=threshold||lim<4){results.add(id);if(++lim>=10)break;}}}
@@ -1508,3 +1483,4 @@ public class ClockActivity extends Activity {
         else if("timer".equals(mode)) updateTimers();
     }
 }
+
