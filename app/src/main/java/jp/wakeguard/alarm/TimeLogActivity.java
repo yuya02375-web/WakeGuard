@@ -114,8 +114,13 @@ public class TimeLogActivity extends Activity {
     private void addOverviewCard(){
         LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(Ui.dp(this,20),Ui.dp(this,17),Ui.dp(this,20),Ui.dp(this,16));card.setBackground(Ui.gradientRound(this,24,Ui.HERO_START,Ui.HERO_END));
         LinearLayout header=Ui.row(this);header.setPadding(0,0,0,0);TextView label=Ui.overline(this,"記録した時間");label.setTextColor(Ui.HERO_TEXT);header.addView(label,new LinearLayout.LayoutParams(0,-2,1));TextView count=text(entries.size()+I18n.tr(this,"件"),13,Ui.HERO_TEXT);header.addView(count);card.addView(header);
+        TextView scope=text(I18n.tr(this,"すべてのフォルダー"),12,Ui.HERO_TEXT);scope.setAlpha(.82f);scope.setPadding(0,Ui.dp(this,8),0,0);card.addView(scope);
         TextView total=Ui.title(this,fmt(totalDurationAll()),34);total.setTextColor(Ui.HERO_TEXT);total.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));total.setPadding(0,Ui.dp(this,5),0,0);card.addView(total);
-        TextView note=text("すべてのフォルダーの合計",13,Ui.HERO_TEXT);note.setPadding(0,Ui.dp(this,2),0,0);card.addView(note);
+        TextView note=text(I18n.tr(this,"全期間の合計"),13,Ui.HERO_TEXT);note.setPadding(0,Ui.dp(this,2),0,0);card.addView(note);
+        View divider=new View(this);LinearLayout.LayoutParams dividerLp=new LinearLayout.LayoutParams(-1,Ui.dp(this,1));dividerLp.setMargins(0,Ui.dp(this,14),0,Ui.dp(this,12));divider.setBackgroundColor(Ui.withAlpha(Ui.HERO_TEXT,0x48));card.addView(divider,dividerLp);
+        LinearLayout todayRow=Ui.row(this);todayRow.setGravity(Gravity.CENTER_VERTICAL);todayRow.setPadding(Ui.dp(this,14),Ui.dp(this,11),Ui.dp(this,14),Ui.dp(this,11));todayRow.setBackground(Ui.round(Ui.withAlpha(Ui.HERO_TEXT,0x18),15,this));
+        TextView todayLabel=Ui.text(this,I18n.tr(this,"今日の合計"),14,Ui.HERO_TEXT);todayRow.addView(todayLabel,new LinearLayout.LayoutParams(0,-2,1));
+        TextView todayValue=Ui.title(this,fmt(durationForDayAll(LocalDate.now())),20);todayValue.setTextColor(Ui.HERO_TEXT);todayValue.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));todayValue.setSingleLine(true);todayRow.addView(todayValue);card.addView(todayRow);
         LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.setMargins(0,0,0,Ui.dp(this,5));body.addView(card,lp);
     }
 
@@ -326,6 +331,7 @@ public class TimeLogActivity extends Activity {
     private long totalDurationAll(){long n=0;for(Entry e:entries)n+=Math.max(0,e.end-e.start);return n;}
     private LocalDate weekStart(LocalDate d){return d.minusDays((d.getDayOfWeek().getValue()+6)%7);}
     private long durationForDay(String folderId,LocalDate day){return durationForRange(folderId,day,day.plusDays(1));}
+    private long durationForDayAll(LocalDate day){long a=day.atStartOfDay(zone).toInstant().toEpochMilli(),b=day.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli(),sum=0;for(Entry e:entries){long lo=Math.max(a,e.start),hi=Math.min(b,e.end);if(hi>lo)sum+=hi-lo;}return sum;}
     private long durationForRange(String folderId,LocalDate start,LocalDate end){long a=start.atStartOfDay(zone).toInstant().toEpochMilli(),b=end.atStartOfDay(zone).toInstant().toEpochMilli(),sum=0;for(Entry e:entries){if(!folderId.equals(e.folderId))continue;long lo=Math.max(a,e.start),hi=Math.min(b,e.end);if(hi>lo)sum+=hi-lo;}return sum;}
     private long averagePerRecordedDay(String folderId){TreeSet<LocalDate> days=new TreeSet<>();for(Entry e:entries){if(!folderId.equals(e.folderId))continue;LocalDate a=Instant.ofEpochMilli(e.start).atZone(zone).toLocalDate(),b=Instant.ofEpochMilli(Math.max(e.start,e.end-1)).atZone(zone).toLocalDate();for(LocalDate d=a;!d.isAfter(b);d=d.plusDays(1))if(durationForDay(folderId,d)>0)days.add(d);}return days.isEmpty()?0:totalDuration(folderId)/days.size();}
     private String fmt(long ms){long mins=Math.max(0,Math.round(ms/60000.0));long h=mins/60,m=mins%60;String hour=I18n.tr(this,"時間単位"),minute=I18n.tr(this,"分単位");if(h==0)return m+minute;if(m==0)return h+hour;return h+hour+m+minute;}
@@ -333,3 +339,4 @@ public class TimeLogActivity extends Activity {
     private void load(){folders.clear();entries.clear();try{JSONArray a=new JSONArray(p().getString(KEY_FOLDERS,"[]"));for(int i=0;i<a.length();i++){JSONObject o=a.getJSONObject(i);folders.add(new Folder(o.getString("id"),o.optString("name","フォルダー"),o.optLong("createdAt",0)));}}catch(Throwable ignored){}try{JSONArray a=new JSONArray(p().getString(KEY_ENTRIES,"[]"));for(int i=0;i<a.length();i++){JSONObject o=a.getJSONObject(i);long s=o.optLong("start",0),e=o.optLong("end",0),created=o.optLong("createdAt",e);if(e>s)entries.add(new Entry(o.getString("id"),o.getString("folderId"),s,e,created>0L?created:e));}}catch(Throwable ignored){}}
     private void save(){try{JSONArray fa=new JSONArray();for(Folder f:folders){JSONObject o=new JSONObject();o.put("id",f.id);o.put("name",f.name);o.put("createdAt",f.createdAt);fa.put(o);}JSONArray ea=new JSONArray();for(Entry e:entries){JSONObject o=new JSONObject();o.put("id",e.id);o.put("folderId",e.folderId);o.put("start",e.start);o.put("end",e.end);o.put("createdAt",e.createdAt>0L?e.createdAt:e.end);ea.put(o);}p().edit().putString(KEY_FOLDERS,fa.toString()).putString(KEY_ENTRIES,ea.toString()).apply();}catch(Throwable ignored){}}
 }
+

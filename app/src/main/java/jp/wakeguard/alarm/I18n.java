@@ -18,7 +18,8 @@ public final class I18n {
         put("記録","Records","기록"); put("起床","Wake-ups","기상"); put("時間の記録","Time log","시간 기록");
         put("起床と時間の記録","Wake-ups and time","기상 및 시간 기록"); put("時間記録","Time log","시간 기록");
         put("時計ツール","Clock tools","시계 도구"); put("計測 / ラップ","Time / lap","측정 / 랩");
-        put("記録した時間","Logged time","기록한 시간"); put("すべてのフォルダーの合計","Total across folders","모든 폴더 합계");
+        put("記録した時間","Logged time","기록한 시간"); put("すべてのフォルダー","All folders","모든 폴더"); put("すべてのフォルダーの合計","Total across folders","모든 폴더 합계");
+        put("全期間の合計","All-time total","전체 기간 합계"); put("今日の合計","Today's total","오늘 합계");
         put("まだフォルダーがありません","No folders yet","폴더가 없습니다");
         put("フォルダーを作ると、時間の記録を整理できます。","Create a folder to organize your time logs.","폴더를 만들어 시간 기록을 정리할 수 있습니다.");
         put("まだ時間記録がありません","No time entries yet","시간 기록이 없습니다");
@@ -315,3 +316,4 @@ public final class I18n {
         if(v instanceof ViewGroup){ViewGroup g=(ViewGroup)v;for(int i=0;i<g.getChildCount();i++)localizeTree(g.getChildAt(i));}
     }
 }
+
