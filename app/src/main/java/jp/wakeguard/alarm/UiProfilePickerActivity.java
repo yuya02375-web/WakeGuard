@@ -7,6 +7,8 @@ import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -186,7 +188,7 @@ public class UiProfilePickerActivity extends Activity {
         } else {
             addListSample(demo, profile);
         }
-        demo.addView(navPreview(profile), new LinearLayout.LayoutParams(-1, Ui.dp(this, 28)));
+        demo.addView(navPreview(profile), new LinearLayout.LayoutParams(-1, Ui.dp(this, 38)));
         return demo;
     }
 
@@ -274,17 +276,49 @@ public class UiProfilePickerActivity extends Activity {
     private View navPreview(UiProfiles.Design profile) {
         LinearLayout nav = new LinearLayout(this);
         nav.setOrientation(LinearLayout.HORIZONTAL);
-        nav.setGravity(Gravity.CENTER_VERTICAL);
+        nav.setGravity(Gravity.CENTER);
         nav.setPadding(Ui.dp(this, 3), 0, Ui.dp(this, 3), 0);
-        for (int i = 0; i < 3; i++) {
-            TextView item = label("labels".equals(profile.navMode) ? new String[]{"HOME", "TIME", "LOG"}[i]
-                    : new String[]{"•", "◷", "▤"}[i], "labels".equals(profile.navMode) ? 7.5f : 11f,
-                    i == 0 ? Ui.ACCENT_2 : Ui.MUTED, i == 0);
+        nav.setBackground(Ui.roundStroke(Ui.SURFACE, Ui.BORDER, 11, this));
+        String[] names = {"アラーム", "時計", "記録", "設定"};
+        boolean labelsOnly = "labels".equals(profile.navMode);
+        boolean compact = "compact".equals(profile.navMode);
+        for (int i = 0; i < names.length; i++) {
+            boolean active = i == 0;
+            LinearLayout item = new LinearLayout(this);
+            item.setOrientation(LinearLayout.VERTICAL);
             item.setGravity(Gravity.CENTER);
-            if ("pill".equals(profile.navMode) && i == 0) item.setBackground(Ui.round(Ui.NAV_HIGHLIGHT, profile.cornerScale * 7f, this));
-            if ("compact".equals(profile.navMode) && i != 0) item.setAlpha(.65f);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, -1, 1);
-            nav.addView(item, params);
+
+            FrameLayout iconFrame = new FrameLayout(this);
+            iconFrame.setBackground(active && !labelsOnly
+                    ? Ui.round(Ui.NAV_HIGHLIGHT, compact ? 14 : 10, this)
+                    : Ui.round(android.graphics.Color.TRANSPARENT, compact ? 14 : 10, this));
+            ImageView icon = new ImageView(this);
+            icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            icon.setImageResource(Ui.navIcon(names[i], active));
+            icon.setImageTintList(android.content.res.ColorStateList.valueOf(active ? Ui.ACCENT_2 : Ui.MUTED));
+            int iconSize = Ui.dp(this, gridMode ? 14 : 17);
+            iconFrame.addView(icon, new FrameLayout.LayoutParams(iconSize, iconSize, Gravity.CENTER));
+            iconFrame.setVisibility(labelsOnly ? View.GONE : View.VISIBLE);
+            int frameWidth = Ui.dp(this, compact ? 26 : 32);
+            int frameHeight = Ui.dp(this, compact ? 26 : 20);
+            item.addView(iconFrame, new LinearLayout.LayoutParams(frameWidth, frameHeight));
+
+            TextView caption = label(I18n.tr(this, names[i]), gridMode ? 6.2f : 7.4f,
+                    active ? Ui.ACCENT_2 : Ui.MUTED, active);
+            caption.setGravity(Gravity.CENTER);
+            caption.setSingleLine(true);
+            caption.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            caption.setVisibility(compact ? View.GONE : View.VISIBLE);
+            item.addView(caption, new LinearLayout.LayoutParams(-1, -2));
+
+            View marker = new View(this);
+            marker.setBackground(Ui.round(Ui.ACCENT_2, 1, this));
+            marker.setVisibility(labelsOnly && active ? View.VISIBLE : View.GONE);
+            LinearLayout.LayoutParams markerParams = new LinearLayout.LayoutParams(Ui.dp(this, 12), Ui.dp(this, 1));
+            markerParams.topMargin = Ui.dp(this, 1);
+            item.addView(marker, markerParams);
+
+            nav.addView(item, new LinearLayout.LayoutParams(0, -1, 1));
         }
         return nav;
     }
@@ -306,13 +340,8 @@ public class UiProfilePickerActivity extends Activity {
     }
 
     private TextView label(String text, float size, int color, boolean bold) {
-        TextView view = new TextView(this);
-        view.setText(text);
-        view.setTextSize(size);
-        view.setTextColor(color);
-        view.setIncludeFontPadding(false);
-        view.setLineSpacing(0, 1.08f);
-        if (bold) view.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        TextView view = Ui.text(this, text, size, color);
+        if (bold) view.setTypeface(Ui.designTypeface(Typeface.BOLD));
         return view;
     }
 

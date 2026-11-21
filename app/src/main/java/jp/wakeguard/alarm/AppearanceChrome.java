@@ -100,7 +100,7 @@ public final class AppearanceChrome {
             TextView chip = Ui.text(activity, title(activity, index), 12, active ? Ui.ON_ACCENT : Ui.TEXT);
             chip.setGravity(Gravity.CENTER);
             chip.setSingleLine(true);
-            chip.setTypeface(null, active ? Typeface.BOLD : Typeface.NORMAL);
+            chip.setTypeface(Ui.designTypeface(active ? Typeface.BOLD : Typeface.NORMAL));
             chip.setPadding(Ui.dp(activity, 12), 0, Ui.dp(activity, 12), 0);
             chip.setBackground(active ? Ui.round(Ui.ACCENT_2, 18, activity)
                     : Ui.roundStroke(Ui.SURFACE_2, Ui.BORDER, 18, activity));

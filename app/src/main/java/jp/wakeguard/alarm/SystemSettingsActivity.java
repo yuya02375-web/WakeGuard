@@ -258,14 +258,14 @@ public class SystemSettingsActivity extends Activity {
         LinearLayout nav = new LinearLayout(this);
         nav.setGravity(Gravity.CENTER);
         nav.setPadding(Ui.dp(this, 8), Ui.dp(this, 4), Ui.dp(this, 8), Ui.dp(this, 4));
-        nav.setBackgroundColor(Ui.SURFACE);
+        nav.setBackground(Ui.navigationSurface(this));
 
-        Button alarms = Ui.bottomTab(this, "アラーム", false);
-        Button clock = Ui.bottomTab(this, "時計", false);
-        Button records = Ui.bottomTab(this, "記録", false);
-        Button settings = Ui.bottomTab(this, "設定", true);
-        Button[] tabs = {alarms, clock, records, settings};
-        for (Button tab : tabs) nav.addView(tab, new LinearLayout.LayoutParams(0, Ui.dp(this, 64), 1));
+        LinearLayout alarms = Ui.bottomTab(this, "アラーム", false);
+        LinearLayout clock = Ui.bottomTab(this, "時計", false);
+        LinearLayout records = Ui.bottomTab(this, "記録", false);
+        LinearLayout settings = Ui.bottomTab(this, "設定", true);
+        LinearLayout[] tabs = {alarms, clock, records, settings};
+        for (LinearLayout tab : tabs) nav.addView(tab, new LinearLayout.LayoutParams(0, Ui.dp(this, 64), 1));
 
         alarms.setOnClickListener(v -> navigateRoot("alarm"));
         clock.setOnClickListener(v -> navigateRoot("clock"));

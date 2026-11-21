@@ -7,11 +7,9 @@ import android.content.res.ColorStateList;
 import android.graphics.Insets;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.ColorFilter;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PixelFormat;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
@@ -25,6 +23,7 @@ import android.view.View;
 import android.view.WindowInsets;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -120,7 +119,7 @@ public final class Ui {
         return Math.round(v * a.getResources().getDisplayMetrics().density);
     }
 
-    private static Typeface designTypeface(int style) {
+    static Typeface designTypeface(int style) {
         String family;
         if ("serif".equals(DESIGN_FONT)) family = "serif";
         else if ("mono".equals(DESIGN_FONT)) family = "monospace";
@@ -151,6 +150,10 @@ public final class Ui {
         int edge = readableColor(BORDER, surface, 2.0);
         field.setTextColor(ink);
         field.setHintTextColor(hint);
+        field.setIncludeFontPadding(false);
+        field.setTypeface(designTypeface(Typeface.NORMAL));
+        field.setMinHeight(Math.max(field.getMinimumHeight(), touchDp(a, 48)));
+        field.setHighlightColor(withAlpha(ACCENT, 0x55));
         field.setBackground(roundStroke(surface, edge, radiusDp, a));
         if (Build.VERSION.SDK_INT >= 21) {
             try { field.setBackgroundTintList(null); } catch (Throwable ignored) {}
@@ -203,7 +206,9 @@ public final class Ui {
     }
 
     public static int cardElevationPx(Activity a) {
-        return "elevated".equals(UI_CARD_MODE) || "raised".equals(DESIGN_CARD) ? touchDp(a, 4) : 0;
+        if ("elevated".equals(UI_CARD_MODE) || "raised".equals(DESIGN_CARD)) return touchDp(a, 4);
+        if ("outlined".equals(UI_CARD_MODE)) return touchDp(a, 1);
+        return 0;
     }
 
     public static GradientDrawable gradient(Activity a, int... colors) {
@@ -334,7 +339,8 @@ public final class Ui {
     public static TextView text(Activity a, String s, float sp, int color) {
         TextView v = new TextView(a);
         v.setText(I18n.tr(a,s)); v.setTextSize(sp); v.setTextColor(color);
-        v.setLineSpacing(0, 1.08f);
+        v.setIncludeFontPadding(false);
+        v.setLineSpacing(0, 1.12f);
         v.setTypeface(designTypeface(Typeface.NORMAL));
         if (Build.VERSION.SDK_INT >= 21) v.setLetterSpacing(DESIGN_LETTER_SPACING);
         return v;
@@ -348,15 +354,16 @@ public final class Ui {
     }
 
     public static TextView overline(Activity a, String s) {
-        TextView v = text(a, s, 11, ACCENT_2);
+        TextView v = text(a, s, 10.5f, ACCENT_2);
         v.setTypeface(designTypeface(Typeface.BOLD));
-        if (Build.VERSION.SDK_INT >= 21) v.setLetterSpacing(Math.max(.05f, DESIGN_LETTER_SPACING + .06f));
+        if (Build.VERSION.SDK_INT >= 21) v.setLetterSpacing(Math.max(.07f, DESIGN_LETTER_SPACING + .07f));
         return v;
     }
 
     public static Button button(Activity a, String s, boolean accent) {
         Button b = new Button(a);
         b.setText(I18n.tr(a,s)); b.setAllCaps(false); b.setTextSize(15);
+        b.setIncludeFontPadding(false);
         b.setTypeface(designTypeface(Typeface.BOLD));
         b.setTextColor(accent ? ON_ACCENT : TEXT);
         Drawable shape;
@@ -378,10 +385,13 @@ public final class Ui {
     public static Button ghostButton(Activity a, String s) {
         Button b = new Button(a);
         b.setText(I18n.tr(a,s)); b.setAllCaps(false); b.setTextSize(14);
-        b.setTextColor(TEXT);
+        b.setIncludeFontPadding(false);
+        b.setTypeface(designTypeface(Typeface.BOLD));
+        b.setTextColor(readableColor(TEXT, SURFACE_2, 4.5));
+        GradientDrawable surface = roundStroke(SURFACE_2, BORDER, 14, a);
         b.setBackground(new android.graphics.drawable.RippleDrawable(
                 ColorStateList.valueOf(withAlpha(TEXT, 0x16)),
-                new ColorDrawable(Color.TRANSPARENT), round(Color.WHITE, 14, a)));
+                surface, round(Color.WHITE, 14, a)));
         b.setMinHeight(touchDp(a,48)); b.setMinWidth(0);
         b.setPadding(dp(a,10),0,dp(a,10),0);
         return b;
@@ -415,33 +425,39 @@ public final class Ui {
     }
 
     public static TextView pill(Activity a, String text) {
-        TextView v = text(a,text,12,MUTED);
+        TextView v = text(a,text,12,readableColor(MUTED, SURFACE_2, 4.5));
         v.setGravity(Gravity.CENTER);
         v.setPadding(dp(a,9),dp(a,6),dp(a,9),dp(a,6));
-        v.setBackground(round(SURFACE_2, 12, a));
+        v.setBackground(roundStroke(SURFACE_2, BORDER, 12, a));
         return v;
     }
 
     public static TextView accentPill(Activity a, String text) {
         TextView v = text(a,text,12,ON_ACCENT);
         v.setGravity(Gravity.CENTER);
-        v.setTypeface(null,Typeface.BOLD);
+        v.setTypeface(designTypeface(Typeface.BOLD));
         v.setPadding(dp(a,9),dp(a,6),dp(a,9),dp(a,6));
         v.setBackground(round(ACCENT_2, 12, a));
         return v;
     }
 
     public static View divider(Activity a) {
-        View v = new View(a); v.setBackgroundColor(BORDER);
+        View v = new View(a); v.setBackgroundColor(withAlpha(BORDER, DARK_THEME ? 0x99 : 0xB8));
         v.setLayoutParams(new LinearLayout.LayoutParams(-1,dp(a,1)));
         return v;
     }
 
+    public static Drawable navigationSurface(Activity a) {
+        GradientDrawable surface = round(SURFACE, 0, a);
+        surface.setStroke(dp(a, 1), withAlpha(BORDER, DARK_THEME ? 0xA0 : 0xC0));
+        return surface;
+    }
+
     public static TextView sectionHeader(Activity a, String s) {
-        TextView v = text(a, s, 15, TEXT);
-        v.setTypeface(null, Typeface.BOLD);
-        if (Build.VERSION.SDK_INT >= 21) v.setLetterSpacing(0.008f);
-        v.setPadding(0, dp(a,8), 0, dp(a,8));
+        TextView v = text(a, s, 16, TEXT);
+        v.setTypeface(designTypeface(Typeface.BOLD));
+        if (Build.VERSION.SDK_INT >= 21) v.setLetterSpacing(0.01f);
+        v.setPadding(0, dp(a,10), 0, dp(a,8));
         return v;
     }
 
@@ -453,89 +469,92 @@ public final class Ui {
         return r;
     }
 
-    /** Material icon navigation. Both icon and label update when switching clock modes. */
-    public static Button bottomTab(Activity a, String name, boolean active) {
-        Button b=new Button(a);
-        b.setTag(name);
-        b.setAllCaps(false);
-        b.setSingleLine(true);
-        b.setIncludeFontPadding(false);
-        b.setGravity(Gravity.CENTER);
-        b.setMinHeight(touchDp(a,48));
-        b.setMinWidth(0); b.setMinimumWidth(0);
-        b.setPadding(dp(a,2),dp(a,8),dp(a,2),dp(a,8));
-        b.setCompoundDrawablePadding(dp(a,4));
-        b.setContentDescription(I18n.tr(a,name));
-        b.setStateListAnimator(null);
-        updateBottomTab(a,b,active);
-        return b;
+    /** A tab uses separate, centered icon and label views so its selection surface cannot drift. */
+    public static LinearLayout bottomTab(Activity a, String name, boolean active) {
+        return createBottomTab(a, name, active, NAV_MODE);
     }
 
-    public static void updateBottomTab(Activity a, Button b, boolean active) {
-        String name=(String)b.getTag();
-        boolean compact = "compact".equals(NAV_MODE);
-        boolean labels = "labels".equals(NAV_MODE);
-        b.setText(compact ? "" : ("ストップウォッチ".equals(name)? I18n.tr(a,"計測"):I18n.tr(a,name)));
-        b.setTextSize(labels ? 12.5f : 12f);
-        b.setTextColor(active?ACCENT_2:MUTED);
-        b.setTypeface(designTypeface(active?Typeface.BOLD:Typeface.NORMAL));
-        b.setSelected(active);
-        b.setContentDescription(I18n.tr(a,name)+(active?" · "+I18n.tr(a,"選択中"):""));
-        int id=navIcon(name,active);
-        Drawable icon=a.getDrawable(id).mutate();
-        icon.setTint(active?ACCENT_2:MUTED);
-        int iconSize = touchDp(a, labels ? 0 : 24);
-        if (labels || iconSize == 0) b.setCompoundDrawables(null,null,null,null);
-        else {
-            icon.setBounds(0,0,iconSize,iconSize);
-            b.setCompoundDrawables(null,icon,null,null);
-        }
-        b.setBackground(new NavigationIndicatorDrawable(a,b,active));
+    static LinearLayout previewBottomTab(Activity a, String name, boolean active, String mode) {
+        return createBottomTab(a, name, active, mode);
     }
 
-    /** Only the icon gets the M3 indicator, never the text below it. */
-    private static final class NavigationIndicatorDrawable extends Drawable {
-        private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Button button;
-        private final boolean selected;
-        private final float density;
-        private final String mode;
-        NavigationIndicatorDrawable(Activity a,Button button,boolean selected){this.button=button;this.selected=selected;this.density=a.getResources().getDisplayMetrics().density;this.mode=NAV_MODE;}
-        private float iconCenterY(Rect r){
-            if(button==null||button.getHeight()<=0)return r.exactCenterY();
-            Drawable icon=button.getCompoundDrawables()[1];
-            if(icon==null||icon.getBounds().height()<=0)return r.exactCenterY();
-            android.text.Layout textLayout=button.getLayout();
-            int labelHeight=button.getText()!=null&&button.getText().length()>0&&textLayout!=null?textLayout.getHeight():0;
-            float iconHeight=icon.getBounds().height();
-            float blockHeight=iconHeight+(labelHeight>0?button.getCompoundDrawablePadding()+labelHeight:0);
-            float contentHeight=button.getHeight()-button.getPaddingTop()-button.getPaddingBottom();
-            float top=button.getPaddingTop()+Math.max(0f,(contentHeight-blockHeight)/2f);
-            return r.top+top+iconHeight/2f;
-        }
-        @Override public void draw(Canvas c){
-            if(!selected)return;
-            Rect r=getBounds();
-            paint.setColor(NAV_HIGHLIGHT);paint.setStyle(Paint.Style.FILL);
-            if ("labels".equals(mode)) {
-                float y=r.bottom-2*density;
-                c.drawRoundRect(r.left+8*density,y,r.right-8*density,r.bottom,1*density,1*density,paint);
-            } else if ("compact".equals(mode)) {
-                float cx=r.exactCenterX(),cy=iconCenterY(r);
-                float half=Math.min(r.width()/2f-4*density,18*density);
-                c.drawRoundRect(cx-half,cy-18*density,cx+half,cy+18*density,18*density,18*density,paint);
-            } else {
-                float cx=r.exactCenterX(),cy=iconCenterY(r),halfHeight=16*density;
-                float half=Math.min(r.width()/2f-3*density,28*density);
-                c.drawRoundRect(cx-half,cy-halfHeight,cx+half,cy+halfHeight,16*density,16*density,paint);
-            }
-        }
-        @Override public void setAlpha(int a){paint.setAlpha(a);}
-        @Override public void setColorFilter(ColorFilter f){paint.setColorFilter(f);}
-        @Override public int getOpacity(){return PixelFormat.TRANSLUCENT;}
+    private static LinearLayout createBottomTab(Activity a, String name, boolean active, String mode) {
+        LinearLayout tab = new LinearLayout(a);
+        tab.setOrientation(LinearLayout.VERTICAL);
+        tab.setGravity(Gravity.CENTER);
+        tab.setPadding(dp(a, 2), 0, dp(a, 2), 0);
+        tab.setMinimumHeight(touchDp(a, 48));
+        tab.setMinimumWidth(0);
+        tab.setTag(name);
+        tab.setFocusable(true);
+        tab.setClickable(true);
+        tab.setBackground(rippleBackground(a, 16));
+
+        FrameLayout iconFrame = new FrameLayout(a);
+        iconFrame.setTag("nav_icon_frame");
+        ImageView icon = new ImageView(a);
+        icon.setTag("nav_icon");
+        icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        FrameLayout.LayoutParams iconParams = new FrameLayout.LayoutParams(dp(a, 24), dp(a, 24), Gravity.CENTER);
+        iconFrame.addView(icon, iconParams);
+        tab.addView(iconFrame, new LinearLayout.LayoutParams(dp(a, 52), dp(a, 34)));
+
+        TextView label = text(a, "", 12, MUTED);
+        label.setTag("nav_label");
+        label.setGravity(Gravity.CENTER);
+        label.setSingleLine(true);
+        label.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(-1, -2);
+        labelParams.topMargin = dp(a, 2);
+        tab.addView(label, labelParams);
+
+        View marker = new View(a);
+        marker.setTag("nav_marker");
+        LinearLayout.LayoutParams markerParams = new LinearLayout.LayoutParams(dp(a, 18), dp(a, 2));
+        markerParams.topMargin = dp(a, 2);
+        tab.addView(marker, markerParams);
+        updateBottomTab(a, tab, active, mode);
+        return tab;
     }
 
-    private static int navIcon(String name, boolean active) {
+    public static void updateBottomTab(Activity a, LinearLayout tab, boolean active) {
+        updateBottomTab(a, tab, active, NAV_MODE);
+    }
+
+    private static void updateBottomTab(Activity a, LinearLayout tab, boolean active, String mode) {
+        String name = (String) tab.getTag();
+        boolean compact = "compact".equals(mode);
+        boolean labels = "labels".equals(mode);
+        FrameLayout iconFrame = (FrameLayout) tab.getChildAt(0);
+        ImageView icon = (ImageView) iconFrame.getChildAt(0);
+        TextView label = (TextView) tab.getChildAt(1);
+        View marker = tab.getChildAt(2);
+
+        iconFrame.setVisibility(labels ? View.GONE : View.VISIBLE);
+        LinearLayout.LayoutParams frameParams = (LinearLayout.LayoutParams) iconFrame.getLayoutParams();
+        frameParams.width = dp(a, compact ? 38 : 52);
+        frameParams.height = dp(a, compact ? 38 : 34);
+        iconFrame.setLayoutParams(frameParams);
+        float radius = compact ? 20 : 16;
+        iconFrame.setBackground(active ? round(NAV_HIGHLIGHT, radius, a) : round(Color.TRANSPARENT, radius, a));
+
+        label.setText("ストップウォッチ".equals(name) ? I18n.tr(a, "計測") : I18n.tr(a, name));
+        label.setTextSize(labels ? 12.5f : 11.5f);
+        label.setTextColor(active ? ACCENT_2 : MUTED);
+        label.setTypeface(designTypeface(active ? Typeface.BOLD : Typeface.NORMAL));
+        label.setVisibility(compact ? View.GONE : View.VISIBLE);
+        marker.setVisibility(labels && active ? View.VISIBLE : View.GONE);
+        marker.setBackground(round(ACCENT_2, 1, a));
+
+        int id = navIcon(name, active);
+        icon.setImageResource(id);
+        icon.setImageTintList(ColorStateList.valueOf(active ? ACCENT_2 : MUTED));
+        icon.setContentDescription(I18n.tr(a, name));
+        tab.setSelected(active);
+        tab.setContentDescription(I18n.tr(a, name) + (active ? " · " + I18n.tr(a, "選択中") : ""));
+    }
+
+    static int navIcon(String name, boolean active) {
         if("アラーム".equals(name)) return active?R.drawable.ic_v292_nav_alarm_fill:R.drawable.ic_v292_nav_alarm_outline;
         if("時計".equals(name)) return active?R.drawable.ic_v292_nav_world_fill:R.drawable.ic_v292_nav_world_outline;
         if("記録".equals(name)) return active?R.drawable.ic_v292_nav_calendar_fill:R.drawable.ic_v292_nav_calendar_outline;

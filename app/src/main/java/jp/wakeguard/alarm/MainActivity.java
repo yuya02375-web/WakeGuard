@@ -129,8 +129,8 @@ public class MainActivity extends Activity {
     }
 
     private LinearLayout bottomNav(){
-        LinearLayout nav=new LinearLayout(this);nav.setGravity(Gravity.CENTER);nav.setPadding(Ui.dp(this,9),Ui.dp(this,2),Ui.dp(this,9),Ui.dp(this,2));nav.setBackgroundColor(Ui.SURFACE);
-        Button alarms=Ui.bottomTab(this,"アラーム",true);Button clock=Ui.bottomTab(this,"時計",false);Button records=Ui.bottomTab(this,"記録",false);Button settings=Ui.bottomTab(this,"設定",false);
+        LinearLayout nav=new LinearLayout(this);nav.setGravity(Gravity.CENTER);nav.setPadding(Ui.dp(this,9),Ui.dp(this,2),Ui.dp(this,9),Ui.dp(this,2));nav.setBackground(Ui.navigationSurface(this));
+        LinearLayout alarms=Ui.bottomTab(this,"アラーム",true);LinearLayout clock=Ui.bottomTab(this,"時計",false);LinearLayout records=Ui.bottomTab(this,"記録",false);LinearLayout settings=Ui.bottomTab(this,"設定",false);
         nav.addView(alarms,new LinearLayout.LayoutParams(0,Ui.dp(this,HomeMetrics.NAV_TAB_HEIGHT_DP),1));nav.addView(clock,new LinearLayout.LayoutParams(0,Ui.dp(this,HomeMetrics.NAV_TAB_HEIGHT_DP),1));nav.addView(records,new LinearLayout.LayoutParams(0,Ui.dp(this,HomeMetrics.NAV_TAB_HEIGHT_DP),1));nav.addView(settings,new LinearLayout.LayoutParams(0,Ui.dp(this,HomeMetrics.NAV_TAB_HEIGHT_DP),1));
         clock.setOnClickListener(v->openClock("world"));records.setOnClickListener(v->Ui.launchNoAnimation(this,new Intent(this,StatsActivity.class)));settings.setOnClickListener(v->Ui.launchNoAnimation(this,new Intent(this,SystemSettingsActivity.class)));return nav;
     }

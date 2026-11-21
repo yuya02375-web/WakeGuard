@@ -90,7 +90,7 @@ public class StatsActivity extends Activity {
         LinearLayout shell=new LinearLayout(this);
         shell.setOrientation(LinearLayout.HORIZONTAL);
         shell.setPadding(Ui.dp(this,4),Ui.dp(this,4),Ui.dp(this,4),Ui.dp(this,4));
-        shell.setBackground(Ui.round(Ui.BG_2,18,this));
+        shell.setBackground(Ui.roundStroke(Ui.BG_2,Ui.BORDER,18,this));
         shell.setElevation(0f);
         Button streak=segmentButton("起床",streakSelected);
         Button time=segmentButton("時間",!streakSelected);
@@ -108,12 +108,14 @@ public class StatsActivity extends Activity {
         b.setText(I18n.tr(this,label));
         b.setAllCaps(false);
         b.setTextSize(14);
-        b.setTypeface(null,selected?Typeface.BOLD:Typeface.NORMAL);
-        b.setTextColor(selected?Ui.TEXT:Ui.MUTED);
+        b.setIncludeFontPadding(false);
+        b.setTypeface(Ui.designTypeface(selected?Typeface.BOLD:Typeface.NORMAL));
+        b.setTextColor(selected?Ui.ACCENT_2:Ui.MUTED);
         b.setGravity(Gravity.CENTER);
         b.setMinHeight(Ui.dp(this,46));
         b.setPadding(Ui.dp(this,8),0,Ui.dp(this,8),0);
-        b.setBackground(selected?Ui.roundStroke(Ui.SURFACE,Ui.BORDER,15,this):Ui.round(0x00ffffff,15,this));
+        b.setBackground(selected?Ui.roundStroke(Ui.SURFACE,Ui.withAlpha(Ui.ACCENT_2,0x55),15,this):Ui.round(0x00ffffff,15,this));
+        if(android.os.Build.VERSION.SDK_INT>=21)b.setElevation(selected?Ui.dp(this,1):0);
         return b;
     }
 
@@ -318,11 +320,11 @@ public class StatsActivity extends Activity {
         LinearLayout nav=new LinearLayout(this);
         nav.setGravity(Gravity.CENTER);
         nav.setPadding(Ui.dp(this,7),Ui.dp(this,5),Ui.dp(this,7),Ui.dp(this,7));
-        nav.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,0,this));
-        Button alarm=Ui.bottomTab(this,"アラーム",false);
-        Button clock=Ui.bottomTab(this,"時計",false);
-        Button records=Ui.bottomTab(this,"記録",true);
-        Button settings=Ui.bottomTab(this,"設定",false);
+        nav.setBackground(Ui.navigationSurface(this));
+        LinearLayout alarm=Ui.bottomTab(this,"アラーム",false);
+        LinearLayout clock=Ui.bottomTab(this,"時計",false);
+        LinearLayout records=Ui.bottomTab(this,"記録",true);
+        LinearLayout settings=Ui.bottomTab(this,"設定",false);
         nav.addView(alarm,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));
         nav.addView(clock,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));
         nav.addView(records,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));

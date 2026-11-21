@@ -69,7 +69,7 @@ public class TimeLogActivity extends Activity {
     }
 
     private void addRecordSegment(LinearLayout parent){
-        LinearLayout shell=new LinearLayout(this);shell.setOrientation(LinearLayout.HORIZONTAL);shell.setPadding(Ui.dp(this,4),Ui.dp(this,4),Ui.dp(this,4),Ui.dp(this,4));shell.setBackground(Ui.round(Ui.BG_2,18,this));
+        LinearLayout shell=new LinearLayout(this);shell.setOrientation(LinearLayout.HORIZONTAL);shell.setPadding(Ui.dp(this,4),Ui.dp(this,4),Ui.dp(this,4),Ui.dp(this,4));shell.setBackground(Ui.roundStroke(Ui.BG_2,Ui.BORDER,18,this));
         streakSegment=segmentButton("起床",false);timeSegment=segmentButton("時間",true);
         streakSegment.setEnabled(pendingImportDurationMs<=0L);
         shell.addView(streakSegment,new LinearLayout.LayoutParams(0,Ui.dp(this,46),1));shell.addView(timeSegment,new LinearLayout.LayoutParams(0,Ui.dp(this,46),1));
@@ -78,12 +78,12 @@ public class TimeLogActivity extends Activity {
     }
 
     private Button segmentButton(String label,boolean selected){
-        Button b=new Button(this);b.setText(I18n.tr(this,label));b.setAllCaps(false);b.setTextSize(14);b.setTypeface(null,selected?android.graphics.Typeface.BOLD:android.graphics.Typeface.NORMAL);b.setTextColor(selected?Ui.TEXT:Ui.MUTED);b.setGravity(Gravity.CENTER);b.setMinHeight(Ui.dp(this,46));b.setPadding(Ui.dp(this,8),0,Ui.dp(this,8),0);b.setBackground(selected?Ui.roundStroke(Ui.SURFACE,Ui.BORDER,15,this):Ui.round(0x00ffffff,15,this));return b;
+        Button b=new Button(this);b.setText(I18n.tr(this,label));b.setAllCaps(false);b.setTextSize(14);b.setIncludeFontPadding(false);b.setTypeface(Ui.designTypeface(selected?android.graphics.Typeface.BOLD:android.graphics.Typeface.NORMAL));b.setTextColor(selected?Ui.ACCENT_2:Ui.MUTED);b.setGravity(Gravity.CENTER);b.setMinHeight(Ui.dp(this,46));b.setPadding(Ui.dp(this,8),0,Ui.dp(this,8),0);b.setBackground(selected?Ui.roundStroke(Ui.SURFACE,Ui.withAlpha(Ui.ACCENT_2,0x55),15,this):Ui.round(0x00ffffff,15,this));if(android.os.Build.VERSION.SDK_INT>=21)b.setElevation(selected?Ui.dp(this,1):0);return b;
     }
 
     private LinearLayout bottomNav(){
-        LinearLayout nav=new LinearLayout(this);nav.setGravity(Gravity.CENTER);nav.setPadding(Ui.dp(this,7),Ui.dp(this,5),Ui.dp(this,7),Ui.dp(this,7));nav.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,0,this));
-        Button alarm=Ui.bottomTab(this,"アラーム",false),clock=Ui.bottomTab(this,"時計",false),records=Ui.bottomTab(this,"記録",true),settings=Ui.bottomTab(this,"設定",false);
+        LinearLayout nav=new LinearLayout(this);nav.setGravity(Gravity.CENTER);nav.setPadding(Ui.dp(this,7),Ui.dp(this,5),Ui.dp(this,7),Ui.dp(this,7));nav.setBackground(Ui.navigationSurface(this));
+        LinearLayout alarm=Ui.bottomTab(this,"アラーム",false),clock=Ui.bottomTab(this,"時計",false),records=Ui.bottomTab(this,"記録",true),settings=Ui.bottomTab(this,"設定",false);
         nav.addView(alarm,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));nav.addView(clock,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));nav.addView(records,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));nav.addView(settings,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));
         alarm.setOnClickListener(v->navigateRoot("alarm"));clock.setOnClickListener(v->navigateRoot("clock"));settings.setOnClickListener(v->navigateRoot("settings"));return nav;
     }
