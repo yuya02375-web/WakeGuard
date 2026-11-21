@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 31173)
-Total output lines: 1511
-
 package jp.wakeguard.alarm;
 
 import android.app.*;
@@ -849,7 +846,35 @@ public class ClockActivity extends Activity {
         list.setAdapter(adapter);
 
         final ExecutorService searchExecutor=Executors.newSingleThreadExecutor();final AtomicInteger searchGeneration=new AtomicInteger();final Runnable[] pendingSearch=new Runnable[1];final java.util.concurrent.atomic.AtomicBoolean indexReady=new java.util.concurrent.atomic.AtomicBoolean(false);final String[] queuedQuery=new String[]{""};
-        final class SearchResult { final Ar…1173 tokens truncated…getOrDefault(c,new ArrayList<>()))if(term.equals(q)){exactCountry=true;break;}if(exactCountry)break;}
+        final class SearchResult { final ArrayList<String> zones,codes; final String title; SearchResult(ArrayList<String> z,ArrayList<String> c,String t){zones=z;codes=c;title=t;} }
+        final Runnable buildIndex=()->{
+            ArrayList<String> built=fastSelectableZones();LinkedHashSet<String> uniqueCodes=new LinkedHashSet<>();
+            for(String id:built){String code=countryCodeForZone(id);countryCache.put(id,code);if(!code.isEmpty()){uniqueCodes.add(code);zonesByCountry.computeIfAbsent(code,k->new ArrayList<>()).add(id);}cityCache.put(id,normalizeSearch(lightweightCityName(id)));}
+            for(String code:uniqueCodes){String local=countryName(code,I18n.locale(this)),ja=countryName(code,Locale.JAPAN),ko=countryName(code,Locale.KOREA),en=countryName(code,Locale.ENGLISH);countryLabelCache.put(code,local);ArrayList<String> terms=new ArrayList<>();for(String x:new String[]{code,local,ja,ko,en}){String n=normalizeSearch(x);if(!n.isEmpty()&&!terms.contains(n))terms.add(n);}String aliases=normalizeSearch(countryAliases(code));if(!aliases.isEmpty()){if(!terms.contains(aliases))terms.add(aliases);for(String x:aliases.split("\\s+"))if(x.length()>1&&!terms.contains(x))terms.add(x);}countryTermsCache.put(code,terms);}
+            for(String id:built){String code=countryCache.getOrDefault(id,"");StringBuilder b=new StringBuilder(id).append(' ').append(lightweightCityName(id)).append(' ').append(code);for(String term:countryTermsCache.getOrDefault(code,new ArrayList<>()))b.append(' ').append(term);searchCache.put(id,normalizeSearch(b.toString()));}
+            all.addAll(built);indexReady.set(true);
+        };
+        searchExecutor.execute(buildIndex);
+        final java.util.function.Consumer<String> requestSearch=(raw)->{
+            final String q=normalizeSearch(raw);queuedQuery[0]=q;final int generation=searchGeneration.incrementAndGet();
+            searchExecutor.execute(()->{
+                if(!indexReady.get()){return;}
+                if(generation!=searchGeneration.get())return;
+                LinkedHashSet<String> results=new LinkedHashSet<>();ArrayList<String> guessed=new ArrayList<>();String titleKey="おすすめ";LinkedHashSet<String> regionCodes=regionCountryCodes(q);ArrayList<String> onlineCodes=onlineHintCache.get(q);if(onlineCodes==null)onlineCodes=new ArrayList<>();
+                if(q.isEmpty()){
+                    for(String id:featuredZones())if(all.contains(id))results.add(id);
+                }else{
+                    ArrayList<String> direct=new ArrayList<>();for(String id:all){String cached=searchCache.get(id);if(cached!=null&&cached.contains(q))direct.add(id);}
+                    direct.sort((a,b)->{String ca=normalizeSearch(countryLabelCache.getOrDefault(countryCache.getOrDefault(a,""),"")),cb=normalizeSearch(countryLabelCache.getOrDefault(countryCache.getOrDefault(b,""),""));boolean ae=ca.equals(q),be=cb.equals(q);if(ae!=be)return ae?-1:1;String aa=cityCache.getOrDefault(a,""),bb=cityCache.getOrDefault(b,"");boolean as=aa.startsWith(q),bs=bb.startsWith(q);if(as!=bs)return as?-1:1;return aa.compareTo(bb);});
+                    results.addAll(direct);
+                    if(!onlineCodes.isEmpty()){for(String code:onlineCodes){if(!guessed.contains(code))guessed.add(code);ArrayList<String> zs=zonesByCountry.get(code);if(zs==null)continue;int n=0;for(String id:zs){results.add(id);if(++n>=12||results.size()>=90)break;}if(results.size()>=90)break;}}
+                    if(!regionCodes.isEmpty()){
+                        titleKey="地域からの候補";for(String code:regionCodes){ArrayList<String> zs=zonesByCountry.get(code);if(zs==null)continue;int n=0;for(String id:zs){results.add(id);if(++n>=4||results.size()>=80)break;}if(results.size()>=80)break;}guessed.addAll(regionCodes);
+                    }else{
+                        HashMap<String,Integer> scores=new HashMap<>();ArrayList<String> codes=new ArrayList<>(countryTermsCache.keySet());int threshold=Math.max(2,q.length()/3);
+                        for(String code:codes){int best=999;for(String term:countryTermsCache.getOrDefault(code,new ArrayList<>())){if(term.equals(q)){best=0;break;}if(term.contains(q))best=Math.min(best,1);else if(term.startsWith(q)||q.startsWith(term))best=Math.min(best,1+Math.abs(term.length()-q.length())/3);if(q.length()>=2)best=Math.min(best,editDistance(q,term));}scores.put(code,best);}
+                        codes.sort(Comparator.comparingInt(c->scores.getOrDefault(c,999)));for(String code:codes){int score=scores.getOrDefault(code,999);if(score<=threshold||guessed.size()<2){guessed.add(code);if(guessed.size()>=4)break;}}
+                        boolean exactCountry=false;for(String c:guessed){for(String term:countryTermsCache.getOrDefault(c,new ArrayList<>()))if(term.equals(q)){exactCountry=true;break;}if(exactCountry)break;}
                         titleKey=exactCountry?"関連する国":"もしかして";
                         if(direct.size()<35){for(String code:guessed){ArrayList<String> zs=zonesByCountry.get(code);if(zs==null)continue;int n=0;for(String id:zs){results.add(id);if(++n>=8||results.size()>=90)break;}if(results.size()>=90)break;}}
                         if(q.length()>=2&&direct.size()<12){ArrayList<String> candidates=new ArrayList<>(all);HashMap<String,Integer> dists=new HashMap<>();for(String id:candidates){String n=cityCache.getOrDefault(id,"");dists.put(id,n.contains(q)?0:editDistance(q,n));}candidates.sort(Comparator.comparingInt(id->dists.getOrDefault(id,999)));int lim=0;for(String id:candidates){int d=dists.getOrDefault(id,999);if(d<=threshold||lim<4){results.add(id);if(++lim>=10)break;}}}
@@ -1322,165 +1347,4 @@ public class ClockActivity extends Activity {
         i.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION|android.content.Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
         try{startActivityForResult(i,video?REQ_TIMER_VIDEO:REQ_TIMER_SOUND);}catch(Throwable t){Toast.makeText(this,I18n.tr(this,video?"動画ファイルを開けません":"音声ファイルを開けません"),Toast.LENGTH_SHORT).show();}
     }
-
-    @Override protected void onActivityResult(int requestCode,int resultCode,android.content.Intent data){
-        super.onActivityResult(requestCode,resultCode,data);
-        boolean video=requestCode==REQ_TIMER_VIDEO;
-        if((requestCode!=REQ_TIMER_SOUND&&!video)||resultCode!=RESULT_OK||data==null||data.getData()==null)return;
-        long id=pendingTimerSoundId; pendingTimerSoundId=-1L; if(id<1000)return;
-        android.net.Uri uri=data.getData();
-        try{getContentResolver().takePersistableUriPermission(uri,android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(Throwable ignored){}
-        String display=I18n.tr(this,video?"選択した動画":"選択した音");
-        android.database.Cursor cur=null;
-        try{cur=getContentResolver().query(uri,new String[]{android.provider.OpenableColumns.DISPLAY_NAME},null,null,null);if(cur!=null&&cur.moveToFirst()){int ix=cur.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);if(ix>=0){String x=cur.getString(ix);if(x!=null&&!x.trim().isEmpty())display=x.trim();}}}catch(Throwable ignored){}finally{if(cur!=null)try{cur.close();}catch(Throwable ignored){}}
-        TimerStore.Entry e=TimerStore.find(this,id); if(e==null)return;
-        if(video){if(!storeTimerVideo(e,uri,display))return;promptTimerVideoFullScreenPermissionIfNeeded();}else{e.soundUri=uri.toString();e.soundName=display;TimerStore.update(this,e);}
-        renderTimers();Toast.makeText(this,I18n.tr(this,(video?"タイマー動画: ":"タイマー音: ")+display),Toast.LENGTH_SHORT).show();
-    }
-
-    private String timerStateText(TimerStore.Entry e) {
-        String prefix=e.saved?I18n.tr(this,"保存済み")+"  ·  ":I18n.tr(this,"今回だけ")+"  ·  ";
-        if(e.running)return prefix+I18n.tr(this,"終了予定")+"  "+new java.text.SimpleDateFormat("HH:mm:ss",I18n.locale(this)).format(new java.util.Date(e.endMs));
-        if(e.finished())return prefix+I18n.tr(this,"終了");
-        if(e.remainingMs<e.durationMs)return prefix+I18n.tr(this,"一時停止中");
-        return prefix+I18n.tr(this,durationLabel(e.durationMs));
-    }
-
-    private String durationLabel(long ms) {
-        long sec=Math.max(1L,ms/1000L),h=sec/3600,m=(sec/60)%60,x=sec%60;
-        if(h>0)return h+"時間 "+m+"分"; if(m>0&&x>0)return m+"分 "+x+"秒"; if(m>0)return m+"分"; return x+"秒";
-    }
-
-    private void showAddTimerDialog() {
-        if(!"timer".equals(mode))return;
-        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(Ui.dp(this,18),0,Ui.dp(this,18),0);
-        EditText label=new EditText(this);label.setHint(I18n.tr(this,"名前（任意）"));label.setSingleLine(true);label.setTextSize(17);label.setPadding(Ui.dp(this,14),Ui.dp(this,9),Ui.dp(this,14),Ui.dp(this,9));Ui.styleInput(label,this,Ui.SURFACE_2,14);box.addView(label,new LinearLayout.LayoutParams(-1,Ui.dp(this,54)));
-        final String[] folder={TimerStore.UNFILED};TextView choose=timerTextAction("保存時のフォルダ："+folder[0],13,Ui.TEXT);choose.setGravity(Gravity.CENTER_VERTICAL|Gravity.START);choose.setOnClickListener(v->showFolderPicker(folder[0],name->{folder[0]=name;choose.setText(I18n.tr(this,"保存時のフォルダ：")+name);}));box.addView(choose,Ui.gapTop(this,8));
-        TextView caption=text("時間",13,Ui.MUTED);caption.setPadding(0,Ui.dp(this,14),0,0);box.addView(caption);
-        LinearLayout inputs=new LinearLayout(this);EditText h=numberBox("時"),m=numberBox("分"),sec=numberBox("秒");inputs.addView(h,new LinearLayout.LayoutParams(0,-2,1));inputs.addView(m,new LinearLayout.LayoutParams(0,-2,1));inputs.addView(sec,new LinearLayout.LayoutParams(0,-2,1));box.addView(inputs);
-        Switch save=new Switch(this);save.setText(I18n.tr(this,"開始時に保存リストにも登録"));save.setTextColor(Ui.TEXT);save.setChecked(true);Ui.styleSwitch(save,this);box.addView(save,Ui.gapTop(this,12));
-        LinearLayout actions=new LinearLayout(this);Button saveOnly=Ui.button(this,"保存",false);Button once=Ui.button(this,"今回だけ",false);Button start=Ui.button(this,"開始",true);
-        LinearLayout.LayoutParams actionLp=new LinearLayout.LayoutParams(0,Ui.dp(this,48),1);actions.addView(saveOnly,actionLp);LinearLayout.LayoutParams onceLp=new LinearLayout.LayoutParams(0,Ui.dp(this,48),1);onceLp.setMargins(Ui.dp(this,8),0,0,0);actions.addView(once,onceLp);box.addView(actions,Ui.gapTop(this,14));box.addView(start,Ui.gapTop(this,8));
-        AlertDialog d=new AlertDialog.Builder(this).setTitle(I18n.tr(this,"タイマーを作成")).setView(box).setNegativeButton(I18n.tr(this,"閉じる"),null).create();
-        saveOnly.setOnClickListener(v->createTimerFromDialog(d,label,h,m,sec,folder[0],"save",save.isChecked()));once.setOnClickListener(v->createTimerFromDialog(d,label,h,m,sec,folder[0],"once",false));start.setOnClickListener(v->createTimerFromDialog(d,label,h,m,sec,folder[0],"start",save.isChecked()));
-        d.show();
-    }
-
-    private void createTimerFromDialog(AlertDialog d,EditText label,EditText h,EditText m,EditText sec,String folder,String action,boolean keep){
-        long total=(parseLong(h)*3600L+parseLong(m)*60L+parseLong(sec))*1000L;
-        if(total<=0){Toast.makeText(this,I18n.tr(this,"時間を設定してください"),Toast.LENGTH_SHORT).show();return;}
-        String name=label.getText().toString().trim();if(name.isEmpty())name=durationLabel(total);
-        if("save".equals(action)){TimerStore.addSaved(this,name,total,folder);Toast.makeText(this,I18n.tr(this,"保存したタイマーに追加しました"),Toast.LENGTH_SHORT).show();}
-        else if("once".equals(action)){TimerStore.addTemporary(this,name,total);Toast.makeText(this,I18n.tr(this,"今回だけ使うタイマーを準備しました"),Toast.LENGTH_SHORT).show();}
-        else{TimerStore.Entry run;if(keep){TimerStore.Entry preset=TimerStore.addSaved(this,name,total,folder);run=TimerStore.addTemporaryFrom(this,preset);}else run=TimerStore.addTemporary(this,name,total);startTimerEntry(run);}
-        d.dismiss();renderTimers();
-    }
-
-    private void startQuickTimer(long durationMs){TimerStore.Entry e=TimerStore.addTemporary(this,"",durationMs);startTimerEntry(e);renderTimers();}
-    private void startTimerEntry(TimerStore.Entry e){
-        if(e==null)return;
-        if(isVideoMedia(e.soundUri))promptTimerVideoFullScreenPermissionIfNeeded();
-        e.remainingMs=e.durationMs; e.endMs=System.currentTimeMillis()+e.durationMs; e.running=true;
-        TimerStore.update(this,e);
-        requestTimerNotificationPermissionIfNeeded();
-        TimerReceiver.schedule(this,e.id,e.endMs);
-    }
-
-    private EditText numberBox(String hint) {
-        EditText e=new EditText(this); e.setHint(I18n.tr(this,hint)); e.setHintTextColor(Ui.MUTED_2); e.setTextColor(Ui.TEXT);
-        e.setInputType(android.text.InputType.TYPE_CLASS_NUMBER); e.setGravity(Gravity.CENTER); e.setTextSize(18); e.setSingleLine(true);
-        e.setPadding(Ui.dp(this,8),Ui.dp(this,10),Ui.dp(this,8),Ui.dp(this,10));
-        Ui.styleInput(e,this,Ui.SURFACE_2,12);return e;
-    }
-    private long parseLong(EditText e){try{return Long.parseLong(e.getText().toString().trim());}catch(Exception x){return 0L;}}
-
-    private void toggleTimer(long id) {
-        TimerStore.Entry e=TimerStore.find(this,id);if(e==null)return;
-        if(e.running){
-            e.remainingMs=e.remaining(); e.running=false; e.endMs=0L;
-            TimerStore.update(this,e); TimerReceiver.cancel(this,id);
-        } else {
-            long rem=e.remainingMs>0?e.remainingMs:e.durationMs; e.remainingMs=rem; e.endMs=System.currentTimeMillis()+rem; e.running=true;
-            TimerStore.update(this,e);
-            requestTimerNotificationPermissionIfNeeded();
-            TimerReceiver.schedule(this,id,e.endMs);
-        }
-        renderTimers();
-    }
-
-    private void addMinute(long id) {
-        TimerStore.Entry e=TimerStore.find(this,id);if(e==null)return;e.durationMs+=60000L;
-        if(e.running){e.endMs+=60000L;e.remainingMs=e.remaining();TimerReceiver.schedule(this,id,e.endMs);}else if(e.finished())e.remainingMs=60000L;else e.remainingMs+=60000L;
-        TimerStore.update(this,e);renderTimers();
-    }
-
-    private void resetTimer(long id) {TimerStore.Entry e=TimerStore.find(this,id);if(e==null)return;TimerReceiver.cancel(this,id);e.running=false;e.endMs=0L;e.remainingMs=e.durationMs;TimerStore.update(this,e);renderTimers();}
-    private String formatTimer(long ms){long total=(ms+999)/1000L,h=total/3600,m=(total/60)%60,x=total%60;return String.format(Locale.US,"%02d:%02d:%02d",h,m,x);}
-
-    private boolean canUseTimerVideoFullScreen(){
-        if(Build.VERSION.SDK_INT<34)return true;try{android.app.NotificationManager nm=getSystemService(android.app.NotificationManager.class);return nm==null||nm.canUseFullScreenIntent();}catch(Throwable ignored){return false;}
-    }
-    private void promptTimerVideoFullScreenPermissionIfNeeded(){
-        if(Build.VERSION.SDK_INT<34||canUseTimerVideoFullScreen())return;
-        try{new AlertDialog.Builder(this).setTitle(I18n.tr(this,"動画タイマーの全画面表示"))
-            .setMessage(I18n.tr(this,"動画をタイマー終了時に画面いっぱいに表示するには、全画面通知の許可をオンにしてください。"))
-            .setNegativeButton(I18n.tr(this,"あとで"),null)
-            .setPositiveButton(I18n.tr(this,"設定を開く"),(d,w)->{try{android.content.Intent x=new android.content.Intent(android.provider.Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,android.net.Uri.parse("package:"+getPackageName()));startActivity(x);}catch(Throwable ignored){}}).show();}catch(Throwable ignored){}
-    }
-
-    private boolean timerNotificationsAllowed(){
-        if(Build.VERSION.SDK_INT<33)return true;
-        try{return checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)==android.content.pm.PackageManager.PERMISSION_GRANTED;}catch(Throwable ignored){return false;}
-    }
-
-    private void requestTimerNotificationPermissionIfNeeded(){
-        if(Build.VERSION.SDK_INT<33||timerNotificationsAllowed())return;
-        try{requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS},REQ_TIMER_NOTIFICATION);}catch(Throwable ignored){}
-    }
-
-    private void refreshRunningTimerNotifications(){
-        if(!timerNotificationsAllowed())return;
-        for(TimerStore.Entry e:TimerStore.all(this))if(e.running)TimerReceiver.showRunning(this,e);
-    }
-
-    private void showTimerNotificationSettingsDialog(){
-        try{
-            new AlertDialog.Builder(this)
-                    .setTitle(I18n.tr(this,"時計ツールの通知を表示できません"))
-                    .setMessage(I18n.tr(this,"タイマーとストップウォッチの実行中表示を通知に出すには、IGNIDO Wakeの通知を許可してください。"))
-                    .setNegativeButton(I18n.tr(this,"閉じる"),null)
-                    .setPositiveButton(I18n.tr(this,"通知設定を開く"),(d,w)->{
-                        try{
-                            android.content.Intent i=new android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS);
-                            i.putExtra(android.provider.Settings.EXTRA_APP_PACKAGE,getPackageName());
-                            startActivity(i);
-                        }catch(Throwable ignored){}
-                    }).show();
-        }catch(Throwable ignored){}
-    }
-
-    @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults){
-        super.onRequestPermissionsResult(requestCode,permissions,grantResults);
-        if(requestCode!=REQ_TIMER_NOTIFICATION)return;
-        if(timerNotificationsAllowed()){refreshRunningTimerNotifications();syncStopwatchNotification();} else showTimerNotificationSettingsDialog();
-    }
-
-    private void updateTimers() {
-        if(!"timer".equals(mode)||timerList==null)return;boolean rebuild=false;
-        for(TimerStore.Entry e:TimerStore.all(this)){
-            long rem=e.remaining();if(e.running&&rem<=0){TimerReceiver.complete(this,e.id);rebuild=true;continue;}
-            TextView time=timerList.findViewWithTag("timer_remaining_"+e.id),state=timerList.findViewWithTag("timer_state_"+e.id);
-            ClockFaceActivity.AnalogFace analog=timerList.findViewWithTag("timer_analog_"+e.id);
-            if(time!=null)time.setText(formatTimer(rem));if(analog!=null){double sec=(rem/1000d)%60d,min=(rem/60000d)%60d,hr=(rem/3600000d)%12d;analog.setHands(hr,min,sec);}if(state!=null){state.setText(timerStateText(e));state.setTextColor(e.running?Ui.ACCENT:(e.finished()?Ui.SUCCESS:Ui.MUTED));}
-        }
-        if(rebuild)renderTimers();
-    }
-
-    private void updateLiveUi() {
-        updateLocalClock();
-        if("world".equals(mode)) updateWorldRows();
-        else if("stopwatch".equals(mode)) updateStopwatch();
-        else if("timer".equals(mode)) updateTimers();
-    }
-}
 
