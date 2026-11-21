@@ -62,24 +62,24 @@ public final class AppThemes {
             bg = scheme.bg;
             surface = scheme.surface;
             text = scheme.text;
-            accent = scheme.accent;
-            accent2 = scheme.accent2 != 0 ? scheme.accent2
-                    : (isDark ? mix(scheme.accent, Color.WHITE, .16f) : mix(scheme.accent, Color.BLACK, .12f));
+            accent = accessibleTextColor(scheme.accent, bg, surface);
+            accent2 = accessibleTextColor(scheme.accent2 != 0 ? scheme.accent2
+                    : (isDark ? mix(accent, Color.WHITE, .16f) : mix(accent, Color.BLACK, .12f)), bg, surface);
 
             if ("dawn-ink".equals(id) && !isDark) {
-                // Keep Dawn Ink's paper surfaces, while deriving emphasis from the
-                // selected accent so a blue palette never inherits coral.
-                bg2 = 0xFFEDE5DA;
-                surface2 = 0xFFF2EAE1;
-                surface3 = 0xFFE8DED2;
-                border = 0xFFD4C8BA;
+                // Keep the default palette crisp and cool: clear paper surfaces,
+                // an ink-blue action color, and restrained neutral dividers.
+                bg2 = 0xFFE7EEF2;
+                surface2 = 0xFFEDF3F6;
+                surface3 = 0xFFE5EDF1;
+                border = 0xFFD2DEE4;
                 borderHot = withAlpha(accent2, 0x70);
                 cyan = 0xFF277C83;
                 blue = 0xFF3E66A0;
                 violet = 0xFF71599C;
                 pink = 0xFFAA526C;
-                muted = 0xFF56636D;
-                muted2 = 0xFF5B5F69;
+                muted = accessibleTextColor(0xFF52636D, bg, surface, surface2, surface3);
+                muted2 = accessibleTextColor(0xFF5B6870, bg, surface, surface2, surface3);
                 success = 0xFF2E745A;
                 danger = 0xFFAD3F36;
                 heroStart = accent;
@@ -101,8 +101,8 @@ public final class AppThemes {
                 violet = mix(isDark ? 0xFFC6A9F0 : 0xFF71599C, accent, .12f);
                 pink = mix(isDark ? 0xFFE99DB5 : 0xFFAA526C, accent, .12f);
 
-                muted = mix(text, bg, .23f);
-                muted2 = mix(text, bg, .35f);
+                muted = accessibleTextColor(mix(text, bg, .23f), bg, surface, surface2, surface3);
+                muted2 = accessibleTextColor(mix(text, bg, .35f), bg, surface, surface2, surface3);
                 success = isDark ? 0xFF79D59B : 0xFF286B4D;
                 danger = isDark ? 0xFFFF8F98 : 0xFFA52C39;
 
@@ -155,8 +155,8 @@ public final class AppThemes {
     // 25 themes: the existing Dawn Ink default plus 24 distinct visual directions.
     private static final ThemeSpec[] SPECS = {
         new ThemeSpec("dawn-ink", "夜明けのインク", "Dawn Ink", "새벽 잉크",
-            new Scheme(0xFFF6F2EB, 0xFFFFFCF7, 0xFF252E36, 0xFF3E5C70),
-            new Scheme(0xFF101820, 0xFF1B272E, 0xFFEDF1F0, 0xFF9AB6C6)),
+            new Scheme(0xFFF2F6F8, 0xFFFCFDFE, 0xFF1A2D3B, 0xFF286F8F),
+            new Scheme(0xFF0D1821, 0xFF15242E, 0xFFEAF3F6, 0xFF78B9D0)),
         new ThemeSpec("aurora", "オーロラ", "Aurora", "오로라",
             new Scheme(0xFFEEF7FA, 0xFFFFFFFF, 0xFF18313B, 0xFF007E9E),
             new Scheme(0xFF0C1A20, 0xFF152A33, 0xFFE7F7FA, 0xFF55C9D9)),
@@ -338,6 +338,27 @@ public final class AppThemes {
                 Math.round(Color.red(from) * (1f - t) + Color.red(to) * t),
                 Math.round(Color.green(from) * (1f - t) + Color.green(to) * t),
                 Math.round(Color.blue(from) * (1f - t) + Color.blue(to) * t));
+    }
+
+    /** Keep muted labels and accent text readable on every standard app surface. */
+    private static int accessibleTextColor(int preferred, int... backgrounds) {
+        if (minimumContrast(preferred, backgrounds) >= 4.5) return preferred;
+        int target = minimumContrast(Color.BLACK, backgrounds) >= minimumContrast(Color.WHITE, backgrounds)
+                ? Color.BLACK : Color.WHITE;
+        if (minimumContrast(target, backgrounds) < 4.5) return target;
+        float low = 0f, high = 1f;
+        for (int i = 0; i < 18; i++) {
+            float middle = (low + high) * .5f;
+            if (minimumContrast(mix(preferred, target, middle), backgrounds) >= 4.5) high = middle;
+            else low = middle;
+        }
+        return mix(preferred, target, high);
+    }
+
+    private static double minimumContrast(int foreground, int... backgrounds) {
+        double result = Double.MAX_VALUE;
+        for (int background : backgrounds) result = Math.min(result, contrastRatio(foreground, background));
+        return result;
     }
 
     private static int withAlpha(int color, int alpha) { return (alpha << 24) | (color & 0x00FFFFFF); }

@@ -4,6 +4,10 @@ import android.Manifest;
 import android.app.*;
 import android.content.*;
 import android.content.pm.PackageManager;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.RadialGradient;
+import android.graphics.Shader;
 import android.os.*;
 import android.view.Gravity;
 import android.view.View;
@@ -19,7 +23,8 @@ public class MainActivity extends Activity {
     private TextView nextText,nextMeta;
     private FrameLayout nextCard;
     private LinearLayout heroContent, emptyHero;
-    private View heroMascot;
+    private View sunriseAccent;
+
     private FrameLayout horizonTrack;
     private View horizonDot;
     private final Handler countdownHandler=new Handler(Looper.getMainLooper());
@@ -40,7 +45,7 @@ public class MainActivity extends Activity {
     @Override protected void onPause(){countdownHandler.removeCallbacks(countdownTick);super.onPause();}
 
     private String appearanceKey(){
-        return UiProfiles.id(this)+":"+VisualDesigns.id(this)+":"+AppThemes.key(this)+":"+MascotCatalog.id(this);
+        return UiProfiles.id(this)+":"+VisualDesigns.id(this)+":"+AppThemes.key(this);
     }
 
     private void buildUi(){
@@ -51,13 +56,26 @@ public class MainActivity extends Activity {
 
         LinearLayout top=new LinearLayout(this);top.setOrientation(LinearLayout.VERTICAL);
         top.setPadding(Ui.dp(this,22),Ui.dp(this,10),Ui.dp(this,22),Ui.dp(this,5));
-        top.addView(Ui.overline(this,"IGNIDO  /  WAKE"));
+        LinearLayout brandLine=new LinearLayout(this);brandLine.setGravity(Gravity.CENTER_VERTICAL);
+        TextView brand=Ui.overline(this,"IGNIDO  /  WAKE");
+        brandLine.addView(brand,new LinearLayout.LayoutParams(0,-2,1));
+        String today=LocalDate.now().format(DateTimeFormatter.ofPattern("M/d · EEE",I18n.locale(this)));
+        TextView date=Ui.text(this,today,11,Ui.MUTED_2);date.setGravity(Gravity.CENTER);
+        date.setSingleLine(true);date.setPadding(Ui.dp(this,10),Ui.dp(this,5),Ui.dp(this,10),Ui.dp(this,5));
+        date.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,11,this));
+        brandLine.addView(date,new LinearLayout.LayoutParams(-2,-2));top.addView(brandLine);
         TextView title=Ui.title(this,"アラーム",HomeMetrics.HEADER_TITLE_SP);
         title.setPadding(0,Ui.dp(this,3),0,0);top.addView(title);root.addView(top);
 
         nextCard=new FrameLayout(this);nextCard.setClipChildren(true);nextCard.setClipToPadding(true);
         nextCard.setMinimumHeight(Ui.dp(this,HomeMetrics.HERO_HEIGHT_DP));
         nextCard.setBackground(Ui.gradientRound(this,24,Ui.HERO_START,Ui.HERO_END));
+        if ("none".equals(Ui.DESIGN_PATTERN) || "rules".equals(Ui.DESIGN_PATTERN)) {
+            sunriseAccent=new SunriseAccentView(this);
+            nextCard.addView(sunriseAccent,
+                    new FrameLayout.LayoutParams(Ui.dp(this,136),Ui.dp(this,HomeMetrics.HERO_HEIGHT_DP),
+                            Gravity.END|Gravity.CENTER_VERTICAL));
+        }
         View edge=new View(this);edge.setBackgroundColor(Ui.withAlpha(Ui.HERO_TEXT,31));
         FrameLayout.LayoutParams edgeLp=new FrameLayout.LayoutParams(-1,Ui.dp(this,1),Gravity.TOP);
         edgeLp.setMargins(Ui.dp(this,HomeMetrics.HERO_SIDE_DP),0,Ui.dp(this,HomeMetrics.HERO_SIDE_DP),0);
@@ -71,11 +89,6 @@ public class MainActivity extends Activity {
         nextText.setIncludeFontPadding(false);
         nextText.setAutoSizeTextTypeUniformWithConfiguration(34,HomeMetrics.HERO_TIME_SP,1,android.util.TypedValue.COMPLEX_UNIT_SP);
         nextText.setPadding(0,Ui.dp(this,2),0,0);
-        String mascotId=MascotCatalog.id(this);
-        if(!"none".equals(mascotId)){
-            int innerWidth=getResources().getDisplayMetrics().widthPixels-Ui.dp(this,68);
-            nextText.setMaxWidth(Math.max(Ui.dp(this,126),Math.round(innerWidth*.60f)));
-        }
         heroContent.addView(nextText,new LinearLayout.LayoutParams(-2,-2));
         nextMeta=Ui.text(this,"次のアラームはありません",13,Ui.HERO_TEXT);
         nextMeta.setSingleLine(true);nextMeta.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -94,17 +107,7 @@ public class MainActivity extends Activity {
         emptyHero.setMinimumHeight(Ui.dp(this,HomeMetrics.HERO_EMPTY_HEIGHT_DP));
         emptyHero.setVisibility(View.GONE);
         nextCard.addView(emptyHero,new FrameLayout.LayoutParams(-1,-2));
-        if(!"none".equals(mascotId)){
-            MascotArtView mascot=new MascotArtView(this,mascotId);
-            mascot.setMascotColors(Ui.ACCENT,Ui.ACCENT_2,Ui.HERO_TEXT);
-            mascot.setClickable(false);mascot.setFocusable(false);
-            heroMascot=mascot;
-            FrameLayout.LayoutParams mascotLp=new FrameLayout.LayoutParams(
-                    Ui.dp(this,HomeMetrics.HERO_CHARACTER_DP),Ui.dp(this,HomeMetrics.HERO_CHARACTER_DP),Gravity.TOP|Gravity.END);
-            mascotLp.topMargin=Ui.dp(this,4);mascotLp.rightMargin=Ui.dp(this,6);
-            nextCard.addView(mascot,mascotLp);
-        }
-        LinearLayout.LayoutParams nextLp=new LinearLayout.LayoutParams(-1,-2);
+        LinearLayout.LayoutParams nextLp=new LinearLayout.LayoutParams(-1,Ui.dp(this,HomeMetrics.HERO_HEIGHT_DP));
         nextLp.setMargins(Ui.dp(this,16),Ui.dp(this,4),Ui.dp(this,16),Ui.dp(this,3));root.addView(nextCard,nextLp);
 
         ScrollView sv=new ScrollView(this);sv.setFillViewport(true);sv.setVerticalScrollBarEnabled(false);
@@ -115,7 +118,12 @@ public class MainActivity extends Activity {
         list.setPadding(Ui.dp(this,18),Ui.dp(this,6),Ui.dp(this,18),Ui.dp(this,24));sv.addView(list);
         root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
 
-        Button add=Ui.button(this,"アラームを追加",true);add.setOnClickListener(v->edit(-1));
+        Button add=Ui.button(this,"アラームを追加",true);
+        android.graphics.drawable.Drawable addIcon=getDrawable(R.drawable.ic_v292_action_add).mutate();
+        addIcon.setTint(Ui.ON_ACCENT);int addIconSize=Ui.dp(this,20);
+        addIcon.setBounds(0,0,addIconSize,addIconSize);
+        add.setCompoundDrawablePadding(Ui.dp(this,8));add.setCompoundDrawables(addIcon,null,null,null);
+        add.setOnClickListener(v->edit(-1));
         LinearLayout action=new LinearLayout(this);action.setPadding(Ui.dp(this,18),Ui.dp(this,5),Ui.dp(this,18),Ui.dp(this,5));
         action.addView(add,new LinearLayout.LayoutParams(-1,-2));root.addView(action);
         root.addView(bottomNav());
@@ -124,8 +132,8 @@ public class MainActivity extends Activity {
     }
 
     private LinearLayout bottomNav(){
-        LinearLayout nav=new LinearLayout(this);nav.setGravity(Gravity.CENTER);nav.setPadding(Ui.dp(this,9),Ui.dp(this,2),Ui.dp(this,9),Ui.dp(this,2));nav.setBackgroundColor(Ui.SURFACE);
-        Button alarms=Ui.bottomTab(this,"アラーム",true);Button clock=Ui.bottomTab(this,"時計",false);Button records=Ui.bottomTab(this,"記録",false);Button settings=Ui.bottomTab(this,"設定",false);
+        LinearLayout nav=new LinearLayout(this);nav.setGravity(Gravity.CENTER);nav.setPadding(Ui.dp(this,9),Ui.dp(this,2),Ui.dp(this,9),Ui.dp(this,2));nav.setBackground(Ui.navigationSurface(this));
+        LinearLayout alarms=Ui.bottomTab(this,"アラーム",true);LinearLayout clock=Ui.bottomTab(this,"時計",false);LinearLayout records=Ui.bottomTab(this,"記録",false);LinearLayout settings=Ui.bottomTab(this,"設定",false);
         nav.addView(alarms,new LinearLayout.LayoutParams(0,Ui.dp(this,HomeMetrics.NAV_TAB_HEIGHT_DP),1));nav.addView(clock,new LinearLayout.LayoutParams(0,Ui.dp(this,HomeMetrics.NAV_TAB_HEIGHT_DP),1));nav.addView(records,new LinearLayout.LayoutParams(0,Ui.dp(this,HomeMetrics.NAV_TAB_HEIGHT_DP),1));nav.addView(settings,new LinearLayout.LayoutParams(0,Ui.dp(this,HomeMetrics.NAV_TAB_HEIGHT_DP),1));
         clock.setOnClickListener(v->openClock("world"));records.setOnClickListener(v->Ui.launchNoAnimation(this,new Intent(this,StatsActivity.class)));settings.setOnClickListener(v->Ui.launchNoAnimation(this,new Intent(this,SystemSettingsActivity.class)));return nav;
     }
@@ -187,31 +195,13 @@ public class MainActivity extends Activity {
 
     private LinearLayout buildEmptyContent(boolean onHero){
         LinearLayout content=onHero?new LinearLayout(this):Ui.card(this);
-        content.setOrientation(LinearLayout.HORIZONTAL);
+        content.setOrientation(LinearLayout.VERTICAL);
         content.setGravity(Gravity.CENTER_VERTICAL);
         content.setPadding(Ui.dp(this,16),Ui.dp(this,10),Ui.dp(this,16),Ui.dp(this,10));
-        String mascotId=MascotCatalog.id(this);
-        if("none".equals(mascotId)){
-            TextView symbol=Ui.title(this,"✦",28);
-            symbol.setTextColor(onHero?Ui.HERO_TEXT:Ui.ACCENT_2);
-            symbol.setGravity(Gravity.CENTER);
-            symbol.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-            symbol.setBackground(onHero
-                    ?Ui.roundStroke(Ui.withAlpha(Ui.HERO_TEXT,26),Ui.withAlpha(Ui.HERO_TEXT,66),28,this)
-                    :Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,28,this));
-            content.addView(symbol,new LinearLayout.LayoutParams(Ui.dp(this,56),Ui.dp(this,56)));
-        }else{
-            MascotArtView mascot=new MascotArtView(this,mascotId);
-            mascot.setMascotColors(Ui.ACCENT,Ui.ACCENT_2,onHero?Ui.HERO_TEXT:Ui.TEXT);
-            mascot.setClickable(false);mascot.setFocusable(false);
-            content.addView(mascot,new LinearLayout.LayoutParams(
-                    Ui.dp(this,HomeMetrics.EMPTY_CHARACTER_DP),Ui.dp(this,HomeMetrics.EMPTY_CHARACTER_DP)));
-        }
+        if(onHero)content.setMinimumHeight(Ui.dp(this,HomeMetrics.HERO_EMPTY_HEIGHT_DP));
         LinearLayout copy=new LinearLayout(this);
         copy.setOrientation(LinearLayout.VERTICAL);
-        LinearLayout.LayoutParams copyLp=new LinearLayout.LayoutParams(0,-2,1);
-        copyLp.leftMargin=Ui.dp(this,12);
-        content.addView(copy,copyLp);
+        content.addView(copy,new LinearLayout.LayoutParams(-1,-2));
         TextView heading=Ui.title(this,localized(
                 "最初のアラームを追加しましょう",
                 "Add your first alarm",
@@ -238,8 +228,8 @@ public class MainActivity extends Activity {
     }
 
     private void addAlarmTile(AlarmStore.Entry e,int index){
-        LinearLayout tile=Ui.card(this);tile.setPadding(Ui.dp(this,11),Ui.dp(this,8),Ui.dp(this,11),Ui.dp(this,8));
-        tile.setMinimumHeight(Ui.dp(this,HomeMetrics.TILE_MIN_HEIGHT_DP));tile.setClickable(true);tile.setFocusable(true);tile.setOnClickListener(v->edit(e.id));
+        LinearLayout tile=Ui.card(this);tile.setPadding(Ui.dp(this,14),Ui.dp(this,10),Ui.dp(this,14),Ui.dp(this,10));
+        tile.setMinimumHeight(Ui.dp(this,HomeMetrics.TILE_MIN_HEIGHT_DP));tile.setClickable(true);tile.setFocusable(true);tile.setForeground(Ui.rippleForeground(this,18));tile.setOnClickListener(v->edit(e.id));
         if(e.id>=1000)tile.setOnLongClickListener(v->{confirmDelete(e);return true;});
         LinearLayout head=Ui.row(this);head.setPadding(0,0,0,Ui.dp(this,4));
         TextView time=Ui.title(this,String.format(Locale.JAPAN,"%02d:%02d",e.hour,e.minute),28);
@@ -247,8 +237,8 @@ public class MainActivity extends Activity {
         Switch on=new Switch(this);on.setChecked(e.enabled);Ui.styleSwitch(on,this);head.addView(on);tile.addView(head);
         String label=(e.label==null||e.label.trim().isEmpty())?I18n.tr(this,"アラーム"):e.label.trim();
         TextView name=Ui.title(this,label,15);name.setSingleLine(true);name.setEllipsize(android.text.TextUtils.TruncateAt.END);tile.addView(name);
-        TextView schedule=Ui.text(this,repeatText(e.dayMask),12,e.enabled?Ui.ACCENT:Ui.MUTED);schedule.setSingleLine(true);schedule.setEllipsize(android.text.TextUtils.TruncateAt.END);schedule.setPadding(0,Ui.dp(this,3),0,0);tile.addView(schedule);
-        TextView mission=Ui.text(this,AlarmProfiles.missionIcon(e.missionType)+"  "+I18n.tr(this,AlarmProfiles.missionName(e.missionType)),11,Ui.MUTED);mission.setSingleLine(true);mission.setEllipsize(android.text.TextUtils.TruncateAt.END);mission.setPadding(0,Ui.dp(this,5),0,0);tile.addView(mission);
+        TextView schedule=Ui.text(this,repeatText(e.dayMask),12,e.enabled?Ui.ACCENT:Ui.MUTED);schedule.setSingleLine(true);schedule.setEllipsize(android.text.TextUtils.TruncateAt.END);schedule.setPadding(0,Ui.dp(this,4),0,0);tile.addView(schedule);
+        TextView mission=Ui.text(this,AlarmProfiles.missionIcon(e.missionType)+"  "+I18n.tr(this,AlarmProfiles.missionName(e.missionType)),12,Ui.MUTED);mission.setSingleLine(true);mission.setEllipsize(android.text.TextUtils.TruncateAt.END);mission.setPadding(0,Ui.dp(this,6),0,0);tile.addView(mission);
         long snoozeAt=SnoozeScheduler.scheduledAt(this,e.id);
         if(snoozeAt>System.currentTimeMillis()){
             TextView snooze=Ui.text(this,I18n.tr(this,"スヌーズ中")+"  ·  "+relativeText(snoozeAt-System.currentTimeMillis()),11,Ui.ACCENT_2);
@@ -258,14 +248,14 @@ public class MainActivity extends Activity {
         on.setOnClickListener(v->{e.enabled=on.isChecked();AlarmProfiles.save(this,e);if(!e.enabled){SnoozeScheduler.cancel(this,e.id);if(e.id>=1000)AlarmScheduler.cancelExtraAlarm(this,e.id);}AlarmScheduler.reschedule(this);render();});
         android.widget.GridLayout.LayoutParams lp=new android.widget.GridLayout.LayoutParams(
                 android.widget.GridLayout.spec(index/2),android.widget.GridLayout.spec(index%2,1f));
-        lp.width=0;lp.height=-2;lp.setMargins(Ui.dp(this,3),Ui.dp(this,3),Ui.dp(this,3),Ui.dp(this,6));tileGrid.addView(tile,lp);
+        lp.width=0;lp.height=-2;lp.setMargins(Ui.dp(this,3),Ui.dp(this,3),Ui.dp(this,3),Ui.dp(this,8));tileGrid.addView(tile,lp);
     }
 
     private void addAlarmRow(AlarmStore.Entry e){
         LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.VERTICAL);
-        row.setPadding(Ui.dp(this,10),Ui.dp(this,4),Ui.dp(this,8),Ui.dp(this,4));
-        row.setBackground(Ui.burnCard(this,e.enabled));
-        if(Build.VERSION.SDK_INT>=21)row.setElevation(0);
+        row.setPadding(Ui.dp(this,16),Ui.dp(this,12),Ui.dp(this,16),Ui.dp(this,12));
+        row.setBackground(Ui.alarmCard(this,e.enabled));
+        if(Build.VERSION.SDK_INT>=21)row.setElevation(Ui.cardElevationPx(this));
         row.setOnClickListener(v->edit(e.id));
         if(e.id>=1000)row.setOnLongClickListener(v->{confirmDelete(e);return true;});
 
@@ -274,8 +264,13 @@ public class MainActivity extends Activity {
         time.setTextColor(e.enabled?Ui.ACCENT_2:Ui.MUTED_2);
         time.setTypeface(android.graphics.Typeface.create("sans-serif-light",android.graphics.Typeface.NORMAL));
         time.setIncludeFontPadding(false);
+        android.graphics.drawable.GradientDrawable statusDot=new android.graphics.drawable.GradientDrawable();
+        statusDot.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        statusDot.setColor(e.enabled?Ui.ACCENT_2:Ui.MUTED_2);
+        int statusDotSize=Ui.dp(this,6);statusDot.setBounds(0,0,statusDotSize,statusDotSize);
+        time.setCompoundDrawablePadding(Ui.dp(this,8));time.setCompoundDrawables(statusDot,null,null,null);
         LinearLayout details=new LinearLayout(this);details.setOrientation(LinearLayout.VERTICAL);
-        details.setPadding(Ui.dp(this,10),0,Ui.dp(this,5),0);
+        details.setPadding(Ui.dp(this,12),0,Ui.dp(this,5),0);
         String label=(e.label==null||e.label.trim().isEmpty())?"アラーム":e.label.trim();
         TextView name=Ui.title(this,label,15);
         name.setTypeface(android.graphics.Typeface.create("sans-serif-medium",android.graphics.Typeface.BOLD));
@@ -286,10 +281,17 @@ public class MainActivity extends Activity {
         long now=System.currentTimeMillis();
         long next=AlarmScheduler.nextTriggerMillis(this,e);
         String remaining=(e.enabled&&next>now)?String.format(I18n.locale(this),I18n.tr(this,"あと %s"),relativeText(next-now)):"";
-        String scheduleLine=scheduleText+(remaining.isEmpty()?"":"  ·  "+remaining);
-        TextView schedule=Ui.text(this,scheduleLine,11,e.enabled?Ui.ACCENT:Ui.MUTED_2);
+        if(!remaining.isEmpty()){
+            TextView countdown=Ui.text(this,remaining,11,Ui.ACCENT_2);
+            countdown.setSingleLine(true);countdown.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            LinearLayout.LayoutParams countdownLp=new LinearLayout.LayoutParams(-1,-2);
+            countdownLp.topMargin=Ui.dp(this,2);details.addView(countdown,countdownLp);
+        }
+        TextView schedule=Ui.text(this,scheduleText,11.5f,e.enabled?Ui.ACCENT_2:Ui.MUTED_2);
         schedule.setSingleLine(true);schedule.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        schedule.setPadding(0,Ui.dp(this,2),0,0);details.addView(schedule);
+        schedule.setMaxWidth(Ui.dp(this,260));
+        schedule.setPadding(Ui.dp(this,8),Ui.dp(this,4),Ui.dp(this,8),Ui.dp(this,4));
+        schedule.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,9,this));
         first.addView(time,new LinearLayout.LayoutParams(-2,-2));
         first.addView(details,new LinearLayout.LayoutParams(0,-2,1));
         Switch on=new Switch(this);on.setChecked(e.enabled);Ui.styleSwitch(on,this);
@@ -305,15 +307,21 @@ public class MainActivity extends Activity {
         }
         first.addView(on);row.addView(first);
 
+        LinearLayout scheduleRow=new LinearLayout(this);
+        scheduleRow.setGravity(Gravity.CENTER_VERTICAL);
+        scheduleRow.setPadding(Ui.dp(this,2),Ui.dp(this,7),0,0);
+        scheduleRow.addView(schedule,new LinearLayout.LayoutParams(-2,-2));
+        row.addView(scheduleRow);
+
         String missionText=I18n.tr(this,AlarmProfiles.missionName(e.missionType))+
                 "  ·  "+I18n.tr(this,AlarmProfiles.missionSummary(this,e.id));
         LinearLayout missionRow=new LinearLayout(this);missionRow.setGravity(Gravity.CENTER_VERTICAL);
-        missionRow.setPadding(Ui.dp(this,2),0,0,0);
+        missionRow.setPadding(Ui.dp(this,2),Ui.dp(this,4),0,0);
         TextView missionIcon=Ui.text(this,AlarmProfiles.missionIcon(e.missionType),11,e.enabled?Ui.ACCENT_2:Ui.MUTED);
         missionIcon.setGravity(Gravity.CENTER);missionIcon.setTypeface(null,android.graphics.Typeface.BOLD);
         missionIcon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         missionRow.addView(missionIcon,new LinearLayout.LayoutParams(Ui.dp(this,16),Ui.dp(this,16)));
-        TextView detail=Ui.text(this,missionText,11,Ui.MUTED);
+        TextView detail=Ui.text(this,missionText,12,Ui.MUTED);
         detail.setSingleLine(true);detail.setEllipsize(android.text.TextUtils.TruncateAt.END);
         LinearLayout.LayoutParams detailLp=new LinearLayout.LayoutParams(0,-2,1);
         detailLp.setMargins(Ui.dp(this,7),0,0,0);missionRow.addView(detail,detailLp);
@@ -345,10 +353,10 @@ public class MainActivity extends Activity {
             LinearLayout.LayoutParams markerLp=new LinearLayout.LayoutParams(Ui.dp(this,9),Ui.dp(this,9));
             markerLp.setMargins(0,Ui.dp(this,18),Ui.dp(this,8),0);event.addView(marker,markerLp);
             LinearLayout.LayoutParams cardLp=new LinearLayout.LayoutParams(0,-2,1);
-            cardLp.bottomMargin=Ui.dp(this,4);event.addView(row,cardLp);
+            cardLp.bottomMargin=Ui.dp(this,10);event.addView(row,cardLp);
             list.addView(event,new LinearLayout.LayoutParams(-1,-2));
         }else{
-            LinearLayout.LayoutParams cardLp=Ui.cardParams(this);cardLp.bottomMargin=Ui.dp(this,4);
+            LinearLayout.LayoutParams cardLp=Ui.cardParams(this);cardLp.bottomMargin=Ui.dp(this,10);
             list.addView(row,cardLp);
         }
     }
@@ -368,10 +376,17 @@ public class MainActivity extends Activity {
     }
 
     private void showEmptyHero(boolean empty){
-        nextCard.setMinimumHeight(Ui.dp(this,empty?HomeMetrics.HERO_EMPTY_HEIGHT_DP:HomeMetrics.HERO_HEIGHT_DP));
+        int height=Ui.dp(this,empty?HomeMetrics.HERO_EMPTY_HEIGHT_DP:HomeMetrics.HERO_HEIGHT_DP);
+        nextCard.setMinimumHeight(height);
+        LinearLayout.LayoutParams cardParams=(LinearLayout.LayoutParams)nextCard.getLayoutParams();
+        if(cardParams.height!=height){cardParams.height=height;nextCard.setLayoutParams(cardParams);}
+        if(sunriseAccent!=null){
+            FrameLayout.LayoutParams accentParams=(FrameLayout.LayoutParams)sunriseAccent.getLayoutParams();
+            if(accentParams.height!=height){accentParams.height=height;sunriseAccent.setLayoutParams(accentParams);}
+        }
         heroContent.setVisibility(empty?View.GONE:View.VISIBLE);
         emptyHero.setVisibility(empty?View.VISIBLE:View.GONE);
-        if(heroMascot!=null)heroMascot.setVisibility(empty?View.GONE:View.VISIBLE);
+
     }
 
     private boolean refreshNext(){
@@ -394,6 +409,44 @@ public class MainActivity extends Activity {
     }
     private String relativeText(long ms){long mins=Math.max(1,(long)Math.ceil(ms/60000.0));long h=mins/60,m=mins%60;String duration;if(h==0)duration=m+"分";else if(m==0)duration=h+"時間";else duration=h+"時間"+m+"分";return I18n.tr(this,duration);}
     private String repeatText(int m){if(m==0)return I18n.tr(this,"1回のみ");if((m&127)==127)return I18n.tr(this,"毎日");String[]n={"月","火","水","木","金","土","日"};StringBuilder b=new StringBuilder();for(int i=0;i<7;i++)if((m&(1<<i))!=0){if(b.length()>0)b.append(" ");b.append(I18n.tr(this,n[i]));}return b.toString();}
+
+    /** A quiet sunrise mark gives the next-alarm card a recognizable, non-character focal point. */
+    private static final class SunriseAccentView extends View {
+        private final float density;
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        SunriseAccentView(Activity activity) {
+            super(activity);
+            density = activity.getResources().getDisplayMetrics().density;
+            setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        }
+        @Override protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            float cx = getWidth() * .68f;
+            float cy = getHeight() * .50f;
+            float r = 31f * density;
+            paint.setStyle(Paint.Style.FILL);
+            paint.setShader(new RadialGradient(cx, cy, r * 1.65f,
+                    new int[]{Ui.withAlpha(Ui.HERO_TEXT, 0x26), Ui.withAlpha(Ui.HERO_TEXT, 0x00)},
+                    null, Shader.TileMode.CLAMP));
+            canvas.drawCircle(cx, cy, r * 1.65f, paint);
+            paint.setShader(null);
+            paint.setColor(Ui.withAlpha(Ui.HERO_TEXT, 0x16));
+            canvas.drawCircle(cx, cy - 5f * density, r * .45f, paint);
+            paint.setColor(Ui.withAlpha(Ui.HERO_TEXT, 0x35));
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(1.1f * density);
+            paint.setStrokeCap(Paint.Cap.ROUND);
+            float horizon = cy + 9f * density;
+            canvas.drawLine(cx-r*.82f, horizon, cx+r*.82f, horizon, paint);
+            for (int i = 0; i < 3; i++) {
+                float half = r * (.24f + .22f*i);
+                float y = horizon + (9f + 8f*i) * density;
+                canvas.drawLine(cx-half, y, cx+half, y, paint);
+            }
+            paint.setStrokeCap(Paint.Cap.BUTT);
+            paint.setStyle(Paint.Style.FILL);
+        }
+    }
 
     private void requestRuntimePermissions(){try{ArrayList<String> req=new ArrayList<>();if(Build.VERSION.SDK_INT>=29&&checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION)!=PackageManager.PERMISSION_GRANTED)req.add(Manifest.permission.ACTIVITY_RECOGNITION);if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)req.add(Manifest.permission.POST_NOTIFICATIONS);if(!req.isEmpty())requestPermissions(req.toArray(new String[0]),41);}catch(Throwable ignored){}}
 }

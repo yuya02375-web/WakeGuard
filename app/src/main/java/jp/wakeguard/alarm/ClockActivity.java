@@ -21,6 +21,7 @@ import java.time.format.TextStyle;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 public class ClockActivity extends Activity {
     private static java.lang.ref.WeakReference<ClockActivity> visibleInstance=new java.lang.ref.WeakReference<>(null);
@@ -40,7 +41,7 @@ public class ClockActivity extends Activity {
     private TextView localClock, localDetail, screenTitle, overviewLocalTime, overviewLocalDate;
     private ClockFaceActivity.AnalogFace localAnalog;
     private ImageButton screenAction, worldLayoutAction;
-    private Button alarmTab, clockTab, recordsTab, settingsTab;
+    private LinearLayout alarmTab, clockTab, recordsTab, settingsTab;
     private final LinkedHashMap<String, TextView> modeTabs = new LinkedHashMap<>();
     private Dialog zonePickerDialog;
     private EditText zoneSearchBox;
@@ -59,7 +60,15 @@ public class ClockActivity extends Activity {
     private static final int REQ_TIMER_VIDEO = 7118;
     private LinearLayout timerList;
     private TextView timerEmpty;
-    private EditText quickHours, quickMinutes, quickSeconds;
+    private EditText quickHours, quickMinutes, quickSeconds, quickLabel;
+    private TextView quickFolder;
+    private String selectedQuickFolder=TimerStore.UNFILED;
+    private static final String KEY_SAVED_TIMER_FOLDER="saved_timer_folder";
+    private Button savedTimersButton;
+    private Dialog savedTimersDialog;
+    private TextView savedFolderSelector;
+    private LinearLayout savedTimerRows;
+    private String selectedSavedFolder=TimerStore.UNFILED;
     private Switch quickSave;
     private boolean normalizingQuickDuration = false;
 
@@ -181,9 +190,7 @@ public class ClockActivity extends Activity {
     }
 
     private TextView text(String s, float sp, int color) {
-        TextView v = new TextView(this);
-        v.setText(I18n.tr(this,s)); v.setTextSize(sp); v.setTextColor(color);
-        return v;
+        return Ui.text(this, s, sp, color);
     }
 
     private Button button(String s) { return Ui.button(this, s, false); }
@@ -215,7 +222,7 @@ public class ClockActivity extends Activity {
         outer.addView(top);
 
         LinearLayout segmentRail=new LinearLayout(this);segmentRail.setGravity(Gravity.CENTER);segmentRail.setPadding(Ui.dp(this,4),Ui.dp(this,4),Ui.dp(this,4),Ui.dp(this,4));
-        segmentRail.setBackground(Ui.round(Ui.BG_2,18,this));
+        segmentRail.setBackground(Ui.roundStroke(Ui.BG_2,Ui.BORDER,18,this));
         addModeTab(segmentRail,"world","世界");
         addModeTab(segmentRail,"timer","タイマー");
         addModeTab(segmentRail,"stopwatch","計測");
@@ -245,20 +252,20 @@ public class ClockActivity extends Activity {
 
     private void addModeTab(LinearLayout rail,String key,String label){
         TextView tab=Ui.text(this,label,14,Ui.MUTED);
-        tab.setGravity(Gravity.CENTER);tab.setMinHeight(Ui.dp(this,44));tab.setPadding(Ui.dp(this,8),0,Ui.dp(this,8),0);
+        tab.setGravity(Gravity.CENTER);tab.setMinHeight(Ui.dp(this,46));tab.setPadding(Ui.dp(this,8),0,Ui.dp(this,8),0);
         tab.setBackground(Ui.round(android.graphics.Color.TRANSPARENT,14,this));
         tab.setClickable(true);tab.setFocusable(true);tab.setOnClickListener(v->showMode(key));
         modeTabs.put(key,tab);rail.addView(tab,new LinearLayout.LayoutParams(0,-2,1));
     }
 
     private LinearLayout rootNavigation(String selected){
-        LinearLayout nav=new LinearLayout(this);nav.setGravity(Gravity.CENTER);nav.setPadding(Ui.dp(this,8),Ui.dp(this,4),Ui.dp(this,8),Ui.dp(this,4));nav.setBackgroundColor(Ui.SURFACE);
+        LinearLayout nav=new LinearLayout(this);nav.setGravity(Gravity.CENTER);nav.setPadding(Ui.dp(this,8),Ui.dp(this,4),Ui.dp(this,8),Ui.dp(this,4));nav.setBackground(Ui.navigationSurface(this));
         alarmTab=Ui.bottomTab(this,"アラーム","alarm".equals(selected));
         clockTab=Ui.bottomTab(this,"時計","clock".equals(selected));
         recordsTab=Ui.bottomTab(this,"記録","records".equals(selected));
         settingsTab=Ui.bottomTab(this,"設定","settings".equals(selected));
-        Button[] tabs={alarmTab,clockTab,recordsTab,settingsTab};
-        for(Button tab:tabs)nav.addView(tab,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));
+        LinearLayout[] tabs={alarmTab,clockTab,recordsTab,settingsTab};
+        for(LinearLayout tab:tabs)nav.addView(tab,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));
         alarmTab.setOnClickListener(v->navigateRoot("alarm"));
         clockTab.setOnClickListener(v->showMode(mode));
         recordsTab.setOnClickListener(v->navigateRoot("records"));
@@ -280,8 +287,9 @@ public class ClockActivity extends Activity {
         if(screenTitle!=null) screenTitle.setText(I18n.tr(this,"時計"));
         for(Map.Entry<String,TextView> entry:modeTabs.entrySet()){
             boolean selected=entry.getKey().equals(mode);TextView tab=entry.getValue();
-            tab.setTextColor(selected?Ui.TEXT:Ui.MUTED);tab.setTypeface(null,selected?Typeface.BOLD:Typeface.NORMAL);
-            tab.setBackground(Ui.round(selected?Ui.SURFACE:android.graphics.Color.TRANSPARENT,14,this));
+            tab.setTextColor(selected?Ui.ACCENT_2:Ui.MUTED);tab.setTypeface(null,selected?Typeface.BOLD:Typeface.NORMAL);
+            tab.setBackground(selected?Ui.roundStroke(Ui.SURFACE,Ui.withAlpha(Ui.ACCENT_2,0x55),14,this):Ui.round(android.graphics.Color.TRANSPARENT,14,this));
+            if(Build.VERSION.SDK_INT>=21)tab.setElevation(selected?Ui.dp(this,1):0);
             String label=entry.getKey().equals("world")?"世界":entry.getKey().equals("timer")?"タイマー":"計測";
             tab.setContentDescription(I18n.tr(this,label)+(selected?"、"+I18n.tr(this,"選択中"):""));
         }
@@ -353,13 +361,15 @@ public class ClockActivity extends Activity {
     private void buildWorldOverview(){
         LinkedHashSet<String> zones=loadZones();
         LinearLayout localCard=Ui.card(this);
-        localCard.setBackground(Ui.gradientRound(this,26,Ui.SURFACE,Ui.SURFACE_2));
+        localCard.setBackground(Ui.gradientRound(this,26,Ui.HERO_START,Ui.HERO_END));
         localCard.setPadding(Ui.dp(this,22),Ui.dp(this,19),Ui.dp(this,22),Ui.dp(this,19));
-        localCard.addView(Ui.overline(this,"現在の時刻"));
+        TextView localEyebrow=Ui.overline(this,"現在の時刻");localEyebrow.setTextColor(Ui.HERO_TEXT);localCard.addView(localEyebrow);
         overviewLocalTime=Ui.title(this,"--:--",52);
+        overviewLocalTime.setTextColor(Ui.HERO_TEXT);
         overviewLocalTime.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));
         localCard.addView(overviewLocalTime,Ui.gapTop(this,4));
         overviewLocalDate=Ui.text(this,"",13,Ui.MUTED);
+        overviewLocalDate.setTextColor(Ui.HERO_TEXT);
         localCard.addView(overviewLocalDate,Ui.gapTop(this,3));
         body.addView(localCard,Ui.cardParams(this));
         TextView citiesHeader=Ui.sectionHeader(this,"登録した都市");
@@ -405,13 +415,13 @@ public class ClockActivity extends Activity {
         TextView here=Ui.text(this,"現在のタイムゾーン",12,Ui.MUTED);stickyWorld.addView(here);
 
         localClockStage=new FrameLayout(this);
-        localClock=new TextView(this);localClock.setTextColor(Ui.TEXT);localClock.setTextSize(52);localClock.setTypeface(Typeface.MONOSPACE,Typeface.NORMAL);localClock.setGravity(Gravity.CENTER_VERTICAL|Gravity.START);localClock.setPadding(0,0,0,0);
+        localClock=Ui.title(this,"",52);localClock.setTextColor(Ui.TEXT);localClock.setTypeface(Typeface.MONOSPACE,Typeface.NORMAL);localClock.setGravity(Gravity.CENTER_VERTICAL|Gravity.START);localClock.setPadding(0,0,0,0);
         localAnalog=new ClockFaceActivity.AnalogFace(this);
         localClockStage.addView(localClock,new FrameLayout.LayoutParams(-1,-1));localClockStage.addView(localAnalog,new FrameLayout.LayoutParams(-1,-1));
         localClockStage.setClickable(true);localClockStage.setOnClickListener(v->toggleWorldClockMode());localClockStage.setOnLongClickListener(v->{openClockFace("world",ZoneId.systemDefault().getId(),-1L);return true;});
         stickyWorld.addView(localClockStage,new LinearLayout.LayoutParams(-1,Ui.dp(this,68)));
 
-        localDetail=new TextView(this);localDetail.setTextColor(Ui.MUTED);localDetail.setTextSize(12);localDetail.setLineSpacing(0,1.08f);localDetail.setPadding(0,Ui.dp(this,2),0,Ui.dp(this,8));stickyWorld.addView(localDetail);
+        localDetail=Ui.text(this,"",12,Ui.MUTED);localDetail.setPadding(0,Ui.dp(this,2),0,Ui.dp(this,8));stickyWorld.addView(localDetail);
         TextView tapHint=Ui.text(this,"タップで表示切替  ·  長押しで大きく表示",11,Ui.MUTED_2);stickyWorld.addView(tapHint);
         View stickyDivider=Ui.divider(this); LinearLayout.LayoutParams stickyDividerLp=new LinearLayout.LayoutParams(-1,Ui.dp(this,1)); stickyDividerLp.setMargins(0,Ui.dp(this,8),0,0); stickyWorld.addView(stickyDivider,stickyDividerLp);
         updateLocalClock();
@@ -456,14 +466,14 @@ public class ClockActivity extends Activity {
 
     private void addWorldCard(String zoneId) {
         ZoneId zone; try{zone=ZoneId.of(zoneId);}catch(Throwable t){return;}
-        LinearLayout row=new LinearLayout(this); row.setOrientation(LinearLayout.VERTICAL); row.setPadding(Ui.dp(this,15),Ui.dp(this,13),Ui.dp(this,15),Ui.dp(this,13));row.setBackground(Ui.round(Ui.SURFACE,16,this));
+        LinearLayout row=new LinearLayout(this); row.setOrientation(LinearLayout.VERTICAL); row.setPadding(Ui.dp(this,15),Ui.dp(this,13),Ui.dp(this,15),Ui.dp(this,13));row.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,18,this));
         LinearLayout titleRow=new LinearLayout(this); titleRow.setGravity(Gravity.CENTER_VERTICAL);
         LinearLayout names=new LinearLayout(this);names.setOrientation(LinearLayout.VERTICAL);TextView name=text(WorldCityCatalog.savedWorldLabel(this,zoneId,friendlyZoneName(zoneId)),17,Ui.TEXT); name.setTypeface(null,Typeface.BOLD);names.addView(name);String country=localizedCountryName(zoneId);if(country!=null&&!country.isEmpty()){TextView countryView=new TextView(this);countryView.setText(country);countryView.setTextSize(11);countryView.setTextColor(Ui.ACCENT);names.addView(countryView,Ui.gapTop(this,1));}titleRow.addView(names,new LinearLayout.LayoutParams(0,-2,1));
         TextView remove=timerTextAction("削除",13,Ui.MUTED); remove.setOnClickListener(v->{LinkedHashSet<String> zones=loadZones();zones.remove(zoneId);saveZones(zones);WorldCityCatalog.saveWorldLabel(this,zoneId,null);showMode("world");}); titleRow.addView(remove);
         row.addView(titleRow);
 
         FrameLayout stage=new FrameLayout(this);
-        TextView t=text("--:--:--",33,Ui.TEXT);t.setTypeface(Typeface.MONOSPACE,Typeface.NORMAL);t.setGravity(Gravity.CENTER_VERTICAL|Gravity.START);
+        TextView t=text("--:--:--",33,Ui.TEXT);t.setTypeface(Typeface.MONOSPACE,Typeface.NORMAL);t.setIncludeFontPadding(false);t.setGravity(Gravity.CENTER_VERTICAL|Gravity.START);
         ClockFaceActivity.AnalogFace analog=new ClockFaceActivity.AnalogFace(this);analog.configure(p().getBoolean("analog_numbers",true),p().getBoolean("analog_ticks",true),p().getBoolean("analog_seconds",true),0);
         stage.addView(t,new FrameLayout.LayoutParams(-1,-1));stage.addView(analog,new FrameLayout.LayoutParams(-1,-1));
         stage.setClickable(true);stage.setOnClickListener(v->toggleWorldClockMode());stage.setOnLongClickListener(v->{openClockFace("world",zoneId,-1L);return true;});
@@ -786,7 +796,7 @@ public class ClockActivity extends Activity {
         TextView subtitle=text("SeattleのようにIANAの代表都市名にない都市も検索できます。正式な全タイムゾーンも表示します",12,Ui.MUTED);subtitle.setPadding(0,Ui.dp(this,4),0,Ui.dp(this,12));box.addView(subtitle);
 
         LinearLayout searchRow=Ui.row(this);
-        EditText search=new EditText(this);zoneSearchBox=search;search.setHint(I18n.tr(this,"日本語・English・한국어で都市 / 国 / タイムゾーンを検索"));search.setTextColor(Ui.TEXT);search.setHintTextColor(Ui.MUTED_2);search.setSingleLine(true);search.setTextSize(16);search.setPadding(Ui.dp(this,15),0,Ui.dp(this,15),0);search.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,16,this));searchRow.addView(search,new LinearLayout.LayoutParams(0,Ui.dp(this,54),1));
+        EditText search=new EditText(this);zoneSearchBox=search;search.setHint(I18n.tr(this,"日本語・English・한국어で都市 / 国 / タイムゾーンを検索"));search.setSingleLine(true);search.setTextSize(16);search.setPadding(Ui.dp(this,15),0,Ui.dp(this,15),0);Ui.styleInput(search,this,Ui.SURFACE_2,16);searchRow.addView(search,new LinearLayout.LayoutParams(0,Ui.dp(this,54),1));
         Button paste=Ui.ghostButton(this,"貼付");paste.setTextSize(12);paste.setOnClickListener(v->{String clip=clipboardText();if(clip.isEmpty())Toast.makeText(this,I18n.tr(this,"コピーした文字がありません"),Toast.LENGTH_SHORT).show();else{search.setText(clip);search.setSelection(search.length());}});LinearLayout.LayoutParams pp=new LinearLayout.LayoutParams(Ui.dp(this,68),Ui.dp(this,54));pp.setMargins(Ui.dp(this,8),0,0,0);searchRow.addView(paste,pp);box.addView(searchRow);
 
         HorizontalScrollView chipScroll=new HorizontalScrollView(this);chipScroll.setHorizontalScrollBarEnabled(false);LinearLayout chips=new LinearLayout(this);chips.setOrientation(LinearLayout.HORIZONTAL);chips.setPadding(0,Ui.dp(this,10),0,Ui.dp(this,7));chipScroll.addView(chips);box.addView(chipScroll,new LinearLayout.LayoutParams(-1,-2));
@@ -909,7 +919,7 @@ public class ClockActivity extends Activity {
     private void buildStopwatch() {
         stopwatchStage=new FrameLayout(this);
         stopwatchDisplay=text("00:00:00.00",46,Ui.TEXT);
-        stopwatchDisplay.setTypeface(Typeface.MONOSPACE,Typeface.NORMAL); stopwatchDisplay.setGravity(Gravity.CENTER); stopwatchDisplay.setPadding(0,Ui.dp(this,18),0,Ui.dp(this,14));stopwatchDisplay.setSingleLine(true);stopwatchDisplay.setAutoSizeTextTypeUniformWithConfiguration(24,46,1,android.util.TypedValue.COMPLEX_UNIT_SP);
+        stopwatchDisplay.setTypeface(Typeface.MONOSPACE,Typeface.NORMAL);stopwatchDisplay.setIncludeFontPadding(false);stopwatchDisplay.setGravity(Gravity.CENTER); stopwatchDisplay.setPadding(0,Ui.dp(this,18),0,Ui.dp(this,14));stopwatchDisplay.setSingleLine(true);stopwatchDisplay.setAutoSizeTextTypeUniformWithConfiguration(24,46,1,android.util.TypedValue.COMPLEX_UNIT_SP);
         stopwatchAnalog=new ClockFaceActivity.AnalogFace(this);
         stopwatchAnalog.configure(p().getBoolean("analog_numbers",true),p().getBoolean("analog_ticks",true),p().getBoolean("analog_seconds",true),p().getInt("analog_number_scale",1));
         stopwatchStage.addView(stopwatchDisplay,new FrameLayout.LayoutParams(-1,-1));
@@ -1045,8 +1055,14 @@ public class ClockActivity extends Activity {
     }
 
     private void buildTimer() {
-        TextView quickTitle=Ui.title(this,"時間を設定",25); body.addView(quickTitle);
-        TextView quickHint=Ui.text(this,"時間を入力するか、プリセットを選んで開始します",13,Ui.MUTED);quickHint.setPadding(0,Ui.dp(this,4),0,0);body.addView(quickHint);
+        LinearLayout titleRow=Ui.row(this);titleRow.setGravity(Gravity.CENTER_VERTICAL);
+        TextView quickTitle=Ui.title(this,"タイマーを作る",25);titleRow.addView(quickTitle,new LinearLayout.LayoutParams(0,-2,1));
+        savedTimersButton=Ui.ghostButton(this,savedTimersButtonLabel());savedTimersButton.setTextSize(12);savedTimersButton.setSingleLine(true);savedTimersButton.setPadding(Ui.dp(this,10),0,Ui.dp(this,10),0);savedTimersButton.setOnClickListener(v->showSavedTimersDialog());titleRow.addView(savedTimersButton);
+        body.addView(titleRow);
+        TextView quickHint=Ui.text(this,"保存・今回だけ準備・今すぐ開始を選べます",13,Ui.MUTED);quickHint.setPadding(0,Ui.dp(this,4),0,0);body.addView(quickHint);
+
+        quickLabel=new EditText(this);quickLabel.setHint(I18n.tr(this,"名前（例: お湯）"));quickLabel.setSingleLine(true);quickLabel.setTextSize(16);quickLabel.setTextColor(Ui.TEXT);quickLabel.setHintTextColor(Ui.MUTED_2);quickLabel.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),0);Ui.styleInput(quickLabel,this,Ui.SURFACE_2,14);body.addView(quickLabel,new LinearLayout.LayoutParams(-1,Ui.dp(this,52)));
+        quickFolder=timerTextAction("保存時のフォルダ："+selectedQuickFolder,13,Ui.TEXT);quickFolder.setGravity(Gravity.CENTER_VERTICAL|Gravity.START);quickFolder.setOnClickListener(v->showFolderPicker(selectedQuickFolder,name->{selectedQuickFolder=name;quickFolder.setText(I18n.tr(this,"保存時のフォルダ：")+name);}));body.addView(quickFolder,Ui.gapTop(this,8));
 
         LinearLayout durationRow=new LinearLayout(this); durationRow.setGravity(Gravity.CENTER_VERTICAL); durationRow.setPadding(0,Ui.dp(this,12),0,0);
         quickHours=quickNumber("時"); quickMinutes=quickNumber("分"); quickSeconds=quickNumber("秒");
@@ -1073,10 +1089,16 @@ public class ClockActivity extends Activity {
         adjustScroll.setVisibility(View.GONE);
         adjustLabel.setOnClickListener(v->{boolean open=adjustScroll.getVisibility()!=View.VISIBLE;adjustScroll.setVisibility(open?View.VISIBLE:View.GONE);adjustLabel.setText(I18n.tr(this,open?"細かく調整  ▴":"細かく調整  ▾"));});
 
-        LinearLayout saveRow=Ui.row(this); saveRow.setPadding(0,Ui.dp(this,10),0,Ui.dp(this,8)); TextView saveLabel=text("この時間を保存",15,Ui.TEXT);saveRow.addView(saveLabel,new LinearLayout.LayoutParams(0,-2,1)); quickSave=new Switch(this);quickSave.setChecked(false);Ui.styleSwitch(quickSave,this);saveRow.addView(quickSave);body.addView(saveRow);
-        Button start=Ui.button(this,"開始",true);start.setOnClickListener(v->startQuickEditor());body.addView(start,new LinearLayout.LayoutParams(-1,Ui.dp(this,56))); body.addView(Ui.divider(this),Ui.dividerTop(this,18));
+        LinearLayout saveRow=Ui.row(this); saveRow.setPadding(0,Ui.dp(this,10),0,Ui.dp(this,4)); TextView saveLabel=text("開始時に保存リストにも登録",14,Ui.TEXT);saveRow.addView(saveLabel,new LinearLayout.LayoutParams(0,-2,1)); quickSave=new Switch(this);quickSave.setChecked(true);Ui.styleSwitch(quickSave,this);saveRow.addView(quickSave);body.addView(saveRow);
+        LinearLayout timerActions=new LinearLayout(this);timerActions.setOrientation(LinearLayout.HORIZONTAL);
+        Button save=Ui.button(this,"保存",false);save.setOnClickListener(v->saveQuickTimer());
+        Button once=Ui.button(this,"今回だけ準備",false);once.setOnClickListener(v->prepareQuickTimer());
+        LinearLayout.LayoutParams actionLp=new LinearLayout.LayoutParams(0,Ui.dp(this,52),1);timerActions.addView(save,actionLp);
+        LinearLayout.LayoutParams onceLp=new LinearLayout.LayoutParams(0,Ui.dp(this,52),1);onceLp.setMargins(Ui.dp(this,8),0,0,0);timerActions.addView(once,onceLp);
+        body.addView(timerActions,Ui.gapTop(this,8));
+        Button start=Ui.button(this,"今すぐ開始",true);start.setOnClickListener(v->startQuickEditor());body.addView(start,Ui.gapTop(this,8));
+        body.addView(Ui.divider(this),Ui.dividerTop(this,18));
 
-        TextView listTitle=text("タイマー",16,Ui.TEXT);listTitle.setTypeface(null,Typeface.BOLD);listTitle.setPadding(0,Ui.dp(this,20),0,Ui.dp(this,4));body.addView(listTitle);
         timerList=new LinearLayout(this);timerList.setOrientation(LinearLayout.VERTICAL);body.addView(timerList);renderTimers();
     }
 
@@ -1084,7 +1106,7 @@ public class ClockActivity extends Activity {
         EditText e=new EditText(this); e.setHint(I18n.tr(this,hint)); e.setHintTextColor(Ui.MUTED_2); e.setTextColor(Ui.TEXT); e.setTextSize(27);
         e.setGravity(Gravity.CENTER); e.setSingleLine(true); e.setSelectAllOnFocus(true); e.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
         e.setPadding(Ui.dp(this,4),0,Ui.dp(this,4),0);
-        e.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));
+        Ui.styleInput(e,this,Ui.SURFACE_2,14);
         return e;
     }
 
@@ -1145,8 +1167,34 @@ public class ClockActivity extends Activity {
             return;
         }
         long total=quickDuration(); if(total<=0){Toast.makeText(this,I18n.tr(this,"時間を入力してください"),Toast.LENGTH_SHORT).show();return;}
-        boolean saved=quickSave!=null&&quickSave.isChecked(); TimerStore.Entry e=saved?TimerStore.addSaved(this,"",total):TimerStore.addTemporary(this,"",total); startTimerEntry(e); renderTimers();
+        String label=quickTimerLabel(total);boolean keep=quickSave==null||quickSave.isChecked();
+        TimerStore.Entry e;if(keep){TimerStore.Entry preset=TimerStore.addSaved(this,label,total,selectedQuickFolder);e=TimerStore.addTemporaryFrom(this,preset);}else e=TimerStore.addTemporary(this,label,total);
+        startTimerEntry(e); renderTimers();
     }
+
+    private void saveQuickTimer(){
+        if(normalizeQuickDurationFields()){
+            Toast.makeText(this,I18n.tr(this,"時間表記に直しました。確認してから保存してください"),Toast.LENGTH_SHORT).show();
+            return;
+        }
+        long total=quickDuration();
+        if(total<=0){Toast.makeText(this,I18n.tr(this,"時間を入力してください"),Toast.LENGTH_SHORT).show();return;}
+        TimerStore.addSaved(this,quickTimerLabel(total),total,selectedQuickFolder);
+        renderTimers();
+        Toast.makeText(this,I18n.tr(this,"保存したタイマーに追加しました"),Toast.LENGTH_SHORT).show();
+    }
+
+    private void prepareQuickTimer(){
+        if(normalizeQuickDurationFields()){
+            Toast.makeText(this,I18n.tr(this,"時間表記に直しました。確認してから準備してください"),Toast.LENGTH_SHORT).show();
+            return;
+        }
+        long total=quickDuration();if(total<=0){Toast.makeText(this,I18n.tr(this,"時間を入力してください"),Toast.LENGTH_SHORT).show();return;}
+        TimerStore.addTemporary(this,quickTimerLabel(total),total);renderTimers();
+        Toast.makeText(this,I18n.tr(this,"今回だけ使うタイマーを準備しました。開始は一覧からできます"),Toast.LENGTH_SHORT).show();
+    }
+
+    private String quickTimerLabel(long durationMs){String s=quickLabel==null?"":quickLabel.getText().toString().trim();return s.isEmpty()?durationLabel(durationMs):s;}
 
     private boolean timerAnalog(){ return p().getBoolean("timer_face_analog",false); }
     private void toggleTimerFace(){ p().edit().putBoolean("timer_face_analog",!timerAnalog()).apply(); renderTimers(); }
@@ -1154,17 +1202,80 @@ public class ClockActivity extends Activity {
     private void renderTimers() {
         if(!"timer".equals(mode)||timerList==null)return;
         timerList.removeAllViews();
-        List<TimerStore.Entry> timers=TimerStore.all(this);
-        timers.sort((a,b)->{if(a.saved!=b.saved)return a.saved?1:-1;return Long.compare(a.id,b.id);});
-        if(timers.isEmpty()){
-            timerEmpty=text("保存したタイマーはありません",14,Ui.MUTED); timerEmpty.setGravity(Gravity.CENTER);
-            timerEmpty.setPadding(0,Ui.dp(this,28),0,Ui.dp(this,18)); timerList.addView(timerEmpty); return;
-        }
-        for(TimerStore.Entry timer:timers)addTimerRow(timer);
+        List<TimerStore.Entry> all=TimerStore.all(this);all.sort((a,b)->Long.compare(b.id,a.id));
+        ArrayList<TimerStore.Entry> oneTime=new ArrayList<>();
+        for(TimerStore.Entry e:all)if(!e.saved)oneTime.add(e);
+
+        addTimerSectionHeading("今回だけ使う", "作成した一回限りのタイマー", null);
+        if(oneTime.isEmpty())addTimerEmpty("ここに準備したタイマーが表示されます");
+        else for(TimerStore.Entry timer:oneTime)addTimerRow(timer,false,timerList);
+        updateSavedTimersButton();
+        renderSavedTimerDialog();
     }
 
-    private void addTimerRow(TimerStore.Entry e) {
-        LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.VERTICAL);row.setPadding(Ui.dp(this,16),Ui.dp(this,14),Ui.dp(this,16),Ui.dp(this,14));row.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,18,this));
+    private int savedTimerCount(){int count=0;for(TimerStore.Entry e:TimerStore.all(this))if(e.saved)count++;return count;}
+    private String savedTimersButtonLabel(){return I18n.tr(this,"保存タイマー")+" "+savedTimerCount()+"  ›";}
+    private void updateSavedTimersButton(){if(savedTimersButton!=null)savedTimersButton.setText(savedTimersButtonLabel());}
+
+    private String firstSavedTimerFolder(){
+        List<String> folders=TimerStore.folders(this);List<TimerStore.Entry> all=TimerStore.all(this);
+        for(String folder:folders)for(TimerStore.Entry e:all)if(e.saved&&normalizedFolder(e.folder).equalsIgnoreCase(folder))return folder;
+        return folders.isEmpty()?TimerStore.UNFILED:folders.get(0);
+    }
+
+    private void showSavedTimersDialog(){
+        List<String> folders=TimerStore.folders(this);String remembered=p().getString(KEY_SAVED_TIMER_FOLDER,"");
+        selectedSavedFolder=folders.contains(remembered)?remembered:firstSavedTimerFolder();
+        LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);panel.setPadding(Ui.dp(this,20),Ui.dp(this,18),Ui.dp(this,20),Ui.dp(this,14));panel.setBackground(Ui.round(Ui.SURFACE,24,this));
+        LinearLayout header=Ui.row(this);header.setGravity(Gravity.CENTER_VERTICAL);
+        TextView title=Ui.title(this,I18n.tr(this,"保存したタイマー"),21);header.addView(title,new LinearLayout.LayoutParams(0,-2,1));
+        TextView count=Ui.text(this,savedTimerCount()+I18n.tr(this,"件"),13,Ui.MUTED);count.setPadding(0,0,Ui.dp(this,8),0);header.addView(count);
+        TextView close=timerTextAction("×",25,Ui.MUTED);close.setContentDescription(I18n.tr(this,"閉じる"));header.addView(close,new LinearLayout.LayoutParams(Ui.dp(this,40),Ui.dp(this,42)));panel.addView(header);
+        TextView hint=Ui.text(this,I18n.tr(this,"フォルダーを選ぶと、その中だけ表示します"),12,Ui.MUTED);hint.setPadding(0,Ui.dp(this,3),0,Ui.dp(this,12));panel.addView(hint);
+        LinearLayout folderRow=Ui.row(this);folderRow.setGravity(Gravity.CENTER_VERTICAL);
+        savedFolderSelector=timerTextAction(selectedSavedFolder+"  ▾",14,Ui.TEXT);savedFolderSelector.setGravity(Gravity.CENTER_VERTICAL|Gravity.START);savedFolderSelector.setPadding(Ui.dp(this,14),0,Ui.dp(this,12),0);savedFolderSelector.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));savedFolderSelector.setOnClickListener(v->showFolderPicker(selectedSavedFolder,name->{selectedSavedFolder=name;p().edit().putString(KEY_SAVED_TIMER_FOLDER,name).apply();renderSavedTimerDialog();}));
+        folderRow.addView(savedFolderSelector,new LinearLayout.LayoutParams(0,Ui.dp(this,48),1));
+        TextView add=timerTextAction("＋",20,Ui.ACCENT);add.setContentDescription(I18n.tr(this,"フォルダーを作成"));add.setGravity(Gravity.CENTER);add.setOnClickListener(v->promptFolderName("新しいフォルダ",null,name->{TimerStore.createFolder(this,name);selectedSavedFolder=name;p().edit().putString(KEY_SAVED_TIMER_FOLDER,name).apply();renderTimers();}));folderRow.addView(add,new LinearLayout.LayoutParams(Ui.dp(this,44),Ui.dp(this,48)));
+        TextView more=timerTextAction("︙",20,Ui.MUTED);more.setContentDescription(I18n.tr(this,"フォルダーの操作"));more.setGravity(Gravity.CENTER);more.setOnClickListener(v->{if(!TimerStore.UNFILED.equals(selectedSavedFolder))showFolderMenu(selectedSavedFolder);});folderRow.addView(more,new LinearLayout.LayoutParams(Ui.dp(this,38),Ui.dp(this,48)));panel.addView(folderRow);
+        ScrollView scroll=new ScrollView(this);scroll.setFillViewport(true);scroll.setVerticalScrollBarEnabled(false);savedTimerRows=new LinearLayout(this);savedTimerRows.setOrientation(LinearLayout.VERTICAL);scroll.addView(savedTimerRows);panel.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
+        Dialog dialog=new Dialog(this);savedTimersDialog=dialog;dialog.setContentView(panel);dialog.setCancelable(true);dialog.setCanceledOnTouchOutside(true);dialog.setOnDismissListener(d->{savedTimersDialog=null;savedFolderSelector=null;savedTimerRows=null;});
+        close.setOnClickListener(v->dialog.dismiss());dialog.show();
+        Window window=dialog.getWindow();if(window!=null){window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));android.util.DisplayMetrics metrics=getResources().getDisplayMetrics();int width=Math.min(metrics.widthPixels-Ui.dp(this,28),Ui.dp(this,520));int height=Math.round(metrics.heightPixels*.78f);window.setLayout(width,height);}
+        renderSavedTimerDialog();
+    }
+
+    private void renderSavedTimerDialog(){
+        if(savedTimerRows==null)return;
+        List<String> folders=TimerStore.folders(this);if(!folders.contains(selectedSavedFolder))selectedSavedFolder=firstSavedTimerFolder();
+        p().edit().putString(KEY_SAVED_TIMER_FOLDER,selectedSavedFolder).apply();
+        if(savedFolderSelector!=null)savedFolderSelector.setText(selectedSavedFolder+"  ▾");
+        savedTimerRows.removeAllViews();ArrayList<TimerStore.Entry> selected=new ArrayList<>();
+        for(TimerStore.Entry e:TimerStore.all(this))if(e.saved&&normalizedFolder(e.folder).equalsIgnoreCase(selectedSavedFolder))selected.add(e);
+        selected.sort((a,b)->Long.compare(b.id,a.id));
+        if(selected.isEmpty())addTimerEmpty(savedTimerRows,I18n.tr(this,"このフォルダーには保存したタイマーがありません"));
+        else for(TimerStore.Entry timer:selected)addTimerRow(timer,true,savedTimerRows);
+    }
+
+    private String normalizedFolder(String folder){return folder==null||folder.trim().isEmpty()?TimerStore.UNFILED:folder.trim();}
+
+    private void addTimerSectionHeading(String title,String subtitle,View action){
+        LinearLayout heading=new LinearLayout(this);heading.setGravity(Gravity.CENTER_VERTICAL);heading.setPadding(0,Ui.dp(this,22),0,Ui.dp(this,6));
+        LinearLayout copy=new LinearLayout(this);copy.setOrientation(LinearLayout.VERTICAL);TextView name=text(title,17,Ui.TEXT);name.setTypeface(null,Typeface.BOLD);copy.addView(name);TextView hint=text(subtitle,12,Ui.MUTED);hint.setPadding(0,Ui.dp(this,2),0,0);copy.addView(hint);heading.addView(copy,new LinearLayout.LayoutParams(0,-2,1));if(action!=null)heading.addView(action);timerList.addView(heading);
+    }
+
+    private void addFolderHeading(String folder){
+        LinearLayout heading=new LinearLayout(this);heading.setGravity(Gravity.CENTER_VERTICAL);heading.setPadding(Ui.dp(this,4),Ui.dp(this,12),0,Ui.dp(this,6));
+        TextView name=text("▣  "+folder,14,Ui.ACCENT);name.setTypeface(null,Typeface.BOLD);heading.addView(name,new LinearLayout.LayoutParams(0,-2,1));
+        if(!TimerStore.UNFILED.equals(folder)){TextView more=timerTextAction("︙",20,Ui.MUTED);more.setOnClickListener(v->showFolderMenu(folder));heading.addView(more);}
+        timerList.addView(heading);
+    }
+
+    private void addTimerEmpty(String message){addTimerEmpty(timerList,message);}
+    private void addTimerEmpty(LinearLayout parent,String message){TextView empty=text(message,13,Ui.MUTED);empty.setGravity(Gravity.CENTER);empty.setPadding(Ui.dp(this,8),Ui.dp(this,14),Ui.dp(this,8),Ui.dp(this,14));parent.addView(empty);}
+
+    private void addTimerRow(TimerStore.Entry e,boolean preset){addTimerRow(e,preset,timerList);}
+    private void addTimerRow(TimerStore.Entry e,boolean preset,LinearLayout destination) {
+        LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.VERTICAL);row.setPadding(Ui.dp(this,16),Ui.dp(this,14),Ui.dp(this,16),Ui.dp(this,14));row.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,20,this));
         LinearLayout titleRow=new LinearLayout(this);titleRow.setGravity(Gravity.CENTER_VERTICAL);
         String label=e.label==null||e.label.isEmpty()?durationLabel(e.durationMs):e.label;TextView name=text(label,15,Ui.TEXT);titleRow.addView(name,new LinearLayout.LayoutParams(0,-2,1));
         TextView sound=timerTextAction(timerSoundText(e),13,Ui.MUTED);sound.setOnClickListener(v->pickTimerSound(e.id));titleRow.addView(sound);
@@ -1178,8 +1289,10 @@ public class ClockActivity extends Activity {
         LinearLayout.LayoutParams timerStageParams=new LinearLayout.LayoutParams(-1,Ui.dp(this,analogMode?220:72));timerStageParams.setMargins(0,Ui.dp(this,2),0,0);row.addView(timerStage,timerStageParams);
         TextView state=text(timerStateText(e),12,Ui.MUTED);state.setTextColor(e.running?Ui.ACCENT:(e.finished()?Ui.SUCCESS:Ui.MUTED));state.setTag("timer_state_"+e.id);row.addView(state,Ui.gapTop(this,1));
         LinearLayout controls=new LinearLayout(this);controls.setGravity(Gravity.CENTER_VERTICAL);controls.setPadding(0,Ui.dp(this,4),0,0);
-        String startText=e.running?"一時停止":(e.finished()?"もう一度":(e.remainingMs<e.durationMs?"再開":"スタート"));TextView startPause=timerTextAction(startText,14,Ui.ACCENT);startPause.setOnClickListener(v->toggleTimer(e.id));controls.addView(startPause);
-        TextView plus=timerTextAction("＋1分",14,Ui.TEXT);plus.setOnClickListener(v->addMinute(e.id));controls.addView(plus);row.addView(controls);LinearLayout.LayoutParams rowLp=Ui.cardParams(this);rowLp.setMargins(0,0,0,Ui.dp(this,10));timerList.addView(row,rowLp);
+        if(preset&&!e.running){TextView use=timerTextAction("今すぐ開始",14,Ui.ACCENT);use.setOnClickListener(v->startPreset(e.id));controls.addView(use);}
+        else{String startText=e.running?"一時停止":(e.finished()?"もう一度":(e.remainingMs<e.durationMs?"再開":"スタート"));TextView startPause=timerTextAction(startText,14,Ui.ACCENT);startPause.setOnClickListener(v->toggleTimer(e.id));controls.addView(startPause);}
+        if(!preset||e.running){TextView plus=timerTextAction("＋1分",14,Ui.TEXT);plus.setOnClickListener(v->addMinute(e.id));controls.addView(plus);}
+        row.addView(controls);LinearLayout.LayoutParams rowLp=Ui.cardParams(this);rowLp.setMargins(0,0,0,Ui.dp(this,10));destination.addView(row,rowLp);
     }
 
     private void showTimerMenu(View anchor,long id){
@@ -1187,8 +1300,16 @@ public class ClockActivity extends Activity {
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(Ui.dp(this,6),Ui.dp(this,6),Ui.dp(this,6),Ui.dp(this,6));box.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,12,this));
         PopupWindow popup=new PopupWindow(box,Ui.dp(this,176),WindowManager.LayoutParams.WRAP_CONTENT,true);
         popup.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));popup.setOutsideTouchable(true);popup.setFocusable(true);if(Build.VERSION.SDK_INT>=21)popup.setElevation(Ui.dp(this,10));
-        if(!e.saved)addTimerMenuItem(box,popup,"保存",()->{TimerStore.makeSaved(this,id);renderTimers();});
-        addTimerMenuItem(box,popup,"リセット",()->resetTimer(id));
+        if(e.saved){
+            addTimerMenuItem(box,popup,"今回だけ準備",()->preparePreset(id));
+            if(!e.running)addTimerMenuItem(box,popup,"今すぐ開始",()->startPreset(id));
+            addTimerMenuItem(box,popup,"名前を変更",()->editTimerName(id));
+            addTimerMenuItem(box,popup,"フォルダを変更",()->showFolderPicker(e.folder,name->{TimerStore.moveToFolder(this,id,name);renderTimers();}));
+        }else{
+            addTimerMenuItem(box,popup,"保存リストにコピー",()->saveTimer(id));
+            addTimerMenuItem(box,popup,"名前を変更",()->editTimerName(id));
+            addTimerMenuItem(box,popup,"リセット",()->resetTimer(id));
+        }
         addTimerMenuItem(box,popup,"削除",()->{TimerReceiver.cancel(this,id);TimerStore.delete(this,id);renderTimers();});
         popup.showAsDropDown(anchor,-Ui.dp(this,146),-Ui.dp(this,8));
     }
@@ -1196,6 +1317,59 @@ public class ClockActivity extends Activity {
     private void addTimerMenuItem(LinearLayout box,PopupWindow popup,String label,Runnable action){
         TextView item=timerTextAction(label,15,Ui.TEXT);item.setGravity(Gravity.CENTER_VERTICAL|Gravity.START);item.setMinHeight(Ui.dp(this,48));item.setPadding(Ui.dp(this,16),0,Ui.dp(this,16),0);
         item.setOnClickListener(v->{popup.dismiss();action.run();});box.addView(item,new LinearLayout.LayoutParams(-1,Ui.dp(this,48)));
+    }
+
+    private void saveTimer(long id){
+        TimerStore.Entry e=TimerStore.find(this,id);if(e==null)return;
+        showSavePresetDialog(e);
+    }
+
+    private void startPreset(long id){TimerStore.Entry preset=TimerStore.find(this,id);if(preset==null)return;TimerStore.Entry run=TimerStore.addTemporaryFrom(this,preset);startTimerEntry(run);renderTimers();}
+    private void preparePreset(long id){TimerStore.Entry preset=TimerStore.find(this,id);if(preset==null)return;TimerStore.addTemporaryFrom(this,preset);renderTimers();Toast.makeText(this,I18n.tr(this,"今回だけ使うタイマーを準備しました"),Toast.LENGTH_SHORT).show();}
+
+    private void editTimerName(long id){
+        TimerStore.Entry e=TimerStore.find(this,id);if(e==null)return;EditText input=new EditText(this);input.setSingleLine(true);input.setText(e.label);input.setHint(I18n.tr(this,"タイマー名"));input.setTextColor(Ui.TEXT);input.setHintTextColor(Ui.MUTED_2);input.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),0);Ui.styleInput(input,this,Ui.SURFACE_2,14);
+        new AlertDialog.Builder(this).setTitle(I18n.tr(this,"名前を変更")).setView(input).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"保存"),(d,w)->{e.label=input.getText().toString().trim();TimerStore.update(this,e);renderTimers();}).show();
+    }
+
+    private void showSavePresetDialog(TimerStore.Entry source){
+        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(Ui.dp(this,18),0,Ui.dp(this,18),0);
+        EditText label=new EditText(this);label.setSingleLine(true);label.setText(source.label);label.setHint(I18n.tr(this,"名前（例: お湯）"));label.setTextSize(16);label.setTextColor(Ui.TEXT);label.setHintTextColor(Ui.MUTED_2);label.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),0);Ui.styleInput(label,this,Ui.SURFACE_2,14);box.addView(label,new LinearLayout.LayoutParams(-1,Ui.dp(this,52)));
+        final String[] folder={TimerStore.UNFILED};TextView choose=timerTextAction("保存時のフォルダ："+folder[0],13,Ui.TEXT);choose.setGravity(Gravity.CENTER_VERTICAL|Gravity.START);choose.setOnClickListener(v->showFolderPicker(folder[0],name->{folder[0]=name;choose.setText(I18n.tr(this,"保存時のフォルダ：")+name);}));box.addView(choose,Ui.gapTop(this,8));
+        new AlertDialog.Builder(this).setTitle(I18n.tr(this,"保存リストに追加")).setView(box).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"保存"),(d,w)->{source.label=label.getText().toString().trim();TimerStore.duplicateAsSaved(this,source,folder[0]);renderTimers();Toast.makeText(this,I18n.tr(this,"保存したタイマーに追加しました"),Toast.LENGTH_SHORT).show();}).show();
+    }
+
+    private void showFolderPicker(String current,Consumer<String> selected){
+        List<String> folders=TimerStore.folders(this);LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setFocusableInTouchMode(true);box.setPadding(Ui.dp(this,18),0,Ui.dp(this,18),0);
+        EditText search=new EditText(this);search.setSingleLine(true);search.setHint(I18n.tr(this,"フォルダーを検索"));search.setTextColor(Ui.TEXT);search.setHintTextColor(Ui.MUTED_2);search.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),0);Ui.styleInput(search,this,Ui.SURFACE_2,14);box.addView(search,new LinearLayout.LayoutParams(-1,Ui.dp(this,48)));
+        ListView list=new ListView(this);list.setChoiceMode(ListView.CHOICE_MODE_SINGLE);list.setDivider(new android.graphics.drawable.ColorDrawable(Ui.BORDER));list.setDividerHeight(Ui.dp(this,1));
+        ArrayAdapter<String> adapter=new ArrayAdapter<String>(this,android.R.layout.simple_list_item_single_choice,new ArrayList<>(folders)){
+            @Override public View getView(int position,View convertView,ViewGroup parent){
+                CheckedTextView row=(CheckedTextView)super.getView(position,convertView,parent);row.setTextColor(Ui.readableTextColor(Ui.TEXT,Ui.SURFACE_2));row.setTypeface(Ui.designTypeface(Typeface.NORMAL));row.setTextSize(16);row.setSingleLine(true);row.setEllipsize(android.text.TextUtils.TruncateAt.END);row.setMinHeight(Ui.dp(ClockActivity.this,56));row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(Ui.dp(ClockActivity.this,14),Ui.dp(ClockActivity.this,7),Ui.dp(ClockActivity.this,14),Ui.dp(ClockActivity.this,7));row.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,12,ClockActivity.this));if(Build.VERSION.SDK_INT>=21)row.setCheckMarkTintList(android.content.res.ColorStateList.valueOf(Ui.readableTextColor(Ui.ACCENT_2,Ui.SURFACE_2)));return row;
+            }
+        };list.setAdapter(adapter);
+        FrameLayout listFrame=new FrameLayout(this);listFrame.addView(list,new FrameLayout.LayoutParams(-1,-1));TextView noFolder=Ui.text(this,I18n.tr(this,"フォルダーが見つかりません"),13,Ui.MUTED);noFolder.setGravity(Gravity.CENTER);listFrame.addView(noFolder,new FrameLayout.LayoutParams(-1,-1));list.setEmptyView(noFolder);
+        int listHeight=Math.min(Ui.dp(this,300),Math.round(getResources().getDisplayMetrics().heightPixels*.42f));box.addView(listFrame,new LinearLayout.LayoutParams(-1,listHeight));
+        search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int start,int count,int after){}public void onTextChanged(CharSequence s,int start,int before,int count){adapter.getFilter().filter(s);}public void afterTextChanged(Editable e){}});
+        AlertDialog dialog=new AlertDialog.Builder(this).setTitle(I18n.tr(this,"保存先フォルダ")).setView(box)
+            .setNeutralButton(I18n.tr(this,"＋ 新しいフォルダ"),(d,w)->promptFolderName("新しいフォルダ",null,name->{TimerStore.createFolder(this,name);selected.accept(name);}))
+            .setNegativeButton(I18n.tr(this,"キャンセル"),null).create();
+        dialog.setOnShowListener(d->box.requestFocus());
+        list.setOnItemClickListener((parent,view,position,id)->{String folder=adapter.getItem(position);if(folder!=null){dialog.dismiss();selected.accept(folder);}});
+        dialog.show();
+        int currentIndex=adapter.getPosition(normalizedFolder(current));if(currentIndex>=0)list.setItemChecked(currentIndex,true);
+    }
+
+    private void promptFolderName(String title,String initial,Consumer<String> saved){
+        EditText input=new EditText(this);input.setSingleLine(true);input.setText(initial==null?"":initial);input.setHint(I18n.tr(this,"フォルダ名"));input.setTextColor(Ui.TEXT);input.setHintTextColor(Ui.MUTED_2);input.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),0);Ui.styleInput(input,this,Ui.SURFACE_2,14);
+        new AlertDialog.Builder(this).setTitle(I18n.tr(this,title)).setView(input).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"保存"),(d,w)->{String name=input.getText().toString().trim();if(name.isEmpty()){Toast.makeText(this,I18n.tr(this,"フォルダ名を入力してください"),Toast.LENGTH_SHORT).show();return;}saved.accept(name);}).show();
+    }
+
+    private void showFolderMenu(String folder){
+        new AlertDialog.Builder(this).setTitle(I18n.tr(this,folder)).setItems(new String[]{I18n.tr(this,"名前を変更"),I18n.tr(this,"削除")},(d,which)->{
+            if(which==0)promptFolderName("フォルダ名を変更",folder,name->{boolean duplicate=false;for(String value:TimerStore.folders(this))if(value.equalsIgnoreCase(name)&&!value.equalsIgnoreCase(folder))duplicate=true;if(duplicate){Toast.makeText(this,I18n.tr(this,"同じ名前のフォルダがあります"),Toast.LENGTH_SHORT).show();return;}TimerStore.renameFolder(this,folder,name);renderTimers();});
+            else new AlertDialog.Builder(this).setMessage(I18n.tr(this,"中のタイマーは「未分類」に移動します。フォルダを削除しますか？")).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"削除"),(x,y)->{TimerStore.deleteFolder(this,folder);renderTimers();}).show();
+        }).show();
     }
 
     private String timerSoundText(TimerStore.Entry e){
@@ -1247,7 +1421,7 @@ public class ClockActivity extends Activity {
     }
 
     private String timerStateText(TimerStore.Entry e) {
-        String prefix=e.saved?"":I18n.tr(this,"今回だけ")+"  ·  ";
+        String prefix=e.saved?I18n.tr(this,"保存済み")+"  ·  ":I18n.tr(this,"今回だけ")+"  ·  ";
         if(e.running)return prefix+I18n.tr(this,"終了予定")+"  "+new java.text.SimpleDateFormat("HH:mm:ss",I18n.locale(this)).format(new java.util.Date(e.endMs));
         if(e.finished())return prefix+I18n.tr(this,"終了");
         if(e.remainingMs<e.durationMs)return prefix+I18n.tr(this,"一時停止中");
@@ -1262,19 +1436,26 @@ public class ClockActivity extends Activity {
     private void showAddTimerDialog() {
         if(!"timer".equals(mode))return;
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(Ui.dp(this,18),0,Ui.dp(this,18),0);
-        EditText label=new EditText(this);label.setHint(I18n.tr(this,"名前（任意）"));label.setSingleLine(true);box.addView(label);
+        EditText label=new EditText(this);label.setHint(I18n.tr(this,"名前（任意）"));label.setSingleLine(true);label.setTextSize(17);label.setPadding(Ui.dp(this,14),Ui.dp(this,9),Ui.dp(this,14),Ui.dp(this,9));Ui.styleInput(label,this,Ui.SURFACE_2,14);box.addView(label,new LinearLayout.LayoutParams(-1,Ui.dp(this,54)));
+        final String[] folder={TimerStore.UNFILED};TextView choose=timerTextAction("保存時のフォルダ："+folder[0],13,Ui.TEXT);choose.setGravity(Gravity.CENTER_VERTICAL|Gravity.START);choose.setOnClickListener(v->showFolderPicker(folder[0],name->{folder[0]=name;choose.setText(I18n.tr(this,"保存時のフォルダ：")+name);}));box.addView(choose,Ui.gapTop(this,8));
         TextView caption=text("時間",13,Ui.MUTED);caption.setPadding(0,Ui.dp(this,14),0,0);box.addView(caption);
         LinearLayout inputs=new LinearLayout(this);EditText h=numberBox("時"),m=numberBox("分"),sec=numberBox("秒");inputs.addView(h,new LinearLayout.LayoutParams(0,-2,1));inputs.addView(m,new LinearLayout.LayoutParams(0,-2,1));inputs.addView(sec,new LinearLayout.LayoutParams(0,-2,1));box.addView(inputs);
-        Switch save=new Switch(this);save.setText(I18n.tr(this,"このタイマーを保存"));save.setTextColor(Ui.TEXT);save.setChecked(true);box.addView(save,Ui.gapTop(this,14));
-        AlertDialog d=new AlertDialog.Builder(this).setTitle(I18n.tr(this,"タイマーを作成")).setView(box).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"開始"),null).create();
-        d.setOnShowListener(x->d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->createTimerFromDialog(d,label,h,m,sec,save.isChecked())));d.show();
+        Switch save=new Switch(this);save.setText(I18n.tr(this,"開始時に保存リストにも登録"));save.setTextColor(Ui.TEXT);save.setChecked(true);Ui.styleSwitch(save,this);box.addView(save,Ui.gapTop(this,12));
+        LinearLayout actions=new LinearLayout(this);Button saveOnly=Ui.button(this,"保存",false);Button once=Ui.button(this,"今回だけ",false);Button start=Ui.button(this,"開始",true);
+        LinearLayout.LayoutParams actionLp=new LinearLayout.LayoutParams(0,Ui.dp(this,48),1);actions.addView(saveOnly,actionLp);LinearLayout.LayoutParams onceLp=new LinearLayout.LayoutParams(0,Ui.dp(this,48),1);onceLp.setMargins(Ui.dp(this,8),0,0,0);actions.addView(once,onceLp);box.addView(actions,Ui.gapTop(this,14));box.addView(start,Ui.gapTop(this,8));
+        AlertDialog d=new AlertDialog.Builder(this).setTitle(I18n.tr(this,"タイマーを作成")).setView(box).setNegativeButton(I18n.tr(this,"閉じる"),null).create();
+        saveOnly.setOnClickListener(v->createTimerFromDialog(d,label,h,m,sec,folder[0],"save",save.isChecked()));once.setOnClickListener(v->createTimerFromDialog(d,label,h,m,sec,folder[0],"once",false));start.setOnClickListener(v->createTimerFromDialog(d,label,h,m,sec,folder[0],"start",save.isChecked()));
+        d.show();
     }
 
-    private void createTimerFromDialog(AlertDialog d,EditText label,EditText h,EditText m,EditText sec,boolean saved){
+    private void createTimerFromDialog(AlertDialog d,EditText label,EditText h,EditText m,EditText sec,String folder,String action,boolean keep){
         long total=(parseLong(h)*3600L+parseLong(m)*60L+parseLong(sec))*1000L;
         if(total<=0){Toast.makeText(this,I18n.tr(this,"時間を設定してください"),Toast.LENGTH_SHORT).show();return;}
-        TimerStore.Entry e=saved?TimerStore.addSaved(this,label.getText().toString().trim(),total):TimerStore.addTemporary(this,label.getText().toString().trim(),total);
-        startTimerEntry(e); d.dismiss(); renderTimers();
+        String name=label.getText().toString().trim();if(name.isEmpty())name=durationLabel(total);
+        if("save".equals(action)){TimerStore.addSaved(this,name,total,folder);Toast.makeText(this,I18n.tr(this,"保存したタイマーに追加しました"),Toast.LENGTH_SHORT).show();}
+        else if("once".equals(action)){TimerStore.addTemporary(this,name,total);Toast.makeText(this,I18n.tr(this,"今回だけ使うタイマーを準備しました"),Toast.LENGTH_SHORT).show();}
+        else{TimerStore.Entry run;if(keep){TimerStore.Entry preset=TimerStore.addSaved(this,name,total,folder);run=TimerStore.addTemporaryFrom(this,preset);}else run=TimerStore.addTemporary(this,name,total);startTimerEntry(run);}
+        d.dismiss();renderTimers();
     }
 
     private void startQuickTimer(long durationMs){TimerStore.Entry e=TimerStore.addTemporary(this,"",durationMs);startTimerEntry(e);renderTimers();}
@@ -1291,7 +1472,7 @@ public class ClockActivity extends Activity {
         EditText e=new EditText(this); e.setHint(I18n.tr(this,hint)); e.setHintTextColor(Ui.MUTED_2); e.setTextColor(Ui.TEXT);
         e.setInputType(android.text.InputType.TYPE_CLASS_NUMBER); e.setGravity(Gravity.CENTER); e.setTextSize(18); e.setSingleLine(true);
         e.setPadding(Ui.dp(this,8),Ui.dp(this,10),Ui.dp(this,8),Ui.dp(this,10));
-        try{e.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Ui.MUTED_2));}catch(Throwable ignored){} return e;
+        Ui.styleInput(e,this,Ui.SURFACE_2,12);return e;
     }
     private long parseLong(EditText e){try{return Long.parseLong(e.getText().toString().trim());}catch(Exception x){return 0L;}}
 
@@ -1370,12 +1551,14 @@ public class ClockActivity extends Activity {
         if(!"timer".equals(mode)||timerList==null)return;boolean rebuild=false;
         for(TimerStore.Entry e:TimerStore.all(this)){
             long rem=e.remaining();if(e.running&&rem<=0){TimerReceiver.complete(this,e.id);rebuild=true;continue;}
-            TextView time=timerList.findViewWithTag("timer_remaining_"+e.id),state=timerList.findViewWithTag("timer_state_"+e.id);
-            ClockFaceActivity.AnalogFace analog=timerList.findViewWithTag("timer_analog_"+e.id);
+            TextView time=findTimerView("timer_remaining_"+e.id),state=findTimerView("timer_state_"+e.id);
+            ClockFaceActivity.AnalogFace analog=findTimerView("timer_analog_"+e.id);
             if(time!=null)time.setText(formatTimer(rem));if(analog!=null){double sec=(rem/1000d)%60d,min=(rem/60000d)%60d,hr=(rem/3600000d)%12d;analog.setHands(hr,min,sec);}if(state!=null){state.setText(timerStateText(e));state.setTextColor(e.running?Ui.ACCENT:(e.finished()?Ui.SUCCESS:Ui.MUTED));}
         }
         if(rebuild)renderTimers();
     }
+
+    private <T extends View> T findTimerView(String tag){T v=timerList==null?null:timerList.findViewWithTag(tag);return v!=null?v:savedTimerRows==null?null:savedTimerRows.findViewWithTag(tag);}
 
     private void updateLiveUi() {
         updateLocalClock();

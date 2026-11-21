@@ -18,7 +18,8 @@ public final class I18n {
         put("記録","Records","기록"); put("起床","Wake-ups","기상"); put("時間の記録","Time log","시간 기록");
         put("起床と時間の記録","Wake-ups and time","기상 및 시간 기록"); put("時間記録","Time log","시간 기록");
         put("時計ツール","Clock tools","시계 도구"); put("計測 / ラップ","Time / lap","측정 / 랩");
-        put("記録した時間","Logged time","기록한 시간"); put("すべてのフォルダーの合計","Total across folders","모든 폴더 합계");
+        put("記録した時間","Logged time","기록한 시간"); put("すべてのフォルダー","All folders","모든 폴더"); put("すべてのフォルダーの合計","Total across folders","모든 폴더 합계");
+        put("全期間の合計","All-time total","전체 기간 합계"); put("今日の合計","Today's total","오늘 합계");
         put("まだフォルダーがありません","No folders yet","폴더가 없습니다");
         put("フォルダーを作ると、時間の記録を整理できます。","Create a folder to organize your time logs.","폴더를 만들어 시간 기록을 정리할 수 있습니다.");
         put("まだ時間記録がありません","No time entries yet","시간 기록이 없습니다");
@@ -80,7 +81,10 @@ public final class I18n {
         put("リセット","Reset","초기화"); put("ラップ","Lap","랩"); put("ラップはまだありません","No laps yet","아직 랩이 없습니다");
         put("経過時間","Elapsed time","경과 시간"); put("残り時間","Time remaining","남은 시간"); put("終了","Finished","종료");
         put("一時停止中","Paused","일시정지 중"); put("もう一度","Again","다시"); put("今回だけ","One-time","이번만");
-        put("保存したタイマーはありません","No saved timers","저장된 타이머가 없습니다"); put("タイマーを作成","Create timer","타이머 만들기");
+        put("保存したタイマーはありません","No saved timers","저장된 타이머가 없습니다"); put("このフォルダーには保存したタイマーがありません","No saved timers in this folder","이 폴더에는 저장된 타이머가 없습니다."); put("保存したタイマー","Saved timers","저장된 타이머"); put("保存タイマー","Saved timers","저장된 타이머");
+        put("フォルダーを選ぶと、その中だけ表示します","Choose a folder to view its timers.","폴더를 선택하면 그 폴더의 타이머만 표시합니다."); put("フォルダーの操作","Folder actions","폴더 작업"); put("フォルダーを検索","Search folders","폴더 검색");
+        put("フォルダーが見つかりません","No folders found","폴더를 찾을 수 없습니다.");
+        put("タイマーを作成","Create timer","타이머 만들기");
         put("名前（任意）","Name (optional)","이름(선택)"); put("時間","Time","시간"); put("このタイマーを保存","Save this timer","이 타이머 저장");
         put("この時間を保存","Save this duration","이 시간 저장"); put("すぐ使う","Quick start","바로 사용"); put("よく使う時間","Common durations","자주 쓰는 시간");
         put("時間を設定してください","Set a duration","시간을 설정하세요"); put("時間を入力してください","Enter a duration","시간을 입력하세요");
@@ -100,16 +104,8 @@ public final class I18n {
         put("設定した時間になりました","Time is up","설정한 시간이 되었습니다");
         put("アラームはありません。右上の＋から追加できます。","No alarms. Tap + at the top right to add one.","알람이 없습니다. 오른쪽 위 +에서 추가할 수 있습니다.");
         put("次のアラームはありません","No upcoming alarms","다음 알람이 없습니다"); put("毎日","Every day","매일"); put("1回のみ","Once","한 번만");
-        put("🔥  ストリーク","🔥  Streak","🔥  스트릭"); put("ストリーク","Streak","스트릭"); put("カレンダー","Calendar","캘린더");
+        put("ストリーク","Streak","스트릭"); put("カレンダー","Calendar","캘린더");
         put("成功した起床","Successful wake-ups","성공한 기상"); put("最高ストリーク","Best streak","최고 스트릭");
-        put("成長","Growth","성장"); put("火種","Ember","불씨"); put("炎の幼体","Flame form","불꽃 유체");
-        put("竜の幼体","Young dragon","어린 용"); put("翼竜","Winged dragon","날개 용"); put("成竜","Adult dragon","성룡");
-        put("古竜","Ancient dragon","고룡"); put("無限成長体","Infinite growth form","무한 성장체");
-        put("起床に成功するたびに、この1体だけが1段階成長します。上限はありません。ガチャ・レア度・通貨・装備・アイテムはありません。","Every successful wake-up grows this one companion by one step. There is no level cap, gacha, rarity, currency, equipment, or items.","기상에 성공할 때마다 이 한 캐릭터만 한 단계 성장합니다. 상한, 가챠, 희귀도, 재화, 장비, 아이템은 없습니다.");
-        put("成長するほど、体格・角・翼・鱗・装甲・炎・オーラ・紋様・背景演出が連続的に強くなります。","As it grows, its body, horns, wings, scales, armor, flames, aura, markings, and background effects continuously become more powerful.","성장할수록 체격, 뿔, 날개, 비늘, 갑주, 불꽃, 오라, 문양, 배경 연출이 계속 강해집니다.");
-        put("成功した本番アラームの日だけ記録します。テストアラームはストリークに入りません。","Only successful real alarms count. Test alarms do not affect your streak.","성공한 실제 알람만 기록됩니다. 테스트 알람은 스트릭에 포함되지 않습니다.");
-        put("伝説の炎を維持中","Legendary flame active","전설의 불꽃 유지 중"); put("最初の1日で火が灯る","The flame starts on day 1","첫날부터 불꽃이 켜집니다");
-        put("成長段階  1日 → 3日 → 7日 → 14日 → 30日","Growth: day 1 → 3 → 7 → 14 → 30","성장 단계  1일 → 3일 → 7일 → 14일 → 30일");
         put("アラームを追加","Add alarm","알람 추가"); put("アラームを編集","Edit alarm","알람 편집"); put("アラームを有効にする","Enable alarm","알람 사용");
         put("時刻と曜日","Time & days","시간 및 요일"); put("アラーム時刻","Alarm time","알람 시간"); put("タップして時刻を変更","Tap to change the time","탭하여 시간 변경"); put("繰り返す曜日","Repeat days","반복 요일");
         put("基本設定","Basic settings","기본 설정"); put("名前","Name","이름"); put("繰り返し","Repeat","반복"); put("曜日を選ばなければ1回だけ鳴ります","If no days are selected, it rings once","요일을 선택하지 않으면 한 번만 울립니다");
@@ -228,21 +224,12 @@ public final class I18n {
         put("Googleで確認した国名をコピーして戻ると、自動でその国の候補を表示します","Copy the country name from Google and return to automatically show that country's options","Google에서 확인한 국가명을 복사한 뒤 돌아오면 해당 국가의 후보가 자동으로 표시됩니다");
         put("国名が分からない場所","place unknown country","국가명을 모르는 장소"); put("国名","country","국가명"); put("ブラウザを開けません","Unable to open browser","브라우저를 열 수 없습니다");
         put("現在のストリーク","Current streak","현재 스트릭");
-        put("キャラ","Characters","캐릭터"); put("育てる","Train","육성"); put("キャラガチャ","Character gacha","캐릭터 가챠"); put("装飾","Decorations","장식");
-        put("育成","Progression","육성"); put("プレイヤーレベル","Player level","플레이어 레벨"); put("ガチャチケット","Gacha tickets","가챠 티켓"); put("エッセンス","Essence","에센스"); put("次の確定報酬","Next guaranteed reward","다음 확정 보상");
-        put("起床成功でプレイヤーと装備中キャラが成長。5レベルごとに無料ガチャチケット、4レベルごとに35%で装飾抽選。節目レベルでは100%報酬があります。","Successful wake-ups grow both your player level and equipped character. Every 5 levels gives a free gacha ticket; every 4 levels has a 35% decoration roll. Milestone levels have guaranteed rewards.","기상 성공 시 플레이어와 장착 캐릭터가 함께 성장합니다. 5레벨마다 무료 가챠 티켓, 4레벨마다 35% 확률로 장식 추첨이 있으며 주요 레벨에는 확정 보상이 있습니다.");
-        put("限定スターター","Exclusive starter","한정 스타터"); put("限定","Exclusive","한정"); put("所持キャラ","Owned characters","보유 캐릭터"); put("キャラコレクション","Character collection","캐릭터 컬렉션"); put("装備しました","Equipped","장착했습니다");
-        put("25エッセンスで250XP獲得","Gained 250 XP for 25 Essence","에센스 25로 250 XP 획득"); put("エッセンスが足りません","Not enough Essence","에센스가 부족합니다");
-        put("無料チケットだけで回せます。課金要素はありません。","Uses free tickets only. There are no paid gacha purchases.","무료 티켓만 사용합니다. 유료 가챠 요소는 없습니다."); put("30回でSSR以上確定、100回でUR確定","SSR+ guaranteed by 30 pulls; UR guaranteed by 100 pulls","30회 이내 SSR 이상 확정, 100회 이내 UR 확정");
-        put("ガチャチケットが足りません","Not enough gacha tickets","가챠 티켓이 부족합니다"); put("ガチャチケットが10枚必要です","You need 10 gacha tickets","가챠 티켓 10장이 필요합니다"); put("10連結果","10-pull results","10연속 결과"); put("ガチャ結果","Gacha result","가챠 결과"); put("重複","Duplicate","중복"); put("新しいキャラを獲得","New character obtained","새 캐릭터 획득");
-        put("装飾は最大3個まで同時装備できます","You can equip up to 3 decorations at once","장식은 최대 3개까지 동시에 장착할 수 있습니다"); put("所持","Owned","보유"); put("装備中","Equipped","장착 중"); put("タップで装備","Tap to equip","탭하여 장착"); put("装飾は3個までです","You can equip up to 3 decorations","장식은 3개까지 장착할 수 있습니다"); put("装飾コレクション","Decoration collection","장식 컬렉션");
-        put("4レベルごとに35%で装飾、5レベルごとにガチャチケット","Every 4 levels: 35% decoration chance; every 5 levels: gacha ticket","4레벨마다 장식 35% 확률, 5레벨마다 가챠 티켓");
         put("ストリーク保護","Streak protection","스트릭 보호"); put("保護日","Protection days","보호일"); put("保護","Protected","보호");
         put("自動で保護日を使う","Use protection days automatically","보호일 자동 사용");
-        put("毎月1日に2日分回復し、最大3日まで持てます。起きられなかった対象日に1日だけ自動使用してストリークを守ります。保護日は成功回数や成長Lvには加算されません。","Two protection days are restored on the first of each month, up to three. One is automatically used on an eligible missed wake-up to preserve your streak. Protected days do not increase successful wake-ups or Growth Lv.","매월 1일에 보호일 2일이 회복되며 최대 3일까지 보유할 수 있습니다. 대상 기상일을 놓치면 1일을 자동 사용해 스트릭을 보호합니다. 보호일은 성공 횟수나 성장 Lv에 더해지지 않습니다.");
+        put("毎月1日に2日分回復し、最大3日まで持てます。起きられなかった対象日に1日だけ自動使用してストリークを守ります。保護日はストリークを維持しますが、成功回数には加算されません。","Two protection days are restored on the first of each month, up to three. One is automatically used on an eligible missed wake-up to preserve your streak. Protected days preserve your streak but do not add successful wake-ups.","매월 1일에 보호일 2일이 회복되며 최대 3일까지 보유할 수 있습니다. 대상 기상일을 놓치면 1일을 자동 사용해 스트릭을 보호합니다. 보호일은 스트릭을 유지하지만 성공 횟수에는 더해지지 않습니다.");
         put("30日連続で実際に起床成功するごとに、保護日を1日追加します（最大3日）。","Every 30 actual successful wake-ups in the streak adds one protection day, up to three.","실제 기상 성공을 30일 연속 달성할 때마다 보호일 1일이 추가됩니다(최대 3일).");
         put("◆ 成功   ◇ 保護","◆ Success   ◇ Protected","◆ 성공   ◇ 보호"); put("この月の成功","Successful this month","이번 달 성공");
-        put("成功した本番アラームの日だけ成長します。保護日はストリークだけを維持し、テストアラームは記録しません。","Growth only increases on successful real alarms. A protected day only preserves the streak, and test alarms are not recorded.","성공한 실제 알람에서만 성장합니다. 보호일은 스트릭만 유지하며 테스트 알람은 기록하지 않습니다.");
+        put("起床に成功した本番アラームを記録します。保護日はストリークだけを維持し、テストアラームは記録しません。","Successful real alarm wake-ups are recorded. Protected days only preserve your streak, and test alarms are not recorded.","실제 알람의 기상 성공을 기록합니다. 보호일은 스트릭만 유지하며 테스트 알람은 기록하지 않습니다.");
         put("タイマーを停止","Stop timer","타이머 정지");
         put("OK","OK","확인"); put("1回","1 pull","1회"); put("10回","10 pulls","10회");
         put("アラームを停止","Dismiss alarm","알람 해제");
@@ -332,3 +319,4 @@ public final class I18n {
         if(v instanceof ViewGroup){ViewGroup g=(ViewGroup)v;for(int i=0;i<g.getChildCount();i++)localizeTree(g.getChildAt(i));}
     }
 }
+

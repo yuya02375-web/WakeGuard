@@ -168,7 +168,7 @@ public class AlarmEditorActivity extends Activity {
         String language=I18n.language(this);return "ko".equals(language)?korean:"en".equals(language)?english:japanese;
     }
 
-    private EditText input(String hint,int type){EditText e=new EditText(this);e.setHint(I18n.tr(this,hint));e.setHintTextColor(Ui.MUTED_2);e.setTextColor(Ui.TEXT);e.setTextSize(17);e.setInputType(type);e.setSingleLine(true);e.setMinHeight(Ui.dp(this,54));e.setPadding(Ui.dp(this,14),Ui.dp(this,9),Ui.dp(this,14),Ui.dp(this,9));e.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));return e;}
+    private EditText input(String hint,int type){EditText e=new EditText(this);e.setHint(I18n.tr(this,hint));e.setTextSize(17);e.setInputType(type);e.setSingleLine(true);e.setMinHeight(Ui.dp(this,54));e.setPadding(Ui.dp(this,14),Ui.dp(this,9),Ui.dp(this,14),Ui.dp(this,9));Ui.styleInput(e,this,Ui.SURFACE_2,14);return e;}
 
     private void refreshMissionFields(){if(steps==null)return;String t=selectedMission;boolean needSteps="STEPS".equals(t)||"RANDOM".equals(t);boolean needCount=!("NONE".equals(t)||"STEPS".equals(t));stepsLabel.setVisibility(needSteps?View.VISIBLE:View.GONE);stepsControl.setVisibility(needSteps?View.VISIBLE:View.GONE);countLabel.setVisibility(needCount?View.VISIBLE:View.GONE);countControl.setVisibility(needCount?View.VISIBLE:View.GONE);
         selectedMissionTitle.setText(I18n.tr(this,AlarmProfiles.missionName(t)));

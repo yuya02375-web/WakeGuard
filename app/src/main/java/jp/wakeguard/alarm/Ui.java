@@ -1,19 +1,16 @@
 package jp.wakeguard.alarm;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Insets;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.ColorFilter;
-import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PixelFormat;
-import android.graphics.Rect;
 import android.graphics.RectF;
-import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -25,6 +22,8 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.WindowInsets;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -68,6 +67,7 @@ public final class Ui {
     public static volatile String NAV_MODE = "pill";
     public static volatile String UI_CARD_MODE = "outlined";
     public static volatile String DESIGN_PATTERN = "none";
+    public static volatile String DESIGN_ID = "paper-craft";
     public static volatile String DESIGN_FONT = "sans";
     public static volatile String DESIGN_CARD = "flat";
     public static volatile float DESIGN_LETTER_SPACING = 0f;
@@ -97,6 +97,7 @@ public final class Ui {
 
     public static void applyVisualDesign(VisualDesigns.Design design) {
         if (design == null) return;
+        DESIGN_ID = safe(design.id, "paper-craft");
         DESIGN_PATTERN = safe(design.pattern, "none");
         DESIGN_FONT = safe(design.fontFamily, "sans");
         DESIGN_CARD = safe(design.cardTreatment, "flat");
@@ -118,7 +119,7 @@ public final class Ui {
         return Math.round(v * a.getResources().getDisplayMetrics().density);
     }
 
-    private static Typeface designTypeface(int style) {
+    static Typeface designTypeface(int style) {
         String family;
         if ("serif".equals(DESIGN_FONT)) family = "serif";
         else if ("mono".equals(DESIGN_FONT)) family = "monospace";
@@ -140,82 +141,78 @@ public final class Ui {
         return d;
     }
 
-    public static Drawable burnCard(Activity a, boolean active) {
-        return new BurnCardDrawable(a, active);
+    /** Apply a theme-aware input style with readable text, hint, and boundary colors. */
+    public static void styleInput(EditText field, Activity a, int surfaceColor, float radiusDp) {
+        if (field == null || a == null) return;
+        int surface = surfaceColor;
+        int ink = readableColor(TEXT, surface, 4.5);
+        int hint = readableColor(MUTED_2, surface, 4.5);
+        int edge = readableColor(BORDER, surface, 2.0);
+        field.setTextColor(ink);
+        field.setHintTextColor(hint);
+        field.setIncludeFontPadding(false);
+        field.setTypeface(designTypeface(Typeface.NORMAL));
+        field.setMinHeight(Math.max(field.getMinimumHeight(), touchDp(a, 48)));
+        field.setHighlightColor(withAlpha(ACCENT, 0x55));
+        field.setBackground(roundStroke(surface, edge, radiusDp, a));
+        if (Build.VERSION.SDK_INT >= 21) {
+            try { field.setBackgroundTintList(null); } catch (Throwable ignored) {}
+        }
     }
 
-    public static Drawable tabChrome(Activity a, boolean selected) {
-        return new BurnTabDrawable(a, selected);
+    private static int readableColor(int preferred, int background, double minimumContrast) {
+        if (contrastRatio(preferred, background) >= minimumContrast) return preferred;
+        int black = Color.BLACK, white = Color.WHITE;
+        return contrastRatio(black, background) >= contrastRatio(white, background) ? black : white;
     }
 
-    private static final class BurnCardDrawable extends Drawable {
-        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Path tongue = new Path();
-        private final float radius;
-        private final float edge;
-        private final float density;
-        private final boolean active;
-
-        BurnCardDrawable(Activity a, boolean active) {
-            this.density = a.getResources().getDisplayMetrics().density;
-            this.radius = 18f * density * CORNER_SCALE;
-            this.edge = 3f * density;
-            this.active = active;
-        }
-
-        @Override public void draw(Canvas canvas) {
-            Rect b = getBounds();
-            RectF r = new RectF(b.left + 0.5f, b.top + 0.5f, b.right - 0.5f, b.bottom - 0.5f);
-
-            paint.setStyle(Paint.Style.FILL);
-            paint.setShader(null);
-            paint.setShader(active
-                    ? new LinearGradient(0, r.top, 0, r.bottom,
-                            SURFACE, SURFACE_2, Shader.TileMode.CLAMP)
-                    : null);
-            paint.setColor(active ? SURFACE : BG_2);
-            canvas.drawRoundRect(r, radius, radius, paint);
-            paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(density);
-            paint.setShader(null);
-            paint.setColor(active ? BORDER_HOT : BORDER);
-            canvas.drawRoundRect(r, radius, radius, paint);
-            if (active) {
-                paint.setStyle(Paint.Style.FILL);
-                paint.setColor(ACCENT_2);
-                RectF marker = new RectF(r.left + 1, r.top + radius, r.left + edge + 1,
-                        r.top + radius + 28f * density);
-                canvas.drawRoundRect(marker, edge, edge, paint);
-            }
-            drawCardTreatment(canvas, r, radius, density);
-            paint.setStyle(Paint.Style.FILL);
-        }
-
-        @Override public void setAlpha(int alpha) { paint.setAlpha(alpha); }
-        @Override public void setColorFilter(ColorFilter colorFilter) { paint.setColorFilter(colorFilter); }
-        @Override public int getOpacity() { return PixelFormat.TRANSLUCENT; }
+    public static int readableTextColor(int preferred, int background) {
+        return readableColor(preferred, background, 4.5);
     }
 
-    private static final class BurnTabDrawable extends Drawable {
-        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final float line;
-        private final boolean selected;
-        BurnTabDrawable(Activity a, boolean selected) {
-            this.line = 2f * a.getResources().getDisplayMetrics().density;
-            this.selected = selected;
+    private static double contrastRatio(int foreground, int background) {
+        double first = luminance(foreground), second = luminance(background);
+        return (Math.max(first, second) + .05) / (Math.min(first, second) + .05);
+    }
+
+    private static double luminance(int color) {
+        double red = linear(Color.red(color) / 255.0);
+        double green = linear(Color.green(color) / 255.0);
+        double blue = linear(Color.blue(color) / 255.0);
+        return .2126 * red + .7152 * green + .0722 * blue;
+    }
+
+    private static double linear(double channel) {
+        return channel <= .04045 ? channel / 12.92 : Math.pow((channel + .055) / 1.055, 2.4);
+    }
+
+    public static Drawable alarmCard(Activity a, boolean active) {
+        GradientDrawable base = round(active ? SURFACE : SURFACE_2, 20, a);
+        if ("flat".equals(UI_CARD_MODE) && "flat".equals(DESIGN_CARD)) {
+            base.setStroke(0, Color.TRANSPARENT);
+        } else {
+            base.setStroke(dp(a, 1), active ? BORDER_HOT : BORDER);
         }
-        @Override public void draw(Canvas canvas) {
-            if (!selected) return;
-            Rect b = getBounds();
-            float y = b.bottom - line;
-            paint.setStyle(Paint.Style.FILL);
-            paint.setShader(null);
-            paint.setColor(ACCENT_2);
-            canvas.drawRect(b.left + line * 3, y, b.right - line * 3, b.bottom, paint);
-        }
-        @Override public void setAlpha(int alpha) { paint.setAlpha(alpha); }
-        @Override public void setColorFilter(ColorFilter colorFilter) { paint.setColorFilter(colorFilter); }
-        @Override public int getOpacity() { return PixelFormat.TRANSLUCENT; }
+        Drawable surface = patterned(a, base, true, 20f * CORNER_SCALE);
+        return new android.graphics.drawable.RippleDrawable(
+                ColorStateList.valueOf(withAlpha(ACCENT, 0x20)), surface, round(Color.WHITE, 20, a));
+    }
+
+    public static Drawable rippleBackground(Activity a, float radiusDp) {
+        return new android.graphics.drawable.RippleDrawable(
+                ColorStateList.valueOf(withAlpha(ACCENT, 0x20)),
+                new ColorDrawable(Color.TRANSPARENT), round(Color.WHITE, radiusDp, a));
+    }
+
+    public static Drawable rippleForeground(Activity a, float radiusDp) {
+        return new android.graphics.drawable.RippleDrawable(
+                ColorStateList.valueOf(withAlpha(ACCENT, 0x20)), null, round(Color.WHITE, radiusDp, a));
+    }
+
+    public static int cardElevationPx(Activity a) {
+        if ("elevated".equals(UI_CARD_MODE) || "raised".equals(DESIGN_CARD)) return touchDp(a, 4);
+        if ("outlined".equals(UI_CARD_MODE)) return touchDp(a, 1);
+        return 0;
     }
 
     public static GradientDrawable gradient(Activity a, int... colors) {
@@ -231,7 +228,8 @@ public final class Ui {
         float radiusPx = dp(a, Math.max(0, (int)(radius * CORNER_SCALE)));
         boolean hero = c.length >= 2 && c[0] == HERO_START && c[1] == HERO_END;
         GradientDrawable d = hero
-                ? new HeroGradientDrawable(c, a.getResources().getDisplayMetrics().density, radiusPx)
+                ? new HeroGradientDrawable(a.getApplicationContext(), c,
+                        a.getResources().getDisplayMetrics().density, radiusPx)
                 : new GradientDrawable(GradientDrawable.Orientation.TL_BR, c);
         d.setCornerRadius(radiusPx);
         return d;
@@ -239,16 +237,18 @@ public final class Ui {
 
     /** Adds the selected design's shared motif to the home hero gradient. */
     private static final class HeroGradientDrawable extends GradientDrawable {
+        private final Context context;
         private final float density;
         private final float radius;
-        HeroGradientDrawable(int[] colors, float density, float radius) {
+        HeroGradientDrawable(Context context, int[] colors, float density, float radius) {
             super(GradientDrawable.Orientation.TL_BR, colors);
+            this.context = context;
             this.density = density;
             this.radius = radius;
         }
         @Override public void draw(Canvas canvas) {
             super.draw(canvas);
-            if ("none".equals(DESIGN_PATTERN)) return;
+            if ("none".equals(DESIGN_PATTERN) && !"library-classic".equals(DESIGN_ID)) return;
             RectF bounds = new RectF(getBounds());
             if (bounds.width() <= 0 || bounds.height() <= 0) return;
             int save = canvas.save();
@@ -259,7 +259,9 @@ public final class Ui {
             if (scene != null) {
                 LandscapeArt.Palette palette = LandscapeArt.paletteFromTheme(
                         HERO_START, HERO_END, SURFACE, ACCENT, ACCENT_2, TEXT, HERO_TEXT);
-                LandscapeArt.draw(canvas, scene, bounds, palette, density);
+                if (!LandscapeArt.drawImage(context, canvas, scene, bounds, HERO_TEXT, true)) {
+                    LandscapeArt.draw(canvas, scene, bounds, palette, density);
+                }
                 canvas.restoreToCount(save);
                 return;
             }
@@ -267,14 +269,14 @@ public final class Ui {
             ink.setColor(withAlpha(HERO_TEXT, 36));
             ink.setStyle(Paint.Style.STROKE);
             ink.setStrokeWidth(.75f * density);
-            VisualDesigns.drawPattern(canvas, DESIGN_PATTERN, bounds, ink, density);
+            VisualDesigns.drawPattern(context, canvas, DESIGN_PATTERN, DESIGN_ID, bounds, ink, density);
             canvas.restoreToCount(save);
         }
     }
 
     private static Drawable patterned(Activity a, Drawable base, boolean card, float radiusDp) {
         if (base == null) return null;
-        boolean pagePattern = !card && !"none".equals(DESIGN_PATTERN);
+        boolean pagePattern = !card && (!"none".equals(DESIGN_PATTERN) || "library-classic".equals(DESIGN_ID));
         boolean cardDecoration = card && (!"flat".equals(DESIGN_CARD) || "outlined".equals(UI_CARD_MODE));
         if (!pagePattern && !cardDecoration) return base;
         return new LayerDrawable(new Drawable[]{base,
@@ -304,9 +306,11 @@ public final class Ui {
     }
 
     private static final class PatternOverlayDrawable extends Drawable {
+        private final Context context;
         private final float density, radius;
         private final boolean card;
         PatternOverlayDrawable(Activity a, boolean card, float radius) {
+            context = a.getApplicationContext();
             density = a.getResources().getDisplayMetrics().density;
             this.card = card;
             this.radius = radius;
@@ -317,12 +321,12 @@ public final class Ui {
                 drawCardTreatment(canvas, bounds, radius, density);
                 return;
             }
-            if ("none".equals(DESIGN_PATTERN) || bounds.width() <= 0 || bounds.height() <= 0) return;
+            if (bounds.width() <= 0 || bounds.height() <= 0) return;
             Paint ink = new Paint(Paint.ANTI_ALIAS_FLAG);
             ink.setColor(withAlpha(ACCENT, 36));
             ink.setStyle(Paint.Style.STROKE);
             ink.setStrokeWidth(.75f * density);
-            VisualDesigns.drawPattern(canvas, DESIGN_PATTERN, bounds, ink, density);
+            VisualDesigns.drawPattern(context, canvas, DESIGN_PATTERN, DESIGN_ID, bounds, ink, density);
         }
         @Override public void setAlpha(int alpha) {}
         @Override public void setColorFilter(android.graphics.ColorFilter filter) {}
@@ -339,7 +343,8 @@ public final class Ui {
     public static TextView text(Activity a, String s, float sp, int color) {
         TextView v = new TextView(a);
         v.setText(I18n.tr(a,s)); v.setTextSize(sp); v.setTextColor(color);
-        v.setLineSpacing(0, 1.08f);
+        v.setIncludeFontPadding(false);
+        v.setLineSpacing(0, 1.12f);
         v.setTypeface(designTypeface(Typeface.NORMAL));
         if (Build.VERSION.SDK_INT >= 21) v.setLetterSpacing(DESIGN_LETTER_SPACING);
         return v;
@@ -353,28 +358,44 @@ public final class Ui {
     }
 
     public static TextView overline(Activity a, String s) {
-        TextView v = text(a, s, 11, ACCENT_2);
+        TextView v = text(a, s, 10.5f, ACCENT_2);
         v.setTypeface(designTypeface(Typeface.BOLD));
-        if (Build.VERSION.SDK_INT >= 21) v.setLetterSpacing(Math.max(.05f, DESIGN_LETTER_SPACING + .06f));
+        if (Build.VERSION.SDK_INT >= 21) v.setLetterSpacing(Math.max(.07f, DESIGN_LETTER_SPACING + .07f));
         return v;
     }
 
     public static Button button(Activity a, String s, boolean accent) {
         Button b = new Button(a);
         b.setText(I18n.tr(a,s)); b.setAllCaps(false); b.setTextSize(15);
+        b.setIncludeFontPadding(false);
         b.setTypeface(designTypeface(Typeface.BOLD));
         b.setTextColor(accent ? ON_ACCENT : TEXT);
-        b.setBackground(new android.graphics.drawable.RippleDrawable(ColorStateList.valueOf(withAlpha(TEXT, 0x1A)), accent ? round(ACCENT_2, 16, a) : roundStroke(SURFACE_2, BORDER, 16, a), null));
-        b.setMinHeight(touchDp(a, 54));
+        Drawable shape;
+        if (accent) {
+            GradientDrawable primary = round(ACCENT_2, 17, a);
+            primary.setStroke(dp(a, 1), withAlpha(ON_ACCENT, 0x30));
+            shape = primary;
+        } else {
+            shape = roundStroke(SURFACE_2, BORDER, 17, a);
+        }
+        b.setBackground(new android.graphics.drawable.RippleDrawable(
+                ColorStateList.valueOf(withAlpha(TEXT, 0x1A)), shape, round(Color.WHITE, 17, a)));
+        b.setMinHeight(touchDp(a, 56));
         b.setPadding(dp(a,16),0,dp(a,16),0);
-        if (Build.VERSION.SDK_INT >= 21) b.setElevation(0);
+        if (Build.VERSION.SDK_INT >= 21) b.setElevation(accent ? dp(a, 1) : 0);
         return b;
     }
 
     public static Button ghostButton(Activity a, String s) {
         Button b = new Button(a);
         b.setText(I18n.tr(a,s)); b.setAllCaps(false); b.setTextSize(14);
-        b.setTextColor(TEXT); b.setBackground(new ColorDrawable(Color.TRANSPARENT));
+        b.setIncludeFontPadding(false);
+        b.setTypeface(designTypeface(Typeface.BOLD));
+        b.setTextColor(readableColor(TEXT, SURFACE_2, 4.5));
+        GradientDrawable surface = roundStroke(SURFACE_2, BORDER, 14, a);
+        b.setBackground(new android.graphics.drawable.RippleDrawable(
+                ColorStateList.valueOf(withAlpha(TEXT, 0x16)),
+                surface, round(Color.WHITE, 14, a)));
         b.setMinHeight(touchDp(a,48)); b.setMinWidth(0);
         b.setPadding(dp(a,10),0,dp(a,10),0);
         return b;
@@ -383,20 +404,12 @@ public final class Ui {
     public static LinearLayout card(Activity a) {
         LinearLayout l = new LinearLayout(a);
         l.setOrientation(LinearLayout.VERTICAL);
-        l.setPadding(dp(a,18),dp(a,17),dp(a,18),dp(a,17));
-        GradientDrawable surface = gradient(a, SURFACE, SURFACE_2);
+        l.setPadding(dp(a,20),dp(a,18),dp(a,20),dp(a,18));
+        GradientDrawable surface = round(SURFACE, 20, a);
         if ("flat".equals(UI_CARD_MODE) && "flat".equals(DESIGN_CARD)) surface.setStroke(0, Color.TRANSPARENT);
-        l.setBackground(patterned(a, surface, true, 22f * CORNER_SCALE));
-        if (Build.VERSION.SDK_INT >= 21) l.setElevation("elevated".equals(UI_CARD_MODE) || "raised".equals(DESIGN_CARD) ? touchDp(a, 3) : 0);
-        return l;
-    }
-
-    public static LinearLayout glowCard(Activity a) {
-        LinearLayout l = new LinearLayout(a);
-        l.setOrientation(LinearLayout.VERTICAL);
-        l.setPadding(dp(a,18),dp(a,17),dp(a,18),dp(a,17));
-        l.setBackground(burnCard(a, true));
-        if (Build.VERSION.SDK_INT >= 21) l.setElevation("elevated".equals(UI_CARD_MODE) || "raised".equals(DESIGN_CARD) ? touchDp(a, 3) : 0);
+        else surface.setStroke(dp(a, 1), BORDER);
+        l.setBackground(patterned(a, surface, true, 20f * CORNER_SCALE));
+        if (Build.VERSION.SDK_INT >= 21) l.setElevation(cardElevationPx(a));
         return l;
     }
 
@@ -416,33 +429,39 @@ public final class Ui {
     }
 
     public static TextView pill(Activity a, String text) {
-        TextView v = text(a,text,12,MUTED);
+        TextView v = text(a,text,12,readableColor(MUTED, SURFACE_2, 4.5));
         v.setGravity(Gravity.CENTER);
         v.setPadding(dp(a,9),dp(a,6),dp(a,9),dp(a,6));
-        v.setBackground(round(SURFACE_2, 12, a));
+        v.setBackground(roundStroke(SURFACE_2, BORDER, 12, a));
         return v;
     }
 
     public static TextView accentPill(Activity a, String text) {
         TextView v = text(a,text,12,ON_ACCENT);
         v.setGravity(Gravity.CENTER);
-        v.setTypeface(null,Typeface.BOLD);
+        v.setTypeface(designTypeface(Typeface.BOLD));
         v.setPadding(dp(a,9),dp(a,6),dp(a,9),dp(a,6));
         v.setBackground(round(ACCENT_2, 12, a));
         return v;
     }
 
     public static View divider(Activity a) {
-        View v = new View(a); v.setBackgroundColor(BORDER);
+        View v = new View(a); v.setBackgroundColor(withAlpha(BORDER, DARK_THEME ? 0x99 : 0xB8));
         v.setLayoutParams(new LinearLayout.LayoutParams(-1,dp(a,1)));
         return v;
     }
 
+    public static Drawable navigationSurface(Activity a) {
+        GradientDrawable surface = round(SURFACE, 0, a);
+        surface.setStroke(dp(a, 1), withAlpha(BORDER, DARK_THEME ? 0xA0 : 0xC0));
+        return surface;
+    }
+
     public static TextView sectionHeader(Activity a, String s) {
-        TextView v = text(a, s, 14, MUTED);
-        v.setTypeface(null, Typeface.BOLD);
-        if (Build.VERSION.SDK_INT >= 21) v.setLetterSpacing(0.008f);
-        v.setPadding(0, dp(a,8), 0, dp(a,8));
+        TextView v = text(a, s, 16, TEXT);
+        v.setTypeface(designTypeface(Typeface.BOLD));
+        if (Build.VERSION.SDK_INT >= 21) v.setLetterSpacing(0.01f);
+        v.setPadding(0, dp(a,10), 0, dp(a,8));
         return v;
     }
 
@@ -454,78 +473,96 @@ public final class Ui {
         return r;
     }
 
-    /** Material icon navigation. Both icon and label update when switching clock modes. */
-    public static Button bottomTab(Activity a, String name, boolean active) {
-        Button b=new Button(a);
-        b.setTag(name);
-        b.setAllCaps(false);
-        b.setSingleLine(true);
-        b.setIncludeFontPadding(false);
-        b.setGravity(Gravity.CENTER);
-        b.setMinHeight(touchDp(a,48));
-        b.setMinWidth(0); b.setMinimumWidth(0);
-        b.setPadding(dp(a,2),dp(a,8),dp(a,2),dp(a,8));
-        b.setCompoundDrawablePadding(dp(a,4));
-        b.setContentDescription(I18n.tr(a,name));
-        b.setStateListAnimator(null);
-        updateBottomTab(a,b,active);
-        return b;
+    /** A tab uses separate, centered icon and label views so its selection surface cannot drift. */
+    public static LinearLayout bottomTab(Activity a, String name, boolean active) {
+        return createBottomTab(a, name, active, NAV_MODE);
     }
 
-    public static void updateBottomTab(Activity a, Button b, boolean active) {
-        String name=(String)b.getTag();
-        boolean compact = "compact".equals(NAV_MODE);
-        boolean labels = "labels".equals(NAV_MODE);
-        b.setText(compact ? "" : ("ストップウォッチ".equals(name)? I18n.tr(a,"計測"):I18n.tr(a,name)));
-        b.setTextSize(labels ? 12.5f : 11.5f);
-        b.setTextColor(active?ACCENT_2:MUTED);
-        b.setTypeface(designTypeface(active?Typeface.BOLD:Typeface.NORMAL));
-        b.setBackground(new NavigationIndicatorDrawable(a,active));
-        int id=navIcon(name,active);
-        Drawable icon=a.getDrawable(id).mutate();
-        icon.setTint(active?ACCENT_2:MUTED);
-        int iconSize = touchDp(a, labels ? 0 : 22);
-        if (labels || iconSize == 0) b.setCompoundDrawables(null,null,null,null);
-        else {
-            icon.setBounds(0,0,iconSize,iconSize);
-            b.setCompoundDrawables(null,icon,null,null);
-        }
+    static LinearLayout previewBottomTab(Activity a, String name, boolean active, String mode) {
+        return createBottomTab(a, name, active, mode);
     }
 
-    /** Only the icon gets the M3 indicator, never the text below it. */
-    private static final class NavigationIndicatorDrawable extends Drawable {
-        private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final boolean selected;
-        private final float density;
-        private final String mode;
-        NavigationIndicatorDrawable(Activity a,boolean selected){this.selected=selected;this.density=a.getResources().getDisplayMetrics().density;this.mode=NAV_MODE;}
-        @Override public void draw(Canvas c){
-            if(!selected)return;
-            Rect r=getBounds();
-            paint.setColor(NAV_HIGHLIGHT);paint.setStyle(Paint.Style.FILL);
-            if ("labels".equals(mode)) {
-                float y=r.bottom-2*density;
-                c.drawRoundRect(r.left+8*density,y,r.right-8*density,r.bottom,1*density,1*density,paint);
-            } else if ("compact".equals(mode)) {
-                float cx=r.exactCenterX(),cy=r.exactCenterY();
-                float half=Math.min(r.width()/2f-4*density,18*density);
-                c.drawRoundRect(cx-half,cy-18*density,cx+half,cy+18*density,18*density,18*density,paint);
-            } else {
-                float cx=r.exactCenterX(),top=r.top+3*density;
-                float half=Math.min(r.width()/2f-3*density,27*density);
-                c.drawRoundRect(cx-half,top,cx+half,top+31*density,16*density,16*density,paint);
-            }
-        }
-        @Override public void setAlpha(int a){paint.setAlpha(a);}
-        @Override public void setColorFilter(ColorFilter f){paint.setColorFilter(f);}
-        @Override public int getOpacity(){return PixelFormat.TRANSLUCENT;}
+    private static LinearLayout createBottomTab(Activity a, String name, boolean active, String mode) {
+        LinearLayout tab = new LinearLayout(a);
+        tab.setOrientation(LinearLayout.VERTICAL);
+        tab.setGravity(Gravity.CENTER);
+        tab.setPadding(dp(a, 2), 0, dp(a, 2), 0);
+        tab.setMinimumHeight(touchDp(a, 48));
+        tab.setMinimumWidth(0);
+        tab.setTag(name);
+        tab.setFocusable(true);
+        tab.setClickable(true);
+        tab.setBackground(rippleBackground(a, 16));
+
+        FrameLayout iconFrame = new FrameLayout(a);
+        iconFrame.setTag("nav_icon_frame");
+        ImageView icon = new ImageView(a);
+        icon.setTag("nav_icon");
+        icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        FrameLayout.LayoutParams iconParams = new FrameLayout.LayoutParams(dp(a, 24), dp(a, 24), Gravity.CENTER);
+        iconFrame.addView(icon, iconParams);
+        tab.addView(iconFrame, new LinearLayout.LayoutParams(dp(a, 52), dp(a, 34)));
+
+        TextView label = text(a, "", 12, MUTED);
+        label.setTag("nav_label");
+        label.setGravity(Gravity.CENTER);
+        label.setSingleLine(true);
+        label.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(-1, -2);
+        labelParams.topMargin = dp(a, 2);
+        tab.addView(label, labelParams);
+
+        View marker = new View(a);
+        marker.setTag("nav_marker");
+        LinearLayout.LayoutParams markerParams = new LinearLayout.LayoutParams(dp(a, 18), dp(a, 2));
+        markerParams.topMargin = dp(a, 2);
+        tab.addView(marker, markerParams);
+        updateBottomTab(a, tab, active, mode);
+        return tab;
     }
 
-    private static int navIcon(String name, boolean active) {
+    public static void updateBottomTab(Activity a, LinearLayout tab, boolean active) {
+        updateBottomTab(a, tab, active, NAV_MODE);
+    }
+
+    private static void updateBottomTab(Activity a, LinearLayout tab, boolean active, String mode) {
+        String name = (String) tab.getTag();
+        boolean compact = "compact".equals(mode);
+        boolean labels = "labels".equals(mode);
+        FrameLayout iconFrame = (FrameLayout) tab.getChildAt(0);
+        ImageView icon = (ImageView) iconFrame.getChildAt(0);
+        TextView label = (TextView) tab.getChildAt(1);
+        View marker = tab.getChildAt(2);
+
+        iconFrame.setVisibility(labels ? View.GONE : View.VISIBLE);
+        LinearLayout.LayoutParams frameParams = (LinearLayout.LayoutParams) iconFrame.getLayoutParams();
+        frameParams.width = dp(a, compact ? 38 : 52);
+        frameParams.height = dp(a, compact ? 38 : 34);
+        iconFrame.setLayoutParams(frameParams);
+        float radius = compact ? 20 : 16;
+        iconFrame.setBackground(active ? round(NAV_HIGHLIGHT, radius, a) : round(Color.TRANSPARENT, radius, a));
+
+        label.setText("ストップウォッチ".equals(name) ? I18n.tr(a, "計測") : I18n.tr(a, name));
+        label.setTextSize(labels ? 12.5f : 11.5f);
+        label.setTextColor(active ? ACCENT_2 : MUTED);
+        label.setTypeface(designTypeface(active ? Typeface.BOLD : Typeface.NORMAL));
+        label.setVisibility(compact ? View.GONE : View.VISIBLE);
+        marker.setVisibility(labels && active ? View.VISIBLE : View.GONE);
+        marker.setBackground(round(ACCENT_2, 1, a));
+
+        int id = navIcon(name, active);
+        icon.setImageResource(id);
+        icon.setImageTintList(ColorStateList.valueOf(active ? ACCENT_2 : MUTED));
+        icon.setContentDescription(I18n.tr(a, name));
+        tab.setSelected(active);
+        tab.setContentDescription(I18n.tr(a, name) + (active ? " · " + I18n.tr(a, "選択中") : ""));
+    }
+
+    static int navIcon(String name, boolean active) {
         if("アラーム".equals(name)) return active?R.drawable.ic_v292_nav_alarm_fill:R.drawable.ic_v292_nav_alarm_outline;
         if("時計".equals(name)) return active?R.drawable.ic_v292_nav_world_fill:R.drawable.ic_v292_nav_world_outline;
-        if("記録".equals(name)) return active?R.drawable.ic_v292_nav_streak_fill:R.drawable.ic_v292_nav_streak_outline;
-        if("設定".equals(name)) return R.drawable.ic_v292_action_settings;
+        if("記録".equals(name)) return active?R.drawable.ic_v292_nav_calendar_fill:R.drawable.ic_v292_nav_calendar_outline;
+        if("設定".equals(name)) return active?R.drawable.ic_v292_nav_settings_fill:R.drawable.ic_v292_nav_settings_outline;
         if("タイマー".equals(name)) return R.drawable.ic_v293_timer;
         if("ストップウォッチ".equals(name)) return active?R.drawable.ic_v292_nav_stopwatch_fill:R.drawable.ic_v292_nav_stopwatch_outline;
         return active?R.drawable.ic_v292_nav_streak_fill:R.drawable.ic_v292_nav_streak_outline;

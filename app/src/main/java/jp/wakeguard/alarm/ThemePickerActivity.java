@@ -8,6 +8,7 @@ import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -18,13 +19,18 @@ import java.util.List;
 public class ThemePickerActivity extends Activity {
     private String selectedId;
     private String selectedMode;
+    private String appliedThemeId;
+    private String appliedMode;
     private String paletteKey;
     private LinearLayout themeGrid;
+    private ScrollView themeScroll;
     private AppearanceChrome.ApplyBar applyBar;
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
         Ui.prepareActivity(this);
+        appliedThemeId = AppThemes.id(this);
+        appliedMode = AppThemes.mode(this);
         selectedId = state == null ? AppThemes.id(this) : state.getString("pendingTheme", AppThemes.id(this));
         selectedMode = normalizeMode(state == null ? AppThemes.mode(this)
                 : state.getString("pendingMode", AppThemes.mode(this)));
@@ -41,9 +47,23 @@ public class ThemePickerActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         String current = AppThemes.key(this);
-        if (paletteKey != null && !paletteKey.equals(current)) {
+        String currentId = AppThemes.id(this);
+        String currentMode = AppThemes.mode(this);
+        boolean selectionChanged = appliedThemeId != null && (!appliedThemeId.equals(currentId)
+                || !appliedMode.equals(currentMode));
+        boolean paletteChanged = paletteKey != null && !paletteKey.equals(current);
+        if (selectionChanged || paletteChanged) {
+            int scrollY = themeScroll == null ? 0 : themeScroll.getScrollY();
+            if (selectionChanged) {
+                selectedId = currentId;
+                selectedMode = normalizeMode(currentMode);
+                appliedThemeId = currentId;
+                appliedMode = currentMode;
+                ensureSelectionInMode();
+            }
             paletteKey = current;
-            recreate();
+            build();
+            if (themeScroll != null) themeScroll.post(() -> themeScroll.scrollTo(0, scrollY));
         }
     }
 
@@ -66,6 +86,7 @@ public class ThemePickerActivity extends Activity {
         root.addView(modes);
 
         ScrollView scroll = new ScrollView(this);
+        themeScroll = scroll;
         scroll.setFillViewport(true);
         scroll.setVerticalScrollBarEnabled(false);
         themeGrid = new LinearLayout(this);
@@ -107,21 +128,16 @@ public class ThemePickerActivity extends Activity {
         themeGrid.removeAllViews();
         List<AppThemes.Theme> themes = AppThemes.all(this, selectedMode);
         if (themes == null) return;
-        for (int start = 0; start < themes.size(); start += 2) {
-            LinearLayout row = new LinearLayout(this);
-            row.setOrientation(LinearLayout.HORIZONTAL);
-            LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(-1, -2);
-            rowParams.bottomMargin = Ui.dp(this, 12);
-            themeGrid.addView(row, rowParams);
-            addThemeCard(row, themes.get(start), true);
-            if (start + 1 < themes.size()) addThemeCard(row, themes.get(start + 1), false);
-            else row.addView(new View(this), new LinearLayout.LayoutParams(0, 1, 1));
-        }
+        TextView count = Ui.text(this, local(themes.size() + "種類のカラーパレット",
+                themes.size() + " color palettes", themes.size() + "개 색상 팔레트"), 11.5f, Ui.MUTED);
+        count.setPadding(Ui.dp(this, 2), 0, 0, Ui.dp(this, 9));
+        themeGrid.addView(count);
+        for (AppThemes.Theme theme : themes) addThemeCard(theme);
         AppThemes.Theme selected = AppThemes.get(this, selectedId, selectedMode);
         if (selected != null) applyBar.setSelection(themeName(selected) + " · " + modeLabel(selectedMode));
     }
 
-    private void addThemeCard(LinearLayout row, AppThemes.Theme listedTheme, boolean firstColumn) {
+    private void addThemeCard(AppThemes.Theme listedTheme) {
         if (listedTheme == null) return;
         AppThemes.Theme candidate = AppThemes.get(this, listedTheme.id, selectedMode);
         final AppThemes.Theme theme = candidate == null ? listedTheme : candidate;
@@ -131,12 +147,13 @@ public class ThemePickerActivity extends Activity {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setGravity(Gravity.CENTER_VERTICAL);
-        card.setPadding(Ui.dp(this, 11), Ui.dp(this, 11), Ui.dp(this, 11), Ui.dp(this, 10));
+        card.setPadding(Ui.dp(this, 14), Ui.dp(this, 13), Ui.dp(this, 14), Ui.dp(this, 12));
         GradientDrawable background = new GradientDrawable();
         background.setColor(theme.surface);
         background.setCornerRadius(Ui.dp(this, 20));
         background.setStroke(Ui.dp(this, selected ? 2 : 1), selected ? theme.accent2 : theme.border);
         card.setBackground(background);
+        card.setForeground(Ui.rippleForeground(this, 20));
         card.setFocusable(true);
         card.setClickable(true);
         card.setSelected(selected);
@@ -145,10 +162,34 @@ public class ThemePickerActivity extends Activity {
         String status = saved && selected ? savedLabel + " · " + selectedLabel
                 : saved ? savedLabel : selected ? selectedLabel : "";
         card.setContentDescription(themeName(theme) + (status.isEmpty() ? "" : ", " + status));
-        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(0, -2, 1);
-        if (firstColumn) cardParams.rightMargin = Ui.dp(this, 6);
-        else cardParams.leftMargin = Ui.dp(this, 6);
-        row.addView(card, cardParams);
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(-1, -2);
+        cardParams.bottomMargin = Ui.dp(this, 12);
+        themeGrid.addView(card, cardParams);
+
+        LinearLayout nameRow = new LinearLayout(this);
+        nameRow.setGravity(Gravity.CENTER_VERTICAL);
+        TextView name = new TextView(this);
+        name.setText(themeName(theme));
+        name.setTextSize(16);
+        name.setTextColor(theme.text);
+        name.setTypeface(null, Typeface.BOLD);
+        name.setSingleLine(true);
+        name.setEllipsize(TextUtils.TruncateAt.END);
+        nameRow.addView(name, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView state = new TextView(this);
+        state.setText(status.isEmpty() ? local("選択", "Select", "선택") : status);
+        state.setTextSize(11);
+        state.setTextColor(selected ? theme.onAccent : theme.accent2);
+        state.setTypeface(null, Typeface.BOLD);
+        state.setGravity(Gravity.CENTER);
+        state.setPadding(Ui.dp(this, 10), Ui.dp(this, 6), Ui.dp(this, 10), Ui.dp(this, 6));
+        state.setBackground(Ui.round(selected ? theme.accent2 : theme.bg, 14, this));
+        nameRow.addView(state, new LinearLayout.LayoutParams(-2, -2));
+        card.addView(nameRow);
+
+        LinearLayout.LayoutParams previewParams = new LinearLayout.LayoutParams(-1, Ui.dp(this, 114));
+        previewParams.topMargin = Ui.dp(this, 10);
+        card.addView(themePreview(theme), previewParams);
 
         LinearLayout swatches = new LinearLayout(this);
         swatches.setOrientation(LinearLayout.HORIZONTAL);
@@ -156,28 +197,124 @@ public class ThemePickerActivity extends Activity {
         addSwatch(swatches, theme.surface2);
         addSwatch(swatches, theme.accent);
         addSwatch(swatches, theme.accent2);
-        card.addView(swatches, new LinearLayout.LayoutParams(-1, Ui.dp(this, 25)));
-
-        TextView name = new TextView(this);
-        name.setText(themeName(theme));
-        name.setTextSize(17);
-        name.setTextColor(theme.text);
-        name.setTypeface(null, Typeface.BOLD);
-        name.setSingleLine(true);
-        name.setEllipsize(TextUtils.TruncateAt.END);
-        name.setPadding(0, Ui.dp(this, 9), 0, 0);
-        card.addView(name);
-
-        TextView state = new TextView(this);
-        state.setText(status.isEmpty() ? local("タップして選択", "Tap to select", "탭하여 선택") : status);
-        state.setTextSize(11);
-        state.setTextColor(selected ? theme.accent2 : theme.muted);
-        state.setPadding(0, Ui.dp(this, 4), 0, 0);
-        card.addView(state);
+        LinearLayout.LayoutParams swatchParams = new LinearLayout.LayoutParams(-1, Ui.dp(this, 10));
+        swatchParams.topMargin = Ui.dp(this, 9);
+        card.addView(swatches, swatchParams);
         card.setOnClickListener(v -> {
+            int scrollY = themeScroll == null ? 0 : themeScroll.getScrollY();
             selectedId = theme.id;
             renderThemes();
+            if (themeScroll != null) themeScroll.post(() -> themeScroll.scrollTo(0, scrollY));
         });
+    }
+
+    private View themePreview(AppThemes.Theme theme) {
+        LinearLayout preview = new LinearLayout(this);
+        preview.setOrientation(LinearLayout.VERTICAL);
+        preview.setPadding(Ui.dp(this, 9), Ui.dp(this, 7), Ui.dp(this, 9), Ui.dp(this, 7));
+        GradientDrawable page = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{theme.bg, theme.surface});
+        page.setCornerRadius(Ui.dp(this, 14));
+        preview.setBackground(page);
+
+        LinearLayout masthead = new LinearLayout(this);
+        masthead.setGravity(Gravity.CENTER_VERTICAL);
+        TextView brand = new TextView(this);
+        brand.setText("WAKE  /  ALARM");
+        brand.setTextSize(8.5f);
+        brand.setTextColor(theme.muted);
+        brand.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        brand.setLetterSpacing(.08f);
+        masthead.addView(brand, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView day = new TextView(this);
+        day.setText(local("毎日", "DAILY", "매일"));
+        day.setTextSize(8.5f);
+        day.setTextColor(theme.accent2);
+        masthead.addView(day);
+        preview.addView(masthead);
+
+        LinearLayout hero = new LinearLayout(this);
+        hero.setOrientation(LinearLayout.HORIZONTAL);
+        hero.setGravity(Gravity.CENTER_VERTICAL);
+        hero.setPadding(Ui.dp(this, 12), Ui.dp(this, 7), Ui.dp(this, 12), Ui.dp(this, 7));
+        GradientDrawable heroFill = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{theme.heroStart, theme.heroEnd});
+        heroFill.setCornerRadius(Ui.dp(this, 12));
+        hero.setBackground(heroFill);
+        LinearLayout heroText = new LinearLayout(this);
+        heroText.setOrientation(LinearLayout.VERTICAL);
+        TextView next = new TextView(this);
+        next.setText(local("次の起床", "NEXT ALARM", "다음 알람"));
+        next.setTextSize(8.5f);
+        next.setTextColor(theme.heroText);
+        next.setAlpha(.82f);
+        heroText.addView(next);
+        TextView time = new TextView(this);
+        time.setText("06:30");
+        time.setTextSize(27);
+        time.setTextColor(theme.heroText);
+        time.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
+        time.setIncludeFontPadding(false);
+        time.setLetterSpacing(-.025f);
+        heroText.addView(time);
+        TextView meta = new TextView(this);
+        meta.setText(local("平日  ·  あと 8時間", "WEEKDAYS  ·  IN 8 HRS", "평일  ·  8시간 후"));
+        meta.setTextSize(8.5f);
+        meta.setTextColor(theme.heroText);
+        meta.setAlpha(.88f);
+        heroText.addView(meta);
+        hero.addView(heroText, new LinearLayout.LayoutParams(0, -2, 1));
+        View marker = new View(this);
+        GradientDrawable markerFill = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{theme.accent, theme.accent2});
+        markerFill.setShape(GradientDrawable.OVAL);
+        marker.setBackground(markerFill);
+        LinearLayout.LayoutParams markerParams = new LinearLayout.LayoutParams(Ui.dp(this, 32), Ui.dp(this, 32));
+        markerParams.leftMargin = Ui.dp(this, 6);
+        hero.addView(marker, markerParams);
+        LinearLayout.LayoutParams heroParams = new LinearLayout.LayoutParams(-1, 0, 1);
+        heroParams.topMargin = Ui.dp(this, 5);
+        preview.addView(hero, heroParams);
+
+        LinearLayout alarmRow = new LinearLayout(this);
+        alarmRow.setGravity(Gravity.CENTER_VERTICAL);
+        alarmRow.setPadding(Ui.dp(this, 10), 0, Ui.dp(this, 10), 0);
+        GradientDrawable rowFill = new GradientDrawable();
+        rowFill.setColor(theme.surface);
+        rowFill.setCornerRadius(Ui.dp(this, 9));
+        rowFill.setStroke(Ui.dp(this, 1), theme.border);
+        alarmRow.setBackground(rowFill);
+        TextView alarmTime = new TextView(this);
+        alarmTime.setText("06:30");
+        alarmTime.setTextSize(13);
+        alarmTime.setTextColor(theme.accent2);
+        alarmTime.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        alarmRow.addView(alarmTime);
+        TextView alarmLabel = new TextView(this);
+        alarmLabel.setText(local("平日の起床", "Weekday wake-up", "평일 기상"));
+        alarmLabel.setTextSize(9.5f);
+        alarmLabel.setTextColor(theme.text);
+        LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(0, -2, 1);
+        labelParams.leftMargin = Ui.dp(this, 9);
+        alarmRow.addView(alarmLabel, labelParams);
+        FrameLayout toggle = new FrameLayout(this);
+        GradientDrawable toggleFill = new GradientDrawable();
+        toggleFill.setColor(theme.accent2);
+        toggleFill.setCornerRadius(Ui.dp(this, 8));
+        toggle.setBackground(toggleFill);
+        View thumb = new View(this);
+        GradientDrawable thumbFill = new GradientDrawable();
+        thumbFill.setColor(theme.onAccent);
+        thumbFill.setShape(GradientDrawable.OVAL);
+        thumb.setBackground(thumbFill);
+        FrameLayout.LayoutParams thumbParams = new FrameLayout.LayoutParams(Ui.dp(this, 10), Ui.dp(this, 10), Gravity.END | Gravity.CENTER_VERTICAL);
+        thumbParams.rightMargin = Ui.dp(this, 2);
+        toggle.addView(thumb, thumbParams);
+        alarmRow.addView(toggle, new LinearLayout.LayoutParams(Ui.dp(this, 28), Ui.dp(this, 14)));
+        LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(-1, Ui.dp(this, 25));
+        rowParams.topMargin = Ui.dp(this, 5);
+        preview.addView(alarmRow, rowParams);
+        return preview;
     }
 
     private void addSwatch(LinearLayout parent, int color) {

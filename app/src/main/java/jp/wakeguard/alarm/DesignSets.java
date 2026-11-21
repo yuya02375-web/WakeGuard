@@ -7,28 +7,26 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-/** Curated combinations of layout, visual treatment, palette, and character. */
+/** Curated combinations of layout, visual treatment, and palette. */
 public final class DesignSets {
     private static final String PREFS = "wake_guard";
     private static final String KEY_UI = "app_ui_profile_id";
     private static final String KEY_DESIGN = "app_visual_design_id";
     private static final String KEY_THEME = "app_theme_id";
-    private static final String KEY_MASCOT = "app_mascot_id";
 
-    public enum Part { UI, DESIGN, COLOR, CHARACTER }
+    public enum Part { UI, DESIGN, COLOR }
 
     public static final class Preset {
         public final String id;
         public final String uiProfileId;
         public final String visualDesignId;
         public final String themeId;
-        public final String mascotId;
         private final String ja, en, ko;
         private final String jaDescription, enDescription, koDescription;
 
         private Preset(String id, String ja, String en, String ko,
                        String jaDescription, String enDescription, String koDescription,
-                       String uiProfileId, String visualDesignId, String themeId, String mascotId) {
+                       String uiProfileId, String visualDesignId, String themeId) {
             this.id = id;
             this.ja = ja;
             this.en = en;
@@ -39,7 +37,6 @@ public final class DesignSets {
             this.uiProfileId = uiProfileId;
             this.visualDesignId = visualDesignId;
             this.themeId = themeId;
-            this.mascotId = mascotId;
         }
 
         public String label(Context context) {
@@ -55,72 +52,71 @@ public final class DesignSets {
         public String components(Context context) {
             return UiProfiles.get(uiProfileId).label(context) + "  ·  "
                     + VisualDesigns.get(visualDesignId).label(context) + "  ·  "
-                    + AppThemes.get(context, themeId).label(context) + "  ·  "
-                    + MascotCatalog.get(mascotId).label(context);
+                    + AppThemes.get(context, themeId).label(context);
         }
     }
 
     private static final List<Preset> ALL = Collections.unmodifiableList(Arrays.asList(
             p("classic-paper", "紙の朝", "Paper Morning", "종이 아침",
                     "読みやすい一覧と紙の質感。最初に試しやすいセットです。", "A readable list with a handcrafted paper finish.", "읽기 쉬운 목록과 손으로 만든 종이 질감입니다.",
-                    "classic", "paper-craft", "dawn-ink", "none"),
-            p("sky-dragon", "天空のドラゴン", "Sky Dragon", "하늘 드래곤",
+                    "classic", "paper-craft", "dawn-ink"),
+            p("sky-dragon", "天空の星図", "Sky Chart", "하늘 별자리",
                     "星図と青い配色、時刻を追いやすいタイムライン。", "A blue star chart with a timeline that tracks the next wake-up.", "푸른 별자리 지도와 기상 시간을 따라가는 타임라인입니다.",
-                    "timeline", "moonlit-stars", "glacier", "dragon"),
-            p("deep-dragon", "深海ドラゴン", "Abyss Dragon", "심해 드래곤",
+                    "timeline", "moonlit-stars", "glacier"),
+            p("deep-dragon", "深海ブルー", "Deep Ocean", "심해 블루",
                     "海流の模様と深い青緑。タイル型の操作パネルです。", "Ocean-current lines and deep teal panels with a dashboard layout.", "해류 무늬와 짙은 청록색의 대시보드입니다.",
-                    "dashboard", "ocean-current", "abyss", "dragon"),
-            p("forest-owl", "森のフクロウ", "Forest Owl", "숲 부엉이",
+                    "dashboard", "ocean-current", "abyss"),
+            p("forest-owl", "森の植物標本", "Forest Herbarium", "숲 식물도감",
                     "植物標本の線画と自然な緑。観察ノート風の一覧です。", "Botanical sketches, forest green, and field-note rhythm.", "식물 스케치와 숲의 녹색을 담은 현장 노트 스타일입니다.",
-                    "field-notes", "herbarium", "evergreen", "owl"),
-            p("comic-dragon", "コミック・ドラゴン", "Comic Dragon", "코믹 드래곤",
+                    "field-notes", "herbarium", "evergreen"),
+            p("comic-dragon", "コミック・ポップ", "Comic Pop", "코믹 팝",
                     "網点と赤いアクセントで、コミックの表紙のように。", "Halftone marks and red accents make a bold comic-book cover.", "망점과 붉은 강조색으로 만화 표지처럼 표현합니다.",
-                    "stickerbook", "halftone-pop", "ruby", "dragon"),
-            p("arcade-robot", "アーケード・ロボ", "Arcade Robot", "아케이드 로봇",
+                    "stickerbook", "halftone-pop", "ruby"),
+            p("arcade-robot", "アーケード", "Arcade", "아케이드",
                     "走査線と端末風の緑。ゲーム機のような高密度表示です。", "Scanlines and terminal green in a compact arcade layout.", "주사선과 단말기 녹색을 사용한 아케이드 스타일입니다.",
-                    "arcade", "pixel-arcade", "terminal", "robot"),
+                    "arcade", "pixel-arcade", "terminal"),
             p("moon-owl", "月夜の観測所", "Moon Observatory", "달밤 관측소",
                     "月の色と星の模様。予定を縦に眺めるプランナーです。", "Moonlit colors and a star field in a planner layout.", "달빛 색상과 별 무늬를 담은 플래너입니다.",
-                    "planner", "moonlit-stars", "lunar", "owl"),
-            p("sakura-fox", "桜キツネ", "Sakura Fox", "벚꽃 여우",
+                    "planner", "moonlit-stars", "lunar"),
+            p("sakura-fox", "桜エディトリアル", "Sakura Editorial", "벚꽃 에디토리얼",
                     "花びら模様と桜色。余白を使ったエディトリアル表示です。", "Petal marks and sakura pink with an editorial layout.", "꽃잎 무늬와 벚꽃 색상의 에디토리얼 화면입니다.",
-                    "editorial", "petal-orbit", "sakura", "fox"),
-            p("circuit-dragon", "回路のドラゴン", "Circuit Dragon", "회로 드래곤",
+                    "editorial", "petal-orbit", "sakura"),
+            p("circuit-dragon", "ブループリント", "Blueprint", "블루프린트",
                     "青い設計図と回路模様。小さなタイルで素早く操作できます。", "Blueprint blue and circuit traces in a compact command deck.", "청사진 색상과 회로 무늬를 담은 명령 패널입니다.",
-                    "command", "circuit-trace", "blueprint", "dragon"),
-            p("sun-fox", "太陽のキツネ", "Solar Fox", "태양 여우",
+                    "command", "circuit-trace", "blueprint"),
+            p("sun-fox", "ソーラー・マガジン", "Solar Magazine", "솔라 매거진",
                     "放射状の図形と明るい橙。大きなタイルで見せます。", "Radiating geometry and warm solar color in large tiles.", "방사형 도형과 따뜻한 태양색의 큰 타일입니다.",
-                    "magazine", "solar-orbit", "solar", "fox"),
-            p("storm-robot", "嵐のロボット", "Storm Robot", "폭풍 로봇",
+                    "magazine", "solar-orbit", "solar"),
+            p("storm-robot", "ストーム・パネル", "Storm Panels", "스톰 패널",
                     "機械のメーター模様と嵐色。角ばったパネルが並びます。", "Mechanical meter marks and storm gray in crisp panels.", "기계식 계기 무늬와 폭풍 회색의 패널입니다.",
-                    "brutalist", "cassette-deck", "storm", "robot"),
-            p("tidal-owl", "潮だまりのフクロウ", "Tidepool Owl", "조수 웅덩이 부엉이",
+                    "brutalist", "cassette-deck", "storm"),
+            p("tidal-owl", "潮だまりモザイク", "Tidepool Mosaic", "조수 웅덩이 모자이크",
                     "小さなモザイクと青緑。ゆったりしたカードでまとめます。", "Tidepool mosaic and sea-glass tones with roomy cards.", "조수 웅덩이 모자이크와 바다 유리빛의 여유로운 카드입니다.",
-                    "spacious", "tidepool", "lagoon", "owl"),
-            p("mountain-dragon", "山嶺のドラゴン", "Alpine Dragon", "산맥의 드래곤",
+                    "spacious", "tidepool", "lagoon"),
+            p("mountain-dragon", "山並みの朝", "Mountain Morning", "산맥의 아침",
                     "幾重もの山並みと森の緑。朝の時刻をたどるタイムラインです。", "Layered mountain ridges, evergreen tones, and a timeline for the climb toward morning.", "겹겹의 산맥과 숲의 녹색, 아침을 향해가는 타임라인입니다.",
-                    "timeline", "landscape-mountain", "evergreen", "dragon"),
-            p("forest-owl-sage", "森の観測者", "Forest Watcher", "숲의 관찰자",
+                    "timeline", "landscape-mountain", "evergreen"),
+            p("forest-owl-sage", "セージの森", "Sage Forest", "세이지 숲",
                     "深い森の景色とセージ色。観察ノートのように静かな一覧です。", "A quiet field-notes layout framed by a deep forest and sage palette.", "깊은 숲 풍경과 세이지 색상으로 꾸민 조용한 관찰 노트입니다.",
-                    "field-notes", "landscape-forest", "sage", "owl"),
-            p("volcano-robot", "火山基地ロボット", "Volcano Outpost", "화산 기지 로봇",
+                    "field-notes", "landscape-forest", "sage"),
+            p("volcano-robot", "火山の前哨基地", "Volcanic Outpost", "화산 전초기지",
                     "火山の稜線と溶岩色。素早く扱えるコマンドデッキです。", "A volcanic horizon and ruby lava glow in a quick-access command deck.", "화산 능선과 루비빛 용암을 담은 빠른 명령 패널입니다.",
-                    "command", "landscape-volcano", "ruby", "robot"),
-            p("dunes-fox", "砂丘を渡るキツネ", "Dune Wanderer", "사구를 걷는 여우",
+                    "command", "landscape-volcano", "ruby"),
+            p("dunes-fox", "砂丘の風紋", "Dune Waves", "사구의 바람결",
                     "風紋の砂丘と砂色の配色。広々としたマガジン風レイアウトです。", "Wind-shaped dunes and warm sand tones in a spacious magazine layout.", "바람결 모래언덕과 따뜻한 모래색을 담은 여유로운 매거진 레이아웃입니다.",
-                    "magazine", "landscape-dunes", "dune", "fox"),
-            p("cloud-sea-owl", "雲海の朝を告げるフクロウ", "Cloud-Sea Dawn", "구름 바다의 아침을 알리는 부엉이",
+                    "magazine", "landscape-dunes", "dune"),
+            p("cloud-sea-owl", "雲海の朝", "Cloud-Sea Dawn", "구름 바다의 아침",
                     "重なる雲海と琥珀色の朝。予定をたどるプランナーです。", "An amber dawn above a sea of clouds, arranged as a calm day planner.", "겹겹의 구름 바다와 호박빛 아침을 담은 차분한 플래너입니다.",
-                    "planner", "landscape-cloud-sea", "solar", "owl")
+                    "planner", "landscape-cloud-sea", "solar")
     ));
 
     private DesignSets() {}
 
     private static Preset p(String id, String ja, String en, String ko,
                             String jaDescription, String enDescription, String koDescription,
-                            String ui, String design, String theme, String mascot) {
+                            String ui, String design, String theme) {
         return new Preset(id, ja, en, ko, jaDescription, enDescription, koDescription,
-                ui, design, theme, mascot);
+                ui, design, theme);
     }
 
     public static List<Preset> all() { return ALL; }
@@ -134,10 +130,9 @@ public final class DesignSets {
         String ui = UiProfiles.id(context);
         String design = VisualDesigns.id(context);
         String theme = AppThemes.id(context);
-        String mascot = MascotCatalog.id(context);
         for (Preset preset : ALL) {
             if (preset.uiProfileId.equals(ui) && preset.visualDesignId.equals(design)
-                    && preset.themeId.equals(theme) && preset.mascotId.equals(mascot)) return preset;
+                    && preset.themeId.equals(theme)) return preset;
         }
         return null;
     }
@@ -164,7 +159,6 @@ public final class DesignSets {
         if (part == null || part == Part.UI) edit.putString(KEY_UI, preset.uiProfileId);
         if (part == null || part == Part.DESIGN) edit.putString(KEY_DESIGN, preset.visualDesignId);
         if (part == null || part == Part.COLOR) edit.putString(KEY_THEME, preset.themeId);
-        if (part == null || part == Part.CHARACTER) edit.putString(KEY_MASCOT, preset.mascotId);
         edit.apply();
         applyCurrent(context);
         return true;
@@ -173,9 +167,7 @@ public final class DesignSets {
     private static boolean valid(Context context, Preset preset) {
         if (preset == null || UiProfiles.get(preset.uiProfileId) == null) return false;
         if (!preset.visualDesignId.equals(VisualDesigns.get(preset.visualDesignId).id)) return false;
-        if (!preset.themeId.equals(AppThemes.get(context, preset.themeId).id)) return false;
-        if (!MascotArtView.SUPPORTED_CHARACTER_IDS.contains(preset.mascotId) && !"none".equals(preset.mascotId)) return false;
-        return true;
+        return preset.themeId.equals(AppThemes.get(context, preset.themeId).id);
     }
 
     public static void applyCurrent(Context context) {

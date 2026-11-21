@@ -46,7 +46,7 @@ public class SystemSettingsActivity extends Activity {
         scroll.setVerticalScrollBarEnabled(false);
         body = new LinearLayout(this);
         body.setOrientation(LinearLayout.VERTICAL);
-        body.setPadding(Ui.dp(this, 20), Ui.dp(this, 13), Ui.dp(this, 20), Ui.dp(this, 24));
+        body.setPadding(Ui.dp(this, 20), Ui.dp(this, 18), Ui.dp(this, 20), Ui.dp(this, 28));
         scroll.addView(body);
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
         root.addView(rootNavigation());
@@ -75,27 +75,35 @@ public class SystemSettingsActivity extends Activity {
     }
 
     private void addAppCard() {
-        LinearLayout card = sectionCard("アプリ設定", null);
-        addActionRow(card, localize("アプリの言語", "App language", "앱 언어"), I18n.selectedLanguageLabel(this), this::showLanguageDialog);
-        addDivider(card);
-        addActionRow(card, localize("デザインセット", "Design set", "디자인 세트"), DesignSets.currentLabel(this),
+        LinearLayout general = sectionCard(localize("基本設定", "General", "일반"), null);
+        addActionRow(general, localize("アプリの言語", "App language", "앱 언어"),
+                I18n.selectedLanguageLabel(this), this::showLanguageDialog);
+        addDivider(general);
+        addActionRow(general, localize("時計の詳細設定", "Clock settings", "시계 설정"),
+                localize("表示と文字盤を調整", "Customize display and clock face",
+                        "표시와 문자판을 조정"),
+                () -> Ui.launchNoAnimation(this, new Intent(this, ClockSettingsActivity.class)));
+
+        LinearLayout appearance = sectionCard(localize("見た目", "Appearance", "모양"),
+                localize("配色、模様、文字、画面の並び方をまとめて調整できます。",
+                        "Customize color, motifs, typography, and layout.",
+                        "색상, 무늬, 글꼴, 화면 배치를 함께 조정할 수 있습니다."));
+        addActionRow(appearance, localize("デザインセット", "Design set", "디자인 세트"),
+                DesignSets.currentLabel(this),
                 () -> Ui.launchNoAnimation(this, new Intent(this, DesignSetPickerActivity.class)));
-        addDivider(card);
-        addActionRow(card, localize("UIスタイル", "UI style", "UI 스타일"),
+        addDivider(appearance);
+        addActionRow(appearance, localize("UIスタイル", "UI style", "UI 스타일"),
                 UiProfiles.current(this).label(this),
                 () -> Ui.launchNoAnimation(this, new Intent(this, UiProfilePickerActivity.class)));
-        addDivider(card);
-        addActionRow(card, localize("デザインと配色", "Design and color", "디자인과 색상"),
-                VisualDesigns.current(this).label(this) + "  ·  " + AppThemes.current(this).label(this),
+        addDivider(appearance);
+        addActionRow(appearance, localize("模様と文字", "Motif and type", "무늬와 글꼴"),
+                VisualDesigns.current(this).label(this),
                 () -> Ui.launchNoAnimation(this, new Intent(this, VisualDesignPickerActivity.class)));
-        addDivider(card);
-        addActionRow(card, localize("キャラクター", "Character", "캐릭터"), MascotCatalog.current(this).label(this),
-                () -> Ui.launchNoAnimation(this, new Intent(this, MascotPickerActivity.class)));
-        addDivider(card);
-        addActionRow(card, localize("時計の詳細設定", "Clock settings", "시계 설정"), localize("表示と文字盤を調整", "Customize clock display and face", "시계 표시와 문자판을 설정"), () ->
-                Ui.launchNoAnimation(this, new Intent(this, ClockSettingsActivity.class)));
+        addDivider(appearance);
+        addActionRow(appearance, localize("色とモード", "Color and mode", "색상과 모드"),
+                AppThemes.current(this).label(this) + "  ·  " + themeModeLabel(AppThemes.mode(this)),
+                () -> Ui.launchNoAnimation(this, new Intent(this, ThemePickerActivity.class)));
     }
-
     private String themeModeLabel(String mode) {
         if (AppThemes.MODE_DARK.equals(mode)) return localize("ダーク", "Dark", "다크");
         if (AppThemes.MODE_LIGHT.equals(mode)) return localize("ライト", "Light", "라이트");
@@ -103,8 +111,7 @@ public class SystemSettingsActivity extends Activity {
     }
 
     private String appearanceKey() {
-        return UiProfiles.id(this) + ":" + VisualDesigns.id(this) + ":" + AppThemes.key(this)
-                + ":" + MascotCatalog.id(this);
+        return UiProfiles.id(this) + ":" + VisualDesigns.id(this) + ":" + AppThemes.key(this);
     }
 
     private void addBackupCard() {
@@ -160,8 +167,17 @@ public class SystemSettingsActivity extends Activity {
 
     private LinearLayout sectionCard(String title, String note) {
         LinearLayout card = Ui.card(this);
+        LinearLayout headingRow = new LinearLayout(this);
+        headingRow.setGravity(Gravity.CENTER_VERTICAL);
+        View marker = new View(this);
+        marker.setBackground(Ui.round(Ui.ACCENT_2, 2, this));
+        LinearLayout.LayoutParams markerParams = new LinearLayout.LayoutParams(
+                Ui.dp(this, 3), Ui.dp(this, 22));
+        markerParams.rightMargin = Ui.dp(this, 10);
+        headingRow.addView(marker, markerParams);
         TextView heading = Ui.title(this, localizeSection(title), 18);
-        card.addView(heading);
+        headingRow.addView(heading, new LinearLayout.LayoutParams(0, -2, 1));
+        card.addView(headingRow);
         if (note != null && !note.isEmpty()) {
             TextView description = Ui.text(this, note, 13, Ui.MUTED);
             description.setPadding(0, Ui.dp(this, 5), 0, 0);
@@ -173,13 +189,14 @@ public class SystemSettingsActivity extends Activity {
 
     private void addActionRow(LinearLayout parent, String label, String detail, Runnable action) {
         LinearLayout row = Ui.row(this);
-        row.setMinimumHeight(Ui.dp(this, 56));
-        row.setPadding(Ui.dp(this, 2), Ui.dp(this, 8), Ui.dp(this, 2), Ui.dp(this, 8));
+        row.setMinimumHeight(Ui.dp(this, 60));
+        row.setPadding(Ui.dp(this, 2), Ui.dp(this, 10), Ui.dp(this, 2), Ui.dp(this, 10));
+        row.setBackground(Ui.rippleBackground(this, 10));
         LinearLayout copy = new LinearLayout(this);
         copy.setOrientation(LinearLayout.VERTICAL);
-        copy.addView(Ui.text(this, label, 15, Ui.TEXT));
+        copy.addView(Ui.text(this, label, 16, Ui.TEXT));
         if (detail != null && !detail.isEmpty()) {
-            copy.addView(Ui.text(this, detail, 12, Ui.MUTED), Ui.gapTop(this, 3));
+            copy.addView(Ui.text(this, detail, 13, Ui.MUTED), Ui.gapTop(this, 3));
         }
         row.addView(copy, new LinearLayout.LayoutParams(0, -2, 1));
         TextView chevron = Ui.text(this, "›", 24, Ui.MUTED);
@@ -197,13 +214,16 @@ public class SystemSettingsActivity extends Activity {
         LinearLayout row = Ui.row(this);
         row.setMinimumHeight(Ui.dp(this, 58));
         row.setPadding(Ui.dp(this, 2), Ui.dp(this, 7), Ui.dp(this, 2), Ui.dp(this, 7));
+        row.setBackground(Ui.rippleBackground(this, 10));
         row.addView(Ui.text(this, label, 15, Ui.TEXT), new LinearLayout.LayoutParams(0, -2, 1));
 
-        TextView state = Ui.text(this, ok ? "設定済み" : "確認が必要です", 11, ok ? Ui.SUCCESS : Ui.DANGER);
+        int semanticColor = ok ? Ui.SUCCESS : Ui.DANGER;
+        int semanticWash = Ui.withAlpha(semanticColor, Ui.DARK_THEME ? 0x35 : 0x1E);
+        TextView state = Ui.text(this, ok ? "設定済み" : "確認が必要です", 11, semanticColor);
         state.setTypeface(null, android.graphics.Typeface.BOLD);
         state.setGravity(Gravity.CENTER);
         state.setPadding(Ui.dp(this, 9), Ui.dp(this, 6), Ui.dp(this, 9), Ui.dp(this, 6));
-        state.setBackground(Ui.round(ok ? 0xFFE6F0E9 : 0xFFF6E6E1, 12, this));
+        state.setBackground(Ui.round(semanticWash, 12, this));
         row.addView(state);
         TextView chevron = Ui.text(this, "›", 22, Ui.MUTED);
         chevron.setPadding(Ui.dp(this, 8), 0, Ui.dp(this, 2), 0);
@@ -238,14 +258,14 @@ public class SystemSettingsActivity extends Activity {
         LinearLayout nav = new LinearLayout(this);
         nav.setGravity(Gravity.CENTER);
         nav.setPadding(Ui.dp(this, 8), Ui.dp(this, 4), Ui.dp(this, 8), Ui.dp(this, 4));
-        nav.setBackgroundColor(Ui.SURFACE);
+        nav.setBackground(Ui.navigationSurface(this));
 
-        Button alarms = Ui.bottomTab(this, "アラーム", false);
-        Button clock = Ui.bottomTab(this, "時計", false);
-        Button records = Ui.bottomTab(this, "記録", false);
-        Button settings = Ui.bottomTab(this, "設定", true);
-        Button[] tabs = {alarms, clock, records, settings};
-        for (Button tab : tabs) nav.addView(tab, new LinearLayout.LayoutParams(0, Ui.dp(this, 64), 1));
+        LinearLayout alarms = Ui.bottomTab(this, "アラーム", false);
+        LinearLayout clock = Ui.bottomTab(this, "時計", false);
+        LinearLayout records = Ui.bottomTab(this, "記録", false);
+        LinearLayout settings = Ui.bottomTab(this, "設定", true);
+        LinearLayout[] tabs = {alarms, clock, records, settings};
+        for (LinearLayout tab : tabs) nav.addView(tab, new LinearLayout.LayoutParams(0, Ui.dp(this, 64), 1));
 
         alarms.setOnClickListener(v -> navigateRoot("alarm"));
         clock.setOnClickListener(v -> navigateRoot("clock"));

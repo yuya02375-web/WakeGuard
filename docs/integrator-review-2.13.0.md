@@ -1,3 +1,5 @@
+Historical review of the 2.13.0 source state, before character features were removed on 2026-11-19.
+
 # WakeGuard 2.13.0 integrator review
 
 ## Scope and limits

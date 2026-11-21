@@ -8,7 +8,7 @@
         <item name="android:statusBarColor">@color/ignido_midnight</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
-        <item name="android:textColorPrimary">#1E2438</item>
-        <item name="android:textColorSecondary">#4B5266</item>
+        <item name="android:textColorPrimary">#1A2D3B</item>
+        <item name="android:textColorSecondary">#52636D</item>
     </style>
 </resources>
