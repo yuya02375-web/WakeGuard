@@ -1341,6 +1341,10 @@ public class ClockActivity extends Activity {
 
     private void showFolderPicker(String current,Consumer<String> selected){
         List<String> folders=TimerStore.folders(this);LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setFocusableInTouchMode(true);box.setPadding(Ui.dp(this,18),0,Ui.dp(this,18),0);
+        TextView dialogTitle=Ui.title(this,"保存先フォルダ",20);
+        dialogTitle.setTextColor(Ui.readableTextColor(Ui.TEXT,Ui.SURFACE));
+        dialogTitle.setPadding(0,Ui.dp(this,14),0,Ui.dp(this,12));
+        box.addView(dialogTitle,new LinearLayout.LayoutParams(-1,-2));
         EditText search=new EditText(this);search.setSingleLine(true);search.setHint(I18n.tr(this,"フォルダーを検索"));search.setTextColor(Ui.TEXT);search.setHintTextColor(Ui.MUTED_2);search.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),0);Ui.styleInput(search,this,Ui.SURFACE_2,14);box.addView(search,new LinearLayout.LayoutParams(-1,Ui.dp(this,48)));
         String currentFolder=normalizedFolder(current);
         ListView list=new ListView(this);
@@ -1406,15 +1410,12 @@ public class ClockActivity extends Activity {
             public void afterTextChanged(Editable e){}
         });
         AlertDialog dialog=new AlertDialog.Builder(this)
-            .setTitle(I18n.tr(this,"保存先フォルダ"))
             .setView(box)
             .setNeutralButton(I18n.tr(this,"＋ 新しいフォルダ"),(d,w)->promptFolderName("新しいフォルダ",null,name->{TimerStore.createFolder(this,name);selected.accept(name);}))
             .setNegativeButton(I18n.tr(this,"キャンセル"),null)
             .create();
         dialog.setOnShowListener(d->{
             box.requestFocus();
-            View titleView=dialog.findViewById(android.R.id.alertTitle);
-            if(titleView instanceof TextView)((TextView)titleView).setTextColor(Ui.readableTextColor(Ui.TEXT,Ui.SURFACE));
             for(int which:new int[]{AlertDialog.BUTTON_NEUTRAL,AlertDialog.BUTTON_NEGATIVE}){
                 Button button=dialog.getButton(which);
                 if(button!=null){button.setTextColor(Ui.readableTextColor(Ui.ACCENT_2,Ui.SURFACE));button.setTypeface(Ui.designTypeface(Typeface.BOLD));}
