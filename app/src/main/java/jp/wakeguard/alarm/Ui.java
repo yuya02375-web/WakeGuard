@@ -135,6 +135,32 @@ public final class Ui {
         return d;
     }
 
+    private static int blend(int from, int to, float amount) {
+        float t = clamp(amount, 0f, 1f);
+        return Color.argb(
+                Math.round(Color.alpha(from) + (Color.alpha(to) - Color.alpha(from)) * t),
+                Math.round(Color.red(from) + (Color.red(to) - Color.red(from)) * t),
+                Math.round(Color.green(from) + (Color.green(to) - Color.green(from)) * t),
+                Math.round(Color.blue(from) + (Color.blue(to) - Color.blue(from)) * t));
+    }
+
+    private static GradientDrawable cardSurface(Activity a, int baseColor, int tintColor, float radiusDp) {
+        boolean fullyFlat = "flat".equals(UI_CARD_MODE) && "flat".equals(DESIGN_CARD);
+        if (fullyFlat) return round(baseColor, radiusDp, a);
+        float tint = DARK_THEME ? .12f : .14f;
+        GradientDrawable surface = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{baseColor, blend(baseColor, tintColor, tint)});
+        surface.setCornerRadius(dp(a, Math.max(0, (int)(radiusDp * CORNER_SCALE))));
+        return surface;
+    }
+
+    private static GradientDrawable circle(int color) {
+        GradientDrawable shape = new GradientDrawable();
+        shape.setShape(GradientDrawable.OVAL);
+        shape.setColor(color);
+        return shape;
+    }
+
     public static GradientDrawable roundStroke(int color, int stroke, float radiusDp, Activity a) {
         GradientDrawable d = round(color, radiusDp, a);
         d.setStroke(dp(a, 1), stroke);
@@ -187,7 +213,8 @@ public final class Ui {
     }
 
     public static Drawable alarmCard(Activity a, boolean active) {
-        GradientDrawable base = round(active ? SURFACE : SURFACE_2, 20, a);
+        GradientDrawable base = cardSurface(a, active ? SURFACE : SURFACE_2,
+                active ? SURFACE_2 : SURFACE, 20);
         if ("flat".equals(UI_CARD_MODE) && "flat".equals(DESIGN_CARD)) {
             base.setStroke(0, Color.TRANSPARENT);
         } else {
@@ -405,7 +432,7 @@ public final class Ui {
         LinearLayout l = new LinearLayout(a);
         l.setOrientation(LinearLayout.VERTICAL);
         l.setPadding(dp(a,20),dp(a,18),dp(a,20),dp(a,18));
-        GradientDrawable surface = round(SURFACE, 20, a);
+        GradientDrawable surface = cardSurface(a, SURFACE, SURFACE_2, 20);
         if ("flat".equals(UI_CARD_MODE) && "flat".equals(DESIGN_CARD)) surface.setStroke(0, Color.TRANSPARENT);
         else surface.setStroke(dp(a, 1), BORDER);
         l.setBackground(patterned(a, surface, true, 20f * CORNER_SCALE));
@@ -453,6 +480,8 @@ public final class Ui {
 
     public static Drawable navigationSurface(Activity a) {
         GradientDrawable surface = round(SURFACE, 0, a);
+        float topRadius = dp(a, Math.max(0, (int)(18 * CORNER_SCALE)));
+        surface.setCornerRadii(new float[]{topRadius,topRadius,topRadius,topRadius,0,0,0,0});
         surface.setStroke(dp(a, 1), withAlpha(BORDER, DARK_THEME ? 0xA0 : 0xC0));
         return surface;
     }
@@ -501,7 +530,7 @@ public final class Ui {
         icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
         FrameLayout.LayoutParams iconParams = new FrameLayout.LayoutParams(dp(a, 24), dp(a, 24), Gravity.CENTER);
         iconFrame.addView(icon, iconParams);
-        tab.addView(iconFrame, new LinearLayout.LayoutParams(dp(a, 52), dp(a, 34)));
+        tab.addView(iconFrame, new LinearLayout.LayoutParams(dp(a, 40), dp(a, 40)));
 
         TextView label = text(a, "", 12, MUTED);
         label.setTag("nav_label");
@@ -509,7 +538,7 @@ public final class Ui {
         label.setSingleLine(true);
         label.setEllipsize(android.text.TextUtils.TruncateAt.END);
         LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(-1, -2);
-        labelParams.topMargin = dp(a, 2);
+        labelParams.topMargin = dp(a, 4);
         tab.addView(label, labelParams);
 
         View marker = new View(a);
@@ -536,15 +565,17 @@ public final class Ui {
 
         iconFrame.setVisibility(labels ? View.GONE : View.VISIBLE);
         LinearLayout.LayoutParams frameParams = (LinearLayout.LayoutParams) iconFrame.getLayoutParams();
-        frameParams.width = dp(a, compact ? 38 : 52);
-        frameParams.height = dp(a, compact ? 38 : 34);
+        // The selected surface stays circular and centered around the 24dp icon in every mode.
+        frameParams.width = dp(a, 40);
+        frameParams.height = dp(a, 40);
         iconFrame.setLayoutParams(frameParams);
-        float radius = compact ? 20 : 16;
-        iconFrame.setBackground(active ? round(NAV_HIGHLIGHT, radius, a) : round(Color.TRANSPARENT, radius, a));
+        iconFrame.setBackground(active ? circle(NAV_HIGHLIGHT) : circle(Color.TRANSPARENT));
 
         label.setText("ストップウォッチ".equals(name) ? I18n.tr(a, "計測") : I18n.tr(a, name));
-        label.setTextSize(labels ? 12.5f : 11.5f);
-        label.setTextColor(active ? ACCENT_2 : MUTED);
+        label.setTextSize(labels ? 12.5f : 12f);
+        label.setTextColor(active
+                ? readableColor(ACCENT_2, NAV_HIGHLIGHT, 4.5)
+                : readableColor(MUTED, SURFACE, 4.5));
         label.setTypeface(designTypeface(active ? Typeface.BOLD : Typeface.NORMAL));
         label.setVisibility(compact ? View.GONE : View.VISIBLE);
         marker.setVisibility(labels && active ? View.VISIBLE : View.GONE);
@@ -552,7 +583,9 @@ public final class Ui {
 
         int id = navIcon(name, active);
         icon.setImageResource(id);
-        icon.setImageTintList(ColorStateList.valueOf(active ? ACCENT_2 : MUTED));
+        icon.setImageTintList(ColorStateList.valueOf(active
+                ? readableColor(ACCENT_2, NAV_HIGHLIGHT, 4.5)
+                : readableColor(MUTED, SURFACE, 4.5)));
         icon.setContentDescription(I18n.tr(a, name));
         tab.setSelected(active);
         tab.setContentDescription(I18n.tr(a, name) + (active ? " · " + I18n.tr(a, "選択中") : ""));
