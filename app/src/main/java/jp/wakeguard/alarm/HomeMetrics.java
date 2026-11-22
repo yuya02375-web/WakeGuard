@@ -4,7 +4,7 @@ package jp.wakeguard.alarm;
 public final class HomeMetrics {
     public static final int HEADER_TITLE_SP=28;
     public static final int HERO_HEIGHT_DP=164;
-    public static final int HERO_EMPTY_HEIGHT_DP=120;
+    public static final int HERO_EMPTY_HEIGHT_DP=112;
     public static final int HERO_SIDE_DP=20;
     public static final int HERO_TOP_DP=16;
     public static final int HERO_TIME_SP=54;

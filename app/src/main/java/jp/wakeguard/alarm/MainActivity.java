@@ -19,6 +19,7 @@ import java.util.*;
 public class MainActivity extends Activity {
     private String builtAppearanceKey;
     private LinearLayout list;
+    private LinearLayout addAction;
     private android.widget.GridLayout tileGrid;
     private TextView nextText,nextMeta;
     private FrameLayout nextCard;
@@ -125,8 +126,8 @@ public class MainActivity extends Activity {
         addIcon.setBounds(0,0,addIconSize,addIconSize);
         add.setCompoundDrawablePadding(Ui.dp(this,8));add.setCompoundDrawables(addIcon,null,null,null);
         add.setOnClickListener(v->edit(-1));
-        LinearLayout action=new LinearLayout(this);action.setPadding(Ui.dp(this,18),Ui.dp(this,5),Ui.dp(this,18),Ui.dp(this,5));
-        action.addView(add,new LinearLayout.LayoutParams(-1,-2));root.addView(action);
+        addAction=new LinearLayout(this);addAction.setPadding(Ui.dp(this,18),Ui.dp(this,5),Ui.dp(this,18),Ui.dp(this,5));
+        addAction.addView(add,new LinearLayout.LayoutParams(-1,-2));root.addView(addAction);
         root.addView(bottomNav());
         setContentView(root);
         Ui.applySystemBarInsets(this,root);
@@ -153,16 +154,13 @@ public class MainActivity extends Activity {
         alarms.sort(Comparator.comparingInt((AlarmStore.Entry e)->e.hour).thenComparingInt(e->e.minute));
         int enabled=0;for(AlarmStore.Entry e:alarms)if(e.enabled)enabled++;
         boolean noUpcomingAlarm=!hasNext;
+        addAction.setVisibility(alarms.isEmpty()?View.GONE:View.VISIBLE);
         showEmptyHero(noUpcomingAlarm);
         if(noUpcomingAlarm)updateEmptyHero(alarms.isEmpty(),enabled==0);
         if(alarms.isEmpty()){
-            // A pending snooze can outlive the last saved alarm: keep its live hero.
-            if(hasNext){
-                LinearLayout empty=buildEmptyContent(false);
-                LinearLayout.LayoutParams emptyLp=Ui.cardParams(this);
-                emptyLp.topMargin=Ui.dp(this,8);
-                list.addView(empty,emptyLp);
-            }
+            list.setGravity(Gravity.CENTER);
+            list.setPadding(Ui.dp(this,18),Ui.dp(this,14),Ui.dp(this,18),Ui.dp(this,18));
+            list.addView(buildEmptyContent(false),new LinearLayout.LayoutParams(-1,-2));
             return;
         }
         LinearLayout listHeading=Ui.row(this);
@@ -198,31 +196,52 @@ public class MainActivity extends Activity {
     private LinearLayout buildEmptyContent(boolean onHero){
         LinearLayout content=onHero?new LinearLayout(this):Ui.card(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        content.setGravity(Gravity.CENTER_VERTICAL);
-        content.setPadding(Ui.dp(this,16),Ui.dp(this,10),Ui.dp(this,16),Ui.dp(this,10));
+        content.setGravity(onHero?Gravity.CENTER_VERTICAL:Gravity.CENTER);
+        content.setPadding(Ui.dp(this,onHero?16:20),Ui.dp(this,onHero?10:22),
+                Ui.dp(this,onHero?16:20),Ui.dp(this,onHero?10:20));
         if(onHero)content.setMinimumHeight(Ui.dp(this,HomeMetrics.HERO_EMPTY_HEIGHT_DP));
         LinearLayout copy=new LinearLayout(this);
         copy.setOrientation(LinearLayout.VERTICAL);
+        if(!onHero)copy.setGravity(Gravity.CENTER_HORIZONTAL);
+        if(!onHero){
+            FrameLayout iconPlate=new FrameLayout(this);
+            iconPlate.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,20,this));
+            android.widget.ImageView icon=new android.widget.ImageView(this);
+            android.graphics.drawable.Drawable alarmIcon=getDrawable(R.drawable.ic_v292_nav_alarm_outline).mutate();
+            alarmIcon.setTint(Ui.ACCENT_2);icon.setImageDrawable(alarmIcon);
+            int iconSize=Ui.dp(this,28);
+            iconPlate.addView(icon,new FrameLayout.LayoutParams(iconSize,iconSize,Gravity.CENTER));
+            LinearLayout.LayoutParams iconLp=new LinearLayout.LayoutParams(Ui.dp(this,56),Ui.dp(this,56));
+            iconLp.bottomMargin=Ui.dp(this,14);content.addView(iconPlate,iconLp);
+        }
         content.addView(copy,new LinearLayout.LayoutParams(-1,-2));
         TextView heading=Ui.title(this,localized(
-                "最初のアラームを追加しましょう",
-                "Add your first alarm",
-                "첫 알람을 추가해 보세요"),16);
+                onHero?"最初のアラームを追加しましょう":"アラームを設定しましょう",
+                onHero?"Add your first alarm":"Set up your alarm",
+                onHero?"첫 알람을 추가해 보세요":"알람을 설정해 보세요"),onHero?16:19);
         if(onHero)emptyHeading=heading;
         heading.setTextColor(onHero?Ui.HERO_TEXT:Ui.TEXT);
         heading.setMaxLines(2);
         heading.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        if(!onHero)heading.setGravity(Gravity.CENTER);
         copy.addView(heading);
         TextView note=Ui.text(this,localized(
-                "時刻と曜日を決めると、ここに一覧で表示されます。",
-                "Set a time and days to see it listed here.",
-                "시간과 요일을 정하면 여기에 목록으로 표시됩니다."),12,onHero?Ui.HERO_TEXT:Ui.MUTED);
+                onHero?"時刻と曜日を決めると、ここに一覧で表示されます。":"起床する時刻と曜日を決めると、ここに表示されます。",
+                onHero?"Set a time and days to see it listed here.":"Choose a wake-up time and days to see it here.",
+                onHero?"시간과 요일을 정하면 여기에 목록으로 표시됩니다.":"기상 시간과 요일을 정하면 여기에 표시됩니다."),onHero?12:13,onHero?Ui.HERO_TEXT:Ui.MUTED);
         if(onHero)emptyNote=note;
         note.setMaxLines(2);
         note.setEllipsize(android.text.TextUtils.TruncateAt.END);
         note.setPadding(0,Ui.dp(this,3),0,0);
         if(onHero)note.setAlpha(.82f);
+        else note.setGravity(Gravity.CENTER);
         copy.addView(note);
+        if(!onHero){
+            Button create=Ui.button(this,localized("最初のアラームを作成","Create your first alarm","첫 알람 만들기"),true);
+            create.setOnClickListener(v->edit(-1));
+            LinearLayout.LayoutParams createLp=new LinearLayout.LayoutParams(-1,-2);
+            createLp.topMargin=Ui.dp(this,18);content.addView(create,createLp);
+        }
         return content;
     }
 
@@ -230,13 +249,13 @@ public class MainActivity extends Activity {
         if(emptyHeading==null||emptyNote==null)return;
         if(noSavedAlarms){
             emptyHeading.setText(localized(
-                    "最初のアラームを追加しましょう",
-                    "Add your first alarm",
-                    "첫 알람을 추가해 보세요"));
+                    "次の起床予定はありません",
+                    "No upcoming wake-up",
+                    "예정된 기상 시간이 없습니다"));
             emptyNote.setText(localized(
-                    "時刻と曜日を決めると、ここに一覧で表示されます。",
-                    "Set a time and days to see it listed here.",
-                    "시간과 요일을 정하면 여기에 목록으로 표시됩니다."));
+                    "中央のボタンから、最初のアラームを作成できます。",
+                    "Create your first alarm using the button below.",
+                    "아래 버튼으로 첫 알람을 만들 수 있습니다."));
         }else if(allAlarmsDisabled){
             emptyHeading.setText(localized(
                     "アラームがオフです",
@@ -419,6 +438,7 @@ public class MainActivity extends Activity {
         if(sunriseAccent!=null){
             FrameLayout.LayoutParams accentParams=(FrameLayout.LayoutParams)sunriseAccent.getLayoutParams();
             if(accentParams.height!=height){accentParams.height=height;sunriseAccent.setLayoutParams(accentParams);}
+            sunriseAccent.setVisibility(empty?View.GONE:View.VISIBLE);
         }
         heroContent.setVisibility(empty?View.GONE:View.VISIBLE);
         emptyHero.setVisibility(empty?View.VISIBLE:View.GONE);
