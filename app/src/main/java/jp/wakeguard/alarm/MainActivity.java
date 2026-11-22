@@ -27,6 +27,10 @@ public class MainActivity extends Activity {
     private LinearLayout heroContent, emptyHero;
     private TextView emptyHeading, emptyNote;
     private View sunriseAccent;
+    private StreakCompanionView dragonCompanion;
+    private TextView dragonFormText,dragonLevelText,dragonProgressText;
+    private FrameLayout dragonProgressTrack;
+    private View dragonProgressFill;
 
     private FrameLayout horizonTrack;
     private View horizonDot;
@@ -41,11 +45,12 @@ public class MainActivity extends Activity {
         super.onResume();
         String currentAppearance=appearanceKey();
         if(builtAppearanceKey!=null&&!builtAppearanceKey.equals(currentAppearance)){recreate();return;}
+        if(dragonCompanion!=null)dragonCompanion.onResume();
         AlarmScheduler.reschedule(this);
         for(TimerStore.Entry e:TimerStore.all(this))if(e.running&&e.remaining()>1500L)TimerReceiver.schedule(this,e.id,e.endMs);
         render();countdownHandler.removeCallbacks(countdownTick);countdownHandler.postDelayed(countdownTick,30000L);
     }
-    @Override protected void onPause(){countdownHandler.removeCallbacks(countdownTick);super.onPause();}
+    @Override protected void onPause(){countdownHandler.removeCallbacks(countdownTick);if(dragonCompanion!=null)dragonCompanion.onPause();super.onPause();}
 
     private String appearanceKey(){
         return UiProfiles.id(this)+":"+VisualDesigns.id(this)+":"+AppThemes.key(this);
@@ -87,7 +92,7 @@ public class MainActivity extends Activity {
         nextCard.addView(edge,edgeLp);
         heroContent=new LinearLayout(this);heroContent.setOrientation(LinearLayout.VERTICAL);
         heroContent.setPadding(Ui.dp(this,HomeMetrics.HERO_SIDE_DP),Ui.dp(this,HomeMetrics.HERO_TOP_DP),
-                Ui.dp(this,HomeMetrics.HERO_SIDE_DP),Ui.dp(this,11));
+                Ui.dp(this,136),Ui.dp(this,11));
         TextView nextLabel=Ui.overline(this,"次の起床");nextLabel.setTextColor(Ui.HERO_TEXT);heroContent.addView(nextLabel);
         nextText=Ui.title(this,"--:--",HomeMetrics.HERO_TIME_SP);nextText.setTextColor(Ui.HERO_TEXT);
         nextText.setTypeface(android.graphics.Typeface.create("sans-serif-light",android.graphics.Typeface.NORMAL));
@@ -112,6 +117,7 @@ public class MainActivity extends Activity {
         emptyHero.setMinimumHeight(Ui.dp(this,HomeMetrics.HERO_EMPTY_HEIGHT_DP));
         emptyHero.setVisibility(View.GONE);
         nextCard.addView(emptyHero,new FrameLayout.LayoutParams(-1,-2));
+        addDragonGrowthOverlay();
         LinearLayout.LayoutParams nextLp=new LinearLayout.LayoutParams(-1,Ui.dp(this,HomeMetrics.HERO_HEIGHT_DP));
         nextLp.setMargins(Ui.dp(this,16),Ui.dp(this,4),Ui.dp(this,16),Ui.dp(this,3));root.addView(nextCard,nextLp);
 
@@ -159,6 +165,7 @@ public class MainActivity extends Activity {
         boolean noUpcomingAlarm=!hasNext;
         addAction.setVisibility(alarms.isEmpty()?View.GONE:View.VISIBLE);
         showEmptyHero(noUpcomingAlarm);
+        refreshDragonGrowth();
         if(noUpcomingAlarm)updateEmptyHero(alarms.isEmpty(),enabled==0);
         if(alarms.isEmpty()){
             list.setGravity(Gravity.CENTER);
@@ -201,7 +208,7 @@ public class MainActivity extends Activity {
         content.setOrientation(LinearLayout.VERTICAL);
         content.setGravity(onHero?Gravity.CENTER_VERTICAL:Gravity.CENTER);
         content.setPadding(Ui.dp(this,onHero?16:20),Ui.dp(this,onHero?10:22),
-                Ui.dp(this,onHero?16:20),Ui.dp(this,onHero?10:20));
+                Ui.dp(this,onHero?136:20),Ui.dp(this,onHero?10:20));
         if(onHero)content.setMinimumHeight(Ui.dp(this,HomeMetrics.HERO_EMPTY_HEIGHT_DP));
         LinearLayout copy=new LinearLayout(this);
         copy.setOrientation(LinearLayout.VERTICAL);
@@ -447,6 +454,72 @@ public class MainActivity extends Activity {
         heroContent.setVisibility(empty?View.GONE:View.VISIBLE);
         emptyHero.setVisibility(empty?View.VISIBLE:View.GONE);
 
+    }
+
+    private void addDragonGrowthOverlay(){
+        dragonCompanion=new StreakCompanionView(this);
+        FrameLayout.LayoutParams dragonLp=new FrameLayout.LayoutParams(
+                Ui.dp(this,112),Ui.dp(this,124),Gravity.END|Gravity.TOP);
+        dragonLp.rightMargin=Ui.dp(this,8);
+        dragonLp.topMargin=Ui.dp(this,8);
+        nextCard.addView(dragonCompanion,dragonLp);
+
+        LinearLayout summary=new LinearLayout(this);
+        summary.setOrientation(LinearLayout.VERTICAL);
+        summary.setPadding(Ui.dp(this,10),Ui.dp(this,6),Ui.dp(this,10),Ui.dp(this,6));
+        summary.setBackground(Ui.round(Ui.withAlpha(0xff08111a,0xB8),12,this));
+
+        LinearLayout titleRow=new LinearLayout(this);
+        titleRow.setGravity(Gravity.CENTER_VERTICAL);
+        dragonFormText=Ui.text(this,I18n.tr(this,"竜の卵"),12,Ui.HERO_TEXT);
+        dragonFormText.setTypeface(android.graphics.Typeface.create("sans-serif-medium",android.graphics.Typeface.BOLD));
+        dragonFormText.setSingleLine(true);
+        dragonFormText.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        titleRow.addView(dragonFormText,new LinearLayout.LayoutParams(0,-2,1));
+        dragonLevelText=Ui.text(this,"Lv.1",11,Ui.HERO_TEXT);
+        dragonLevelText.setTypeface(null,android.graphics.Typeface.BOLD);
+        titleRow.addView(dragonLevelText);
+        summary.addView(titleRow);
+
+        dragonProgressText=Ui.text(this,"",10,Ui.HERO_TEXT);
+        dragonProgressText.setSingleLine(true);
+        dragonProgressText.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        dragonProgressText.setAlpha(.88f);
+        dragonProgressText.setPadding(0,Ui.dp(this,1),0,Ui.dp(this,3));
+        summary.addView(dragonProgressText);
+
+        dragonProgressTrack=new FrameLayout(this);
+        dragonProgressTrack.setBackground(Ui.round(Ui.withAlpha(Ui.HERO_TEXT,0x42),4,this));
+        dragonProgressFill=new View(this);
+        dragonProgressFill.setBackground(Ui.round(0xffffc66d,4,this));
+        dragonProgressTrack.addView(dragonProgressFill,new FrameLayout.LayoutParams(0,-1,Gravity.START));
+        summary.addView(dragonProgressTrack,new LinearLayout.LayoutParams(-1,Ui.dp(this,4)));
+
+        FrameLayout.LayoutParams summaryLp=new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM|Gravity.START);
+        summaryLp.setMargins(Ui.dp(this,16),0,Ui.dp(this,136),Ui.dp(this,9));
+        nextCard.addView(summary,summaryLp);
+    }
+
+    private void refreshDragonGrowth(){
+        if(dragonCompanion==null)return;
+        StreakGrowth.ensure(this);
+        long level=StreakGrowth.level(this);
+        dragonCompanion.setGrowth(level,StreakTracker.displayCurrent(this));
+        dragonFormText.setText(StreakGrowth.growthDescriptor(this,level));
+        dragonLevelText.setText("Lv."+level);
+        long remaining=StreakGrowth.remainingToNext(level);
+        if(remaining>0L){
+            dragonProgressText.setText(String.format(I18n.locale(this),
+                    I18n.tr(this,"次の成長段階まであと %d 回"),remaining));
+        }else{
+            dragonProgressText.setText(I18n.tr(this,"最終段階で成長中"));
+        }
+        float progress=StreakGrowth.progressToNext(level);
+        dragonProgressTrack.post(()->{
+            int width=Math.round(dragonProgressTrack.getWidth()*progress);
+            FrameLayout.LayoutParams lp=(FrameLayout.LayoutParams)dragonProgressFill.getLayoutParams();
+            if(lp.width!=width){lp.width=width;dragonProgressFill.setLayoutParams(lp);}
+        });
     }
 
     private boolean refreshNext(){

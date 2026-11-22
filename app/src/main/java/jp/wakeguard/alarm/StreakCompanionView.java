@@ -5,6 +5,7 @@ import android.graphics.ImageDecoder;
 import android.graphics.drawable.AnimatedImageDrawable;
 import android.graphics.drawable.Drawable;
 import android.view.Gravity;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import java.io.IOException;
@@ -23,10 +24,11 @@ public final class StreakCompanionView extends FrameLayout {
     private int currentStreak=0;
     private boolean animationEnabled=true;
     private boolean attached=false;
+    private boolean growthInitialized=false;
 
     public StreakCompanionView(Context context) {
         super(context);
-        setBackgroundColor(0xff141922);
+        setBackgroundColor(0x00000000);
         setClipChildren(false);
         setClipToPadding(false);
         sprite=new ImageView(context);
@@ -38,9 +40,9 @@ public final class StreakCompanionView extends FrameLayout {
 
     private int drawableForTier(int stage){
         switch(stage){
-            case 0:return R.drawable.ignido_stage_ember;
-            case 1:return R.drawable.ignido_stage_flame;
-            case 2:return R.drawable.ignido_stage_egg;
+            case 0:return R.drawable.ignido_stage_egg;
+            case 1:return R.drawable.ignido_stage_ember;
+            case 2:return R.drawable.ignido_stage_flame;
             case 3:return R.drawable.ignido_stage_hatchling;
             default:return R.drawable.ignido_stage_adult;
         }
@@ -74,13 +76,25 @@ public final class StreakCompanionView extends FrameLayout {
     }
 
     public void setGrowth(long level,int streak){
-        permanentLevel=Math.max(1L,level);
+        long nextLevel=Math.max(1L,level);
+        long previousLevel=permanentLevel;
+        boolean animateGrowth=growthInitialized&&nextLevel>previousLevel&&nextLevel-previousLevel==1L;
+        permanentLevel=nextLevel;
         currentStreak=Math.max(0,streak);
-        long visibleLevel=StreakGrowth.appearanceLevel(permanentLevel,currentStreak);
-        int stage=visibleLevel<4L ? 0 : visibleLevel<12L ? 1 :
-                  visibleLevel<30L ? 2 : visibleLevel<80L ? 3 : 4;
+        int stage=StreakGrowth.artStage(permanentLevel);
         chooseStage(stage);
-        sprite.setContentDescription(StreakGrowth.appearanceDescriptor(getContext(),permanentLevel,currentStreak));
+        float targetScale=StreakGrowth.visualScale(permanentLevel);
+        sprite.animate().cancel();
+        if(animateGrowth){
+            float startScale=StreakGrowth.visualScale(previousLevel);
+            sprite.setScaleX(startScale);sprite.setScaleY(startScale);
+            sprite.animate().scaleX(targetScale).scaleY(targetScale)
+                    .setDuration(520L).setInterpolator(new DecelerateInterpolator()).start();
+        }else{
+            sprite.setScaleX(targetScale);sprite.setScaleY(targetScale);
+        }
+        growthInitialized=true;
+        sprite.setContentDescription(StreakGrowth.growthDescriptor(getContext(),permanentLevel)+", Lv."+permanentLevel);
     }
 
     public void setAnimationEnabled(boolean enabled){

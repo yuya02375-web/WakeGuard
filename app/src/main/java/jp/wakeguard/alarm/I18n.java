@@ -105,6 +105,13 @@ public final class I18n {
         put("アラームはありません。右上の＋から追加できます。","No alarms. Tap + at the top right to add one.","알람이 없습니다. 오른쪽 위 +에서 추가할 수 있습니다.");
         put("次のアラームはありません","No upcoming alarms","다음 알람이 없습니다"); put("毎日","Every day","매일"); put("1回のみ","Once","한 번만");
         put("ストリーク","Streak","스트릭"); put("カレンダー","Calendar","캘린더");
+        put("ドラゴンの成長","Dragon growth","드래곤 성장");
+        put("竜の卵","Dragon egg","드래곤 알"); put("火種","Ember","불씨");
+        put("小さな炎","Small flame","작은 불꽃"); put("幼炎竜","Young fire dragon","어린 불꽃 드래곤");
+        put("炎竜","Fire dragon","불꽃 드래곤"); put("天炎竜","Skyfire dragon","하늘 불꽃 드래곤");
+        put("恒星炎竜","Stellar fire dragon","항성 불꽃 드래곤"); put("無限炎竜","Infinite fire dragon","무한 불꽃 드래곤");
+        put("次の成長段階まであと %d 回","Next growth stage in %d successful wake-ups","다음 성장 단계까지 %d회 더 성공적으로 기상");
+        put("最終段階で成長中","Growing at the final stage","최종 단계에서 성장 중");
         put("成功した起床","Successful wake-ups","성공한 기상"); put("最高ストリーク","Best streak","최고 스트릭");
         put("アラームを追加","Add alarm","알람 추가"); put("アラームを編集","Edit alarm","알람 편집"); put("アラームを有効にする","Enable alarm","알람 사용");
         put("時刻と曜日","Time & days","시간 및 요일"); put("アラーム時刻","Alarm time","알람 시간"); put("タップして時刻を変更","Tap to change the time","탭하여 시간 변경"); put("繰り返す曜日","Repeat days","반복 요일");

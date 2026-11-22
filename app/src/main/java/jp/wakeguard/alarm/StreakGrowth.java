@@ -30,40 +30,69 @@ public final class StreakGrowth {
         if(now<Long.MAX_VALUE)p(c).edit().putLong("level",now+1L).apply();
     }
 
-    /** Smooth visual power. It never reaches a hard cap; logarithmic growth keeps very high levels renderable. */
-    public static double visualPower(long level){return Math.log1p(Math.max(1L,level))/Math.log(2.0);}
+    private static final long[] MILESTONES={1L,4L,12L,30L,80L,180L,400L,1000L};
 
-    /**
-     * Appearance follows the current consecutive-day streak, without deleting the
-     * separately stored permanent experience level. A 3-day streak never shows
-     * an adult dragon, even when older imported stats contain many wake-ups.
-     */
+    /** The artwork tier advances from egg to ember, flame, hatchling, then adult. */
+    public static int artStage(long level){
+        long lv=Math.max(1L,level);
+        if(lv<4L)return 0;
+        if(lv<12L)return 1;
+        if(lv<30L)return 2;
+        if(lv<80L)return 3;
+        return 4;
+    }
+
+    /** Scales continuously with permanent wake-ups, including after the adult form appears. */
+    public static float visualScale(long level){
+        double progress=Math.log(Math.max(1L,level))/Math.log(1000.0);
+        return (float)(0.78+0.46*Math.max(0.0,Math.min(1.0,progress)));
+    }
+
+    public static long nextMilestone(long level){
+        long lv=Math.max(1L,level);
+        for(long milestone:MILESTONES)if(milestone>lv)return milestone;
+        return 0L;
+    }
+
+    public static long remainingToNext(long level){
+        long next=nextMilestone(level);
+        return next==0L?0L:next-Math.max(1L,level);
+    }
+
+    /** Progress through the current permanent-growth milestone, from 0.0 to 1.0. */
+    public static float progressToNext(long level){
+        long lv=Math.max(1L,level),next=nextMilestone(lv);
+        if(next==0L)return 1f;
+        long start=1L;
+        for(long milestone:MILESTONES){
+            if(milestone>lv)break;
+            start=milestone;
+        }
+        return Math.max(0f,Math.min(1f,(lv-start)/(float)(next-start)));
+    }
+
+    /** Appearance is permanent: a broken streak never shrinks the dragon. */
     public static long appearanceLevel(long permanentLevel,int currentStreak){
-        return Math.min(Math.max(1L,permanentLevel),Math.max(1L,(long)currentStreak));
+        return Math.max(1L,permanentLevel);
     }
 
     public static String appearanceDescriptor(Context c,long permanentLevel,int currentStreak){
-        long lv=appearanceLevel(permanentLevel,currentStreak);
-        if(lv<4L)return I18n.tr(c,"火種");
-        if(lv<12L)return I18n.tr(c,"小さな炎");
-        if(lv<30L)return I18n.tr(c,"炎竜の兆し");
+        return descriptor(c,permanentLevel);
+    }
+
+    public static String growthDescriptor(Context c){return descriptor(c,level(c));}
+
+    public static String growthDescriptor(Context c,long level){return descriptor(c,level);}
+
+    private static String descriptor(Context c,long level){
+        long lv=Math.max(1L,level);
+        if(lv<4L)return I18n.tr(c,"竜の卵");
+        if(lv<12L)return I18n.tr(c,"火種");
+        if(lv<30L)return I18n.tr(c,"小さな炎");
         if(lv<80L)return I18n.tr(c,"幼炎竜");
         if(lv<180L)return I18n.tr(c,"炎竜");
         if(lv<400L)return I18n.tr(c,"天炎竜");
         if(lv<1000L)return I18n.tr(c,"恒星炎竜");
-        return I18n.tr(c,"無限炎竜");
-    }
-
-    /** A compact, non-gamey description of how far the permanent form has grown. */
-    public static String growthDescriptor(Context c){
-        long lv=level(c);
-        if(lv<4)return I18n.tr(c,"火種");
-        if(lv<12)return I18n.tr(c,"小さな炎");
-        if(lv<30)return I18n.tr(c,"炎竜の兆し");
-        if(lv<80)return I18n.tr(c,"幼炎竜");
-        if(lv<180)return I18n.tr(c,"炎竜");
-        if(lv<400)return I18n.tr(c,"天炎竜");
-        if(lv<1000)return I18n.tr(c,"恒星炎竜");
         return I18n.tr(c,"無限炎竜");
     }
 }
