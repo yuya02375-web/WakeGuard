@@ -1342,22 +1342,91 @@ public class ClockActivity extends Activity {
     private void showFolderPicker(String current,Consumer<String> selected){
         List<String> folders=TimerStore.folders(this);LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setFocusableInTouchMode(true);box.setPadding(Ui.dp(this,18),0,Ui.dp(this,18),0);
         EditText search=new EditText(this);search.setSingleLine(true);search.setHint(I18n.tr(this,"フォルダーを検索"));search.setTextColor(Ui.TEXT);search.setHintTextColor(Ui.MUTED_2);search.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),0);Ui.styleInput(search,this,Ui.SURFACE_2,14);box.addView(search,new LinearLayout.LayoutParams(-1,Ui.dp(this,48)));
-        ListView list=new ListView(this);list.setChoiceMode(ListView.CHOICE_MODE_SINGLE);list.setDivider(new android.graphics.drawable.ColorDrawable(Ui.BORDER));list.setDividerHeight(Ui.dp(this,1));
-        ArrayAdapter<String> adapter=new ArrayAdapter<String>(this,android.R.layout.simple_list_item_single_choice,new ArrayList<>(folders)){
+        String currentFolder=normalizedFolder(current);
+        ListView list=new ListView(this);
+        list.setDivider(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
+        list.setDividerHeight(Ui.dp(this,6));
+        list.setBackgroundColor(Color.TRANSPARENT);
+        list.setSelector(Ui.rippleBackground(this,12));
+        list.setVerticalScrollBarEnabled(false);
+        ArrayAdapter<String> adapter=new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,new ArrayList<>(folders)){
             @Override public View getView(int position,View convertView,ViewGroup parent){
-                CheckedTextView row=(CheckedTextView)super.getView(position,convertView,parent);row.setTextColor(Ui.readableTextColor(Ui.TEXT,Ui.SURFACE_2));row.setTypeface(Ui.designTypeface(Typeface.NORMAL));row.setTextSize(16);row.setSingleLine(true);row.setEllipsize(android.text.TextUtils.TruncateAt.END);row.setMinHeight(Ui.dp(ClockActivity.this,56));row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(Ui.dp(ClockActivity.this,14),Ui.dp(ClockActivity.this,7),Ui.dp(ClockActivity.this,14),Ui.dp(ClockActivity.this,7));row.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,12,ClockActivity.this));if(Build.VERSION.SDK_INT>=21)row.setCheckMarkTintList(android.content.res.ColorStateList.valueOf(Ui.readableTextColor(Ui.ACCENT_2,Ui.SURFACE_2)));return row;
+                String folder=getItem(position);
+                boolean selectedFolder=folder!=null&&folder.equalsIgnoreCase(currentFolder);
+                int fill=selectedFolder?Ui.SURFACE_3:Ui.SURFACE_2;
+                LinearLayout row;
+                TextView name,marker;
+                if(convertView instanceof LinearLayout&&convertView.getTag() instanceof View[]){
+                    row=(LinearLayout)convertView;
+                    View[] children=(View[])row.getTag();
+                    name=(TextView)children[0];
+                    marker=(TextView)children[1];
+                }else{
+                    row=new LinearLayout(ClockActivity.this);
+                    row.setOrientation(LinearLayout.HORIZONTAL);
+                    row.setGravity(Gravity.CENTER_VERTICAL);
+                    row.setPadding(Ui.dp(ClockActivity.this,14),0,Ui.dp(ClockActivity.this,12),0);
+                    row.setMinimumHeight(Ui.dp(ClockActivity.this,56));
+                    name=new TextView(ClockActivity.this);
+                    name.setSingleLine(true);
+                    name.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                    name.setIncludeFontPadding(false);
+                    name.setTextSize(16);
+                    row.addView(name,new LinearLayout.LayoutParams(0,-2,1));
+                    marker=new TextView(ClockActivity.this);
+                    marker.setGravity(Gravity.CENTER);
+                    marker.setTextSize(18);
+                    marker.setIncludeFontPadding(false);
+                    row.addView(marker,new LinearLayout.LayoutParams(Ui.dp(ClockActivity.this,34),-2));
+                    row.setTag(new View[]{name,marker});
+                }
+                name.setText(folder==null?"":folder);
+                name.setTypeface(Ui.designTypeface(Typeface.NORMAL));
+                name.setTextColor(Ui.readableTextColor(Ui.TEXT,fill));
+                marker.setText(selectedFolder?"✓":"○");
+                marker.setTypeface(Ui.designTypeface(selectedFolder?Typeface.BOLD:Typeface.NORMAL));
+                marker.setTextColor(Ui.readableTextColor(selectedFolder?Ui.ACCENT_2:Ui.MUTED,fill));
+                row.setBackground(Ui.roundStroke(fill,selectedFolder?Ui.ACCENT_2:Ui.BORDER,12,ClockActivity.this));
+                row.setContentDescription((folder==null?"":folder)+(selectedFolder?"、"+I18n.tr(ClockActivity.this,"選択中"):""));
+                return row;
             }
-        };list.setAdapter(adapter);
-        FrameLayout listFrame=new FrameLayout(this);listFrame.addView(list,new FrameLayout.LayoutParams(-1,-1));TextView noFolder=Ui.text(this,I18n.tr(this,"フォルダーが見つかりません"),13,Ui.MUTED);noFolder.setGravity(Gravity.CENTER);listFrame.addView(noFolder,new FrameLayout.LayoutParams(-1,-1));list.setEmptyView(noFolder);
-        int listHeight=Math.min(Ui.dp(this,300),Math.round(getResources().getDisplayMetrics().heightPixels*.42f));box.addView(listFrame,new LinearLayout.LayoutParams(-1,listHeight));
-        search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int start,int count,int after){}public void onTextChanged(CharSequence s,int start,int before,int count){adapter.getFilter().filter(s);}public void afterTextChanged(Editable e){}});
-        AlertDialog dialog=new AlertDialog.Builder(this).setTitle(I18n.tr(this,"保存先フォルダ")).setView(box)
+        };
+        list.setAdapter(adapter);
+        FrameLayout listFrame=new FrameLayout(this);
+        listFrame.addView(list,new FrameLayout.LayoutParams(-1,-1));
+        TextView noFolder=Ui.text(this,I18n.tr(this,"フォルダーが見つかりません"),13,Ui.readableTextColor(Ui.MUTED,Ui.SURFACE));
+        noFolder.setGravity(Gravity.CENTER);
+        listFrame.addView(noFolder,new FrameLayout.LayoutParams(-1,-1));
+        list.setEmptyView(noFolder);
+        int listHeight=Math.min(Ui.dp(this,300),Math.round(getResources().getDisplayMetrics().heightPixels*.42f));
+        box.addView(listFrame,new LinearLayout.LayoutParams(-1,listHeight));
+        search.addTextChangedListener(new TextWatcher(){
+            public void beforeTextChanged(CharSequence s,int start,int count,int after){}
+            public void onTextChanged(CharSequence s,int start,int before,int count){adapter.getFilter().filter(s);}
+            public void afterTextChanged(Editable e){}
+        });
+        AlertDialog dialog=new AlertDialog.Builder(this)
+            .setTitle(I18n.tr(this,"保存先フォルダ"))
+            .setView(box)
             .setNeutralButton(I18n.tr(this,"＋ 新しいフォルダ"),(d,w)->promptFolderName("新しいフォルダ",null,name->{TimerStore.createFolder(this,name);selected.accept(name);}))
-            .setNegativeButton(I18n.tr(this,"キャンセル"),null).create();
-        dialog.setOnShowListener(d->box.requestFocus());
-        list.setOnItemClickListener((parent,view,position,id)->{String folder=adapter.getItem(position);if(folder!=null){dialog.dismiss();selected.accept(folder);}});
+            .setNegativeButton(I18n.tr(this,"キャンセル"),null)
+            .create();
+        dialog.setOnShowListener(d->{
+            box.requestFocus();
+            View titleView=dialog.findViewById(android.R.id.alertTitle);
+            if(titleView instanceof TextView)((TextView)titleView).setTextColor(Ui.readableTextColor(Ui.TEXT,Ui.SURFACE));
+            for(int which:new int[]{AlertDialog.BUTTON_NEUTRAL,AlertDialog.BUTTON_NEGATIVE}){
+                Button button=dialog.getButton(which);
+                if(button!=null){button.setTextColor(Ui.readableTextColor(Ui.ACCENT_2,Ui.SURFACE));button.setTypeface(Ui.designTypeface(Typeface.BOLD));}
+            }
+            Window window=dialog.getWindow();
+            if(window!=null)window.setBackgroundDrawable(Ui.round(Ui.SURFACE,20,this));
+        });
+        list.setOnItemClickListener((parent,view,position,id)->{
+            String folder=adapter.getItem(position);
+            if(folder!=null){dialog.dismiss();selected.accept(folder);}
+        });
         dialog.show();
-        int currentIndex=adapter.getPosition(normalizedFolder(current));if(currentIndex>=0)list.setItemChecked(currentIndex,true);
     }
 
     private void promptFolderName(String title,String initial,Consumer<String> saved){
