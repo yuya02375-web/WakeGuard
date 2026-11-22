@@ -1,6 +1,343 @@
-YªçŠx-®éÜj×¢ëiºÚ+Š§j[h‘éÜ¢éíó}ºN‹Z–‹­¦ëeŠw¬ÕÁ…­…”©À¹Ý…­•Õ…É¹…±…É´ì()¥µÁ½ÉÐ…¹‘É½¥¹…ÁÀ¹Ñ¥Ù¥Ñäì)¥µÁ½ÉÐ…¹‘É½¥¹½¹Ñ•¹Ð¹½¹Ñ•áÐì)¥µÁ½ÉÐ…¹‘É½¥¹½¹Ñ•¹Ð¹%¹Ñ•¹Ðì)¥µÁ½ÉÐ…¹‘É½¥¹É…Á¡¥Ì¹…¹Ù…Ìì)¥µÁ½ÉÐ…¹‘É½¥¹É…Á¡¥Ì¹A…¥¹Ðì)¥µÁ½ÉÐ…¹‘É½¥¹É…Á¡¥Ì¹QåÁ•™…”ì)¥µÁ½ÉÐ…¹‘É½¥¹É…Á¡¥Ì¹‘É…Ý…‰±”¹É…‘¥•¹ÑÉ…Ý…‰±”ì)¥µÁ½ÉÐ…¹‘É½¥¹½Ì¹	Õ¹‘±”ì)¥µÁ½ÉÐ…¹‘É½¥¹Ù¥•Ü¹É…Ù¥Ñäì)¥µÁ½ÉÐ…¹‘É½¥¹Ù¥•Ü¹Y¥•Üì)¥µÁ½ÉÐ…¹‘É½¥¹Ý¥‘•Ð¹	ÕÑÑ½¸ì)¥µÁ½ÉÐ…¹‘É½¥¹Ý¥‘•Ð¹É…µ•1…å½ÕÐì)¥µÁ½ÉÐ…¹‘É½¥¹Ý¥‘•Ð¹É¥‘1…å½ÕÐì)¥µÁ½ÉÐ…¹‘É½¥¹Ý¥‘•Ð¹1¥¹•…É1…å½ÕÐì)¥µÁ½ÉÐ…¹‘É½¥¹Ý¥‘•Ð¹MÉ½±±Y¥•Üì)¥µÁ½ÉÐ…¹‘É½¥¹Ý¥‘•Ð¹MÝ¥Ñ ì)¥µÁ½ÉÐ…¹‘É½¥¹Ý¥‘•Ð¹Q•áÑY¥•Üì()¥µÁ½ÉÐ©…Ù„¹Ñ¥µ”¹1½…±…Ñ”ì)¥µÁ½ÉÐ©…Ù„¹Ñ¥µ”¹e•…É5½¹Ñ ì)¥µÁ½ÉÐ©…Ù„¹Ñ¥µ”¹™½Éµ…Ð¹…Ñ•Q¥µ•½Éµ…ÑÑ•Èì)¥µÁ½ÉÐ©…Ù„¹ÕÑ¥°¹M•Ðì()ÁÕ‰±¥Œ±…ÍÌMÑ…ÑÍÑ¥Ù¥Ñä•áÑ•¹‘ÌÑ¥Ù¥Ñäì(€€€ÁÉ¥Ù…Ñ”e•…É5½¹Ñ µ½¹Ñ õe•…É5½¹Ñ ¹¹½Ü ¤ì(€€€ÁÉ¥Ù…Ñ”1¥¹•…É1…å½ÕÐ‰½‘äì(€€€ÁÉ¥Ù…Ñ”1¥¹•…É1…å½ÕÐÉ••¹Ñ]••¬ì(€€€ÁÉ¥Ù…Ñ”Q•áÑY¥•ÜÕÉÉ•¹ÑY…±Õ”±ÍÑÉ•…­U¹¥Ð±‰•ÍÑY…±Õ”±Ñ½Ñ…±Y…±Õ”±µ½¹Ñ¡Q¥Ñ±”±µ½¹Ñ¡MÕµµ…Éä±É½ÝÑ¡1•Ù•°±É½ÝÑ¡½É´±ÁÉ½Ñ•Ñ¥½¹Y…±Õ”±ÁÉ½Ñ•Ñ¥½¹5•ÑÉ¥Y…±Õ”ì(€€€ÁÉ¥Ù…Ñ”É¥‘1…å½ÕÐ…±•¹‘…Èì(€€€ÁÉ¥Ù…Ñ”MÑÉ•…­½µÁ…¹¥½¹Y¥•Ü½µÁ…¹¥½¸ì((€€€ÁÉ¥Ù…Ñ”MÝ¥Ñ ÁÉ½Ñ•Ñ¥½¹ÕÑ¼ì(€€€ÁÉ¥Ù…Ñ”‰½½±•…¸ÕÁ‘…Ñ¥¹AÉ½Ñ•Ñ¥½¸õ™…±Í”ì((€€€=Ù•ÉÉ¥‘”ÁÉ½Ñ•Ñ•Ù½¥½¹É•…Ñ”¡	Õ¹‘±”ˆ¥ì(€€€€€€€ÍÕÁ•È¹½¹É•…Ñ”¡ˆ¤ì(€€€€€€€U¤¹ÁÉ•Á…É•Ñ¥Ù¥Ñä¡Ñ¡¥Ì¤ì(€€€€€€€¥˜¡•Ñ%¹Ñ•¹Ð ¤„õ¹Õ±°˜˜‰Ñ¥µ”ˆ¹•ÅÕ…±Ì¡•Ñ%¹Ñ•¹Ð ¤¹•ÑMÑÉ¥¹áÑÉ„ ‰É•½É‘}µ½‘”ˆ¤¤¥ì(€€€€€€€€€€€U¤¹±…Õ¹¡9½¹¥µ…Ñ¥½¸¡Ñ¡¥Ì±¹•Ü%¹Ñ•¹Ð¡Ñ¡¥Ì±Q¥µ•1½Ñ¥Ù¥Ñä¹±…ÍÌ¤¹ÁÕÑáÑÉ„ ‰É•½É‘}µ½‘”ˆ°‰Ñ¥µ”ˆ¤¤ì(€€€€€€€€€€€U¤¹™¥¹¥Í¡9½¹¥µ…Ñ¥½¸¡Ñ¡¥Ì¤ì(€€€€€€€€€€€É•ÑÕÉ¸ì(€€€€€€€ô((€€€€€€€MÑÉ•…­É½ÝÑ ¹•¹ÍÕÉ”¡Ñ¡¥Ì¤ì(€€€€€€€MÑÉ•…­AÉ½Ñ•Ñ¥½¸¹•¹ÍÕÉ”¡Ñ¡¥Ì¤ì(€€€€€€€‰Õ¥±‘U¤ ¤ì(€€€€€€€É•™É•Í  ¤ì(€€€ô((€€€=Ù•ÉÉ¥‘”ÁÉ½Ñ•Ñ•Ù½¥½¹I•ÍÕµ” ¥íÍÕÁ•È¹½¹I•ÍÕµ” ¤í¥˜¡½µÁ…¹¥½¸„õ¹Õ±°¥½µÁ…¹¥½¸¹½¹I•ÍÕµ” ¤íÉ•™É•Í  ¤íô(€€€=Ù•ÉÉ¥‘”ÁÉ½Ñ•Ñ•Ù½¥½¹A…ÕÍ” ¥í¥˜¡½µÁ…¹¥½¸„õ¹Õ±°¥½µÁ…¹¥½¸¹½¹A…ÕÍ” ¤íÍÕÁ•È¹½¹A…ÕÍ” ¤íô((€€€ÁÉ¥Ù…Ñ”Ù½¥‰Õ¥±‘U¤ ¥ì(€€€€€€€1¥¹•…É1…å½ÕÐÉ½½Ðõ¹•Ü1¥¹•…É1…å½ÕÐ¡Ñ¡¥Ì¤ì(€€€€€€€É½½Ð¹Í•Ñ=É¥•¹Ñ…Ñ¥½¸¡1¥¹•…É1…å½ÕÐ¹YIQ%0¤ì(€€€€€€€É½½Ð¹Í•Ñ	…­É½Õ¹¡U¤¹ÍÉ••¹É…‘¥•¹Ð¡Ñ¡¥Ì¤¤ì((€€€€€€€1¥¹•…É1…å½ÕÐÑ½Àõ¹•Ü1¥¹•…É1…å½ÕÐ¡Ñ¡¥Ì¤ì(€€€€€€€Ñ½À¹Í•Ñ=É¥•¹Ñ…Ñ¥½¸¡1¥¹•…É1…å½ÕÐ¹YIQ%0¤ì(€€€€€€€Ñ½À¹Í•ÑA…‘‘¥¹œ¡U¤¹‘À¡Ñ¡¥Ì°ÈÈ¤±U¤¹‘À¡Ñ¡¥Ì°ÄÔ¤±U¤¹‘À¡Ñ¡¥Ì°ÈÈ¤±U¤¹‘À¡Ñ¡¥Ì°ÄÀ¤¤ì(€€€€€€€Ñ½À¹…‘‘Y¥•Ü¡U¤¹½Ù•É±¥¹”¡Ñ¡¥Ì°‹¢¢c¦2Èˆ¤¤ì(€€€€€€€Q•áÑY¥•ÜÑ¥Ñ±”õU¤¹Ñ¥Ñ±”¡Ñ¡¥Ì°‹¢Öß–ê+Ž£šf¦ZOŽ»¢¢c¦2Èˆ°ÈÜ¤ì(€€€€€€€Ñ¥Ñ±”¹Í•ÑA…‘‘¥¹œ À±U¤¹‘À¡Ñ¡¥Ì°Ì¤°À°À¤ì(€€€€€€€Ñ½À¹…‘‘Y¥•Ü¡Ñ¥Ñ±”¤ì(€€€€€€€É½½Ð¹…‘‘Y¥•Ü¡Ñ½À¤ì((€€€€€€€…‘‘I•½É‘M•µ•¹Ð¡É½½Ð±ÑÉÕ”¤ì((€€€€€€€MÉ½±±Y¥•ÜÍÉ½±°õ¹•ÜMÉ½±±Y¥•Ü¡Ñ¡¥Ì¤ì(€€€€€€€ÍÉ½±°¹Í•Ñ¥±±Y¥•ÝÁ½ÉÐ¡ÑÉÕ”¤ì(€€€€€€€ÍÉ½±°¹Í•ÑY•ÉÑ¥…±MÉ½±±	…É¹…‰±•¡™…±Í”¤ì(€€€€€€€‰½‘äõ¹•Ü1¥¹•…É1…å½ÕÐ¡Ñ¡¥Ì¤ì(€€€€€€€‰½‘ä¹Í•Ñ=É¥•¹Ñ…Ñ¥½¸¡1¥¹•…É1…å½ÕÐ¹YIQ%0¤ì(€€€€€€€‰½‘ä¹Í•ÑA…‘‘¥¹œ¡U¤¹‘À¡Ñ¡¥Ì°Äà¤±U¤¹‘À¡Ñ¡¥Ì°ÄÈ¤±U¤¹‘À¡Ñ¡¥Ì°Äà¤±U¤¹‘À¡Ñ¡¥Ì°Èà¤¤ì(€€€€€€€ÍÉ½±°¹…‘‘Y¥•Ü¡‰½‘ä¤ì(€€€€€€€É½½Ð¹…‘‘Y¥•Ü¡ÍÉ½±°±¹•Ü1¥¹•…É1…å½ÕÐ¹1…å½ÕÑA…É…µÌ ´Ä°À°Ä¤¤ì(€€€€€€€É½½Ð¹…‘‘Y¥•Ü¡‰½ÑÑ½µ9…Ø ¤¤ì(€€€€€€€Í•Ñ½¹Ñ•¹ÑY¥•Ü¡É½½Ð¤ì(€€€€€€€U¤¹…ÁÁ±åMåÍÑ•µ	…É%¹Í•ÑÌ¡Ñ¡¥Ì±É½½Ð¤ì((€€€€€€€…‘‘MÑÉ•…­…É ¤ì(€€€€€€€…‘‘5•ÑÉ¥Ì ¤ì(€€€€€€€…‘‘AÉ½Ñ•Ñ¥½¹…É ¤ì(€€€€€€€…‘‘…±•¹‘…È ¤ì(€€€ô((€€€ÁÉ¥Ù…Ñ”Ù½¥…‘‘I•½É‘M•µ•¹Ð¡1¥¹•…É1…å½ÕÐÁ…É•¹Ð±‰½½±•…¸ÍÑÉ•…­M•±•Ñ•¥ì(€€€€€€€1¥¹•…É1…å½ÕÐÍ¡•±°õ¹•Ü1¥¹•…É1…å½ÕÐ¡Ñ¡¥Ì¤ì(€€€€€€€Í¡•±°¹Í•Ñ=É¥•¹Ñ…Ñ¥½¸¡1¥¹•…É1…å½ÕÐ¹!=I%i=9Q0¤ì(€€€€€€€Í¡•±°¹Í•ÑA…‘‘¥¹œ¡U¤¹‘À¡Ñ¡¥Ì°Ð¤±U¤¹‘À¡Ñ¡¥Ì°Ð¤±U¤¹‘À¡Ñ¡¥Ì°Ð¤±U¤¹‘À¡Ñ¡¥Ì°Ð¤¤ì(€€€€€€€Í¡•±°¹Í•Ñ	…­É½Õ¹¡U¤¹É½Õ¹‘MÑÉ½­”¡U¤¹	|È±U¤¹	=IH°Äà±Ñ¡¥Ì¤¤ì(€€€€€€€Í¡•±°¹Í•Ñ±•Ù…Ñ¥½¸ Á˜¤ì(€€€€€€€	ÕÑÑ½¸ÍÑÉ•…¬õÍ•µ•¹Ñ	ÕÑÑ½¸ ‹¢Öß–ê(ˆ±ÍÑÉ•…­M•±•Ñ•¤ì(€€€€€€€	ÕÑÑ½¸Ñ¥µ”õÍ•µ•¹Ñ	ÕÑÑ½¸ ‹šf¦ZLˆ°…ÍÑÉ•…­M•±•Ñ•¤ì(€€€€€€€Í¡•±°¹…‘‘Y¥•Ü¡ÍÑÉ•…¬±¹•Ü1¥¹•…É1…å½ÕÐ¹1…å½ÕÑA…É…µÌ À±U¤¹‘À¡Ñ¡¥Ì°ÐØ¤°Ä¤¤ì(€€€€€€€Í¡•±°¹…‘‘Y¥•Ü¡Ñ¥µ”±¹•Ü1¥¹•…É1…å½ÕÐ¹1…å½ÕÑA…É…µÌ À±U¤¹‘À¡Ñ¡¥Ì°ÐØ¤°Ä¤¤ì(€€€€€€€ÍÑÉ•…¬¹Í•Ñ=¹±¥­1¥ÍÑ•¹•È¡Ø´ùí¥˜ …ÍÑÉ•…­M•±•Ñ•¥½Á•¹I•½É‘Ì ‰ÍÑÉ•…¬ˆ¤íô¤ì(€€€€€€€Ñ¥µ”¹Í•Ñ=¹±¥­1¥ÍÑ•¹•È¡Ø´ùí¥˜¡ÍÑÉ•…­M•±•Ñ•¥½Á•¹I•½É‘Ì ‰Ñ¥µ”ˆ¤íô¤ì(€€€€€€€1¥¹•…É1…å½ÕÐ¹1…å½ÕÑA…É…µÌ±Àõ¹•Ü1¥¹•…É1…å½ÕÐ¹1…å½ÕÑA…É…µÌ ´Ä°´È¤ì(€€€€€€€±À¹Í•Ñ5…É¥¹Ì¡U¤¹‘À¡Ñ¡¥Ì°Äà¤°À±U¤¹‘À¡Ñ¡¥Ì°Äà¤°À¤ì(€€€€€€€Á…É•¹Ð¹…‘‘Y¥•Ü¡Í¡•±°±±À¤ì(€€€ô((€€€ÁÉ¥Ù…Ñ”	ÕÑÑ½¸Í•µ•¹Ñ	ÕÑÑ½¸¡MÑÉ¥¹œ±…‰•°±‰½½±•…¸Í•±•Ñ•¥ì(€€€€€€€	ÕÑÑ½¸ˆõ¹•Ü	ÕÑÑ½¸¡Ñ¡¥Ì¤ì(€€€€€€€ˆ¹Í•ÑQ•áÐ¡$Äá¸¹ÑÈ¡Ñ¡¥Ì±±…‰•°¤¤ì(€€€€€€€ˆ¹Í•Ñ±±…ÁÌ¡™…±Í”¤ì(€€€€€€€ˆ¹Í•ÑQ•áÑM¥é” ÄÐ¤ì(€€€€€€€ˆ¹Í•Ñ%¹±Õ‘•½¹ÑA…‘‘¥¹œ¡™…±Í”¤ì(€€€€€€€ˆ¹Í•ÑQåÁ•™…”¡U¤¹‘•Í¥¹QåÁ•™…”¡Í•±•Ñ•ýQåÁ•™…”¹	=1éQåÁ•™…”¹9=I50¤¤ì(€€€€€€€ˆ¹Í•ÑQ•áÑ½±½È¡Í•±•Ñ•ýU¤¹9Q|ÈéU¤¹5UQ¤ì(€€€€€€€ˆ¹Í•ÑÉ…Ù¥Ñä¡É…Ù¥Ñä¹9QH¤ì(€€€€€€€ˆ¹Í•Ñ5¥¹!•¥¡Ð¡U¤¹‘À¡Ñ¡¥Ì°ÐØ¤¤ì(€€€€€€€ˆ¹Í•ÑA…‘‘¥¹œ¡U¤¹‘À¡Ñ¡¥Ì°à¤°À±U¤¹‘À¡Ñ¡¥Ì°à¤°À¤ì(€€€€€€€ˆ¹Í•Ñ	…­É½Õ¹¡Í•±•Ñ•ýU¤¹É½Õ¹‘MÑÉ½­”¡U¤¹MUI±U¤¹Ý¥Ñ¡±Á¡„¡U¤¹9Q|È°ÁàÔÔ¤°ÄÔ±Ñ¡¥Ì¤éU¤¹É½Õ¹ ÁàÀÁ™™™™™˜°ÄÔ±Ñ¡¥Ì¤¤ì(€€€€€€€¥˜¡…¹‘É½¥¹½Ì¹	Õ¥±¹YIM%=8¹M-}%9PøôÈÄ¥ˆ¹Í•Ñ±•Ù…Ñ¥½¸¡Í•±•Ñ•ýU¤¹‘À¡Ñ¡¥Ì°Ä¤èÀ¤ì(€€€€€€€É•ÑÕÉ¸ˆì(€€€ô((€€€ÁÉ¥Ù…Ñ”Ù½¥½Á•¹I•½É‘Ì¡MÑÉ¥¹œµ½‘”¥ì(€€€€€€€%¹Ñ•¹Ð¹•áÐì(€€€€€€€¥˜ ‰Ñ¥µ”ˆ¹•ÅÕ…±Ì¡µ½‘”¤¥¹•áÐõ¹•Ü%¹Ñ•¹Ð¡Ñ¡¥Ì±Q¥µ•1½Ñ¥Ù¥Ñä¹±…ÍÌ¤¹ÁÕÑáÑÉ„ ‰É•½É‘}µ½‘”ˆ°‰Ñ¥µ”ˆ¤ì(€€€€€€€•±Í”¹•áÐõ¹•Ü%¹Ñ•¹Ð¡Ñ¡¥Ì±MÑ…ÑÍÑ¥Ù¥Ñä¹±…ÍÌ¤¹ÁÕÑáÑÉ„ ‰É•½É‘}µ½‘”ˆ°‰ÍÑÉ•…¬ˆ¤ì(€€€€€€€U¤¹±…Õ¹¡9½¹¥µ…Ñ¥½¸¡Ñ¡¥Ì±¹•áÐ¤ì(€€€€€€€U¤¹™¥¹¥Í¡9½¹¥µ…Ñ¥½¸¡Ñ¡¥Ì¤ì(€€€ô((€€€ÁÉ¥Ù…Ñ”Ù½¥…‘‘MÑÉ•…­…É ¥ì(€€€€€€€1¥¹•…É1…å½ÕÐ…ÉõU¤¹…É¡Ñ¡¥Ì¤ì(€€€€€€€…É¹Í•Ñ=É¥•¹Ñ…Ñ¥½¸¡1¥¹•…É1…å½ÕÐ¹YIQ%0¤ì(€€€€€€€…É¹Í•ÑA…‘‘¥¹œ¡U¤¹‘À¡Ñ¡¥Ì°ÈÀ¤±U¤¹‘À¡Ñ¡¥Ì°ÄÜ¤±U¤¹‘À¡Ñ¡¥Ì°ÈÀ¤±U¤¹‘À¡Ñ¡¥Ì°ÄÜ¤¤ì(€€€€€€€…É¹Í•Ñ	…­É½Õ¹¡U¤¹É…‘¥•¹ÑI½Õ¹¡Ñ¡¥Ì°ÈÈ±U¤¹!I=}MQIP±U¤¹!I=}9¤¤ì((€€€€€€€Q•áÑY¥•Ü•å•‰É½ÜõU¤¹½Ù•É±¥¹”¡Ñ¡¥Ì°‹ž>û–r£Ž»Ž
-çŽ#Ž«ŽóŽ
-¼ˆ¤ì(€€€€€€€•å•‰É½Ü¹Í•ÑQ•áÑ½±½È¡U¤¹!I=}QaP¤ì(€€€€€€€…É¹…‘‘Y¥•Ü¡•å•‰É½Ü¤ì(€€€€€€€1¥¹•…É1…å½ÕÐ¡¥¡±¥¡Ðõ¹•Ü1¥¹•…É1…å½ÕÐ¡Ñ¡¥Ì¤ì(€€€€€€€¡¥¡±¥¡Ð¹Í•ÑÉ…Ù¥Ñä¡É…Ù¥Ñä¹9QI}YIQ%0¤ì(€€€€€€€¡¥¡±¥¡Ð¹Í•ÑA…‘‘¥¹œ À±U¤¹‘À¡Ñ¡¥Ì°Ø¤°À±U¤¹‘À¡Ñ¡¥Ì°Ð¤¤ì(€€€€€€€½µÁ…¹¥½¸õ¹•ÜMÑÉ•…­½µÁ…¹¥½¹Y¥•Ü¡Ñ¡¥Ì¤ì(€€€€€€€½µÁ…¹¥½¸¹Í•Ñ	…­É½Õ¹¡U¤¹É½Õ¹¡U¤¹MUI|È°Äà±Ñ¡¥Ì¤¤ì(€€€€€€€1¥¹•…É1…å½ÕÐ¹1…å½ÕÑA…É…µÌ½µÁ…¹¥½¹1Àõ¹•Ü1¥¹•…É1…å½ÕÐ¹1…å½ÕÑA…É…µÌ¡U¤¹‘À¡Ñ¡¥Ì°àØ¤±U¤¹‘À¡Ñ¡¥Ì°äÐ¤¤ì(€€€€€€€½µÁ…¹¥½¹1À¹Í•Ñ5…É¥¹Ì À°À±U¤¹‘À¡Ñ¡¥Ì°ÄÈ¤°À¤ì(€€€€€€€¡¥¡±¥¡Ð¹…‘‘Y¥•Ü¡½µÁ…¹¥½¸±½µÁ…¹¥½¹1À¤ì(€€€€€€€1¥¹•…É1…å½ÕÐÍÑÉ•…­½Áäõ¹•Ü1¥¹•…É1…å½ÕÐ¡Ñ¡¥Ì¤ì(€€€€€€€ÍÑÉ•…­½Áä¹Í•Ñ=É¥•¹Ñ…Ñ¥½¸¡1¥¹•…É1…å½ÕÐ¹YIQ%0¤ì(€€€€€€€ÍÑÉ•…­½Áä¹Í•ÑÉ…Ù¥Ñä¡É…Ù¥Ñä¹9QI}YIQ%0¤ì(€€€€€€€1¥¹•…É1…å½ÕÐÍÑÉ•…­I½Üõ¹•Ü1¥¹•…É1…å½ÕÐ¡Ñ¡¥Ì¤ì(€€€€€€€ÍÑÉ•…­I½Ü¹Í•ÑÉ…Ù¥Ñä¡É…Ù¥Ñä¹	=QQ=4¤ì(€€€€€€€ÕÉÉ•¹ÑY…±Õ”õU¤¹Ñ¥Ñ±”¡Ñ¡¥Ì°ˆÀˆ°Ðà¤ì(€€€€€€€ÕÉÉ•¹ÑY…±Õ”¹Í•ÑQåÁ•™…”¡QåÁ•™…”¹É•…Ñ” ‰Í…¹ÌµÍ•É¥˜µµ•‘¥Õ´ˆ±QåÁ•™…”¹9=I50¤¤ì(€€€€€€€ÕÉÉ•¹ÑY…±Õ”¹Í•ÑQ•áÑ½±½È¡U¤¹!I=}QaP¤ì(€€€€€€€ÕÉÉ•¹ÑY…±Õ”¹Í•ÑM¥¹±•1¥¹”¡ÑÉÕ”¤ì(€€€€€€€ÕÉÉ•¹ÑY…±Õ”¹Í•ÑA…‘‘¥¹œ À±U¤¹‘À¡Ñ¡¥Ì°È¤°À±U¤¹‘À¡Ñ¡¥Ì°Ð¤¤ì(€€€€€€€ÍÑÉ•…­I½Ü¹…‘‘Y¥•Ü¡ÕÉÉ•¹ÑY…±Õ”¤ì(€€€€€€€ÍÑÉ•…­U¹¥ÐõU¤¹Ñ•áÐ¡Ñ¡¥Ì±ÍÑÉ•…­U¹¥Ñ1…‰•° À¤°ÄØ±U¤¹!I=}QaP¤ì(€€€€€€€ÍÑÉ•…­U¹¥Ð¹Í•ÑA…‘‘¥¹œ¡U¤¹‘À¡Ñ¡¥Ì°Ì¤°À°À±U¤¹‘À¡Ñ¡¥Ì°ä¤¤ì(€€€€€€€ÍÑÉ•…­I½Ü¹…‘‘Y¥•Ü¡ÍÑÉ•…­U¹¥Ð¤ì(€€€€€€€ÍÑÉ•…­½Áä¹…‘‘Y¥•Ü¡ÍÑÉ•…­I½Ü¤ì(€€€€€€€É½ÝÑ¡1•Ù•°õU¤¹Ñ•áÐ¡Ñ¡¥Ì°‰1Ø¸Äˆ°ÄÌ±U¤¹!I=}QaP¤ì(€€€€€€€É½ÝÑ¡1•Ù•°¹Í•ÑQåÁ•™…”¡¹Õ±°±QåÁ•™…”¹	=1¤ì(€€€€€€€É½ÝÑ¡1•Ù•°¹Í•ÑA…‘‘¥¹œ À±U¤¹‘À¡Ñ¡¥Ì°Ä¤°À°À¤ì(€€€€€€€ÍÑÉ•…­½Áä¹…‘‘Y¥•Ü¡É½ÝÑ¡1•Ù•°¤ì(€€€€€€€É½ÝÑ¡½É´õU¤¹Ñ•áÐ¡Ñ¡¥Ì°‹ž¯ž¢¸ˆ°ÄÈ±U¤¹!I=}QaP¤ì(€€€€€€€É½ÝÑ¡½É´¹Í•Ñ±Á¡„ ¸àÙ˜¤ì(€€€€€€€É½ÝÑ¡½É´¹Í•ÑA…‘‘¥¹œ À±U¤¹‘À¡Ñ¡¥Ì°È¤°À°À¤ì(€€€€€€€ÍÑÉ•…­½Áä¹…‘‘Y¥•Ü¡É½ÝÑ¡½É´¤ì(€€€€€€€¡¥¡±¥¡Ð¹…‘‘Y¥•Ü¡ÍÑÉ•…­½Áä±¹•Ü1¥¹•…É1…å½ÕÐ¹1…å½ÕÑA…É…µÌ À°´È°Ä¤¤ì(€€€€€€€…É¹…‘‘Y¥•Ü¡¡¥¡±¥¡Ð¤ì(€€€€€€€1¥¹•…É1…å½ÕÐÝ••­!•…‘¥¹œõ¹•Ü1¥¹•…É1…å½ÕÐ¡Ñ¡¥Ì¤ì(€€€€€€€Ý••­!•…‘¥¹œ¹Í•ÑÉ…Ù¥Ñä¡É…Ù¥Ñä¹9QI}YIQ%0¤ì(€€€€€€€Ý••­!•…‘¥¹œ¹Í•ÑA…‘‘¥¹œ À±U¤¹‘À¡Ñ¡¥Ì°à¤°À±U¤¹‘À¡Ñ¡¥Ì°Ü¤¤ì(€€€€€€€Q•áÑY¥•ÜÝ••­1…‰•°õU¤¹Ñ•áÐ¡Ñ¡¥Ì°‹žnÓ¢þDßš^”ˆ°ÄÈ±U¤¹!I=}QaP¤ì(€€€€€€€Ý••­1…‰•°¹Í•ÑQåÁ•™…”¡¹Õ±°±QåÁ•™…”¹	=1¤ì(€€€€€€€Ý••­!•…‘¥¹œ¹…‘‘Y¥•Ü¡Ý••­1…‰•°±¹•Ü1¥¹•…É1…å½ÕÐ¹1…å½ÕÑA…É…µÌ À°´È°Ä¤¤ì(€€€€€€€Q•áÑY¥•ÜÝ••­1••¹õU¤¹Ñ•áÐ¡Ñ¡¥Ì°‹Š^<€ˆ­$Äá¸¹ÑÈ¡Ñ¡¥Ì°‹š"C–*|ˆ¤¬ˆ€€ƒŠ^,€ˆ­$Äá¸¹ÑÈ¡Ñ¡¥Ì°‹’þw¢¶Üˆ¤°ä±U¤¹Ý¥Ñ¡±Á¡„¡U¤¹!I=}QaP°Áá¤¤ì(€€€€€€€Ý••­1••¹¹Í•ÑÉ…Ù¥Ñä¡É…Ù¥Ñä¹9QI}YIQ%0¤ì(€€€€€€€Ý••­!•…‘¥¹œ¹…‘‘Y¥•Ü¡Ý••­1••¹¤ì(€€€€€€€…É¹…‘‘Y¥•Ü¡Ý••­!•…‘¥¹œ¤ì(€€€€€€€É••¹Ñ]••¬õ¹•Ü1¥¹•…É1…å½ÕÐ¡Ñ¡¥Ì¤ì(€€€€€€€É••¹Ñ]••¬¹Í•Ñ=É¥•¹Ñ…Ñ¥½¸¡1¥¹•…É1…å½ÕÐ¹!=I%i=9Q0¤ì(€€€€€€€…É¹…‘‘Y¥•Ü¡É••¹Ñ]••¬±¹•Ü1¥¹•…É1…å½ÕÐ¹1…å½ÕÑA…É…µÌ ´Ä±U¤¹‘À¡Ñ¡¥Ì°ÔÜ¤¤¤ì(€€€€€€€1¥¹•…É1…å½ÕÐ¹1…å½ÕÑA…É…µÌ±Àõ¹•Ü1¥¹•…É1…å½ÕÐ¹1…å½ÕÑA…É…µÌ ´Ä°´È¤ì(€€€€€€€±À¹Í•Ñ5…É¥¹Ì À°À°À±U¤¹‘À¡Ñ¡¥Ì°ÄÐ¤¤ì(€€€€€€€‰½‘ä¹…‘‘Y¥•Ü¡…É±±À¤ì(€€€ô((€€€ÁÉ¥Ù…Ñ”Ù½¥…‘‘5•ÑÉ¥Ì ¥ì(€€€€€€€1¥¹•…É1…å½ÕÐÉ½Üõ¹•Ü1¥¹•…É1…å½ÕÐ¡Ñ¡¥Ì¤ì(€€€€€€€É½Ü¹Í•Ñ=É¥•¹Ñ…Ñ¥½¸¡1¥¹•…É1…å½ÕÐ¹!=I%i=9Q0¤ì(€€€€€€€É½Ü¹Í•ÑÉ…Ù¥Ñä¡É…Ù¥Ñä¹9QI}YIQ%0¤ì(€€€€€€€‰•ÍÑY…±Õ”õ…‘‘5•ÑÉ¥Œ¡É½Ü°‹šr¦®`ˆ°ˆÃš^”ˆ¤ì(€€€€€€€Ñ½Ñ…±Y…±Õ”õ…‘‘5•ÑÉ¥Œ¡É½Ü°‹š"C–*|ˆ°ˆÃ–nxˆ¤ì(€€€€€€€ÁÉ½Ñ•Ñ¥½¹5•ÑÉ¥Y…±Õ”õ…‘‘5•ÑÉ¥Œ¡É½Ü°‹’þw¢¶Üˆ°ˆÀ€¼€Ìˆ¤ì(€€€€€€€‰½‘ä¹…‘‘Y¥•Ü¡É½Ü¤ì(€€€ô((€€€ÁÉ¥Ù…Ñ”Q•áÑY¥•Ü…‘‘5•ÑÉ¥Œ¡1¥¹•…É1…å½ÕÐÉ½Ü±MÑÉ¥¹œ±…‰•°±MÑÉ¥¹œÙ…±Õ”¥ì(€€€€€€€1¥¹•…É1…å½ÕÐ•±°õU¤¹…É¡Ñ¡¥Ì¤ì(€€€€€€€•±°¹Í•Ñ=É¥•¹Ñ…Ñ¥½¸¡1¥¹•…É1…çmöêÚ$z{-®éÜj×".equals(destination))next=new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);
+package jp.wakeguard.alarm;
+
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.os.Bundle;
+import android.view.Gravity;
+import android.view.View;
+import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.GridLayout;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.Switch;
+import android.widget.TextView;
+
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.util.Set;
+
+public class StatsActivity extends Activity {
+    private YearMonth month=YearMonth.now();
+    private LinearLayout body;
+    private LinearLayout recentWeek;
+    private TextView currentValue,streakUnit,bestValue,totalValue,monthTitle,monthSummary,growthLevel,growthForm,protectionValue,protectionMetricValue;
+    private GridLayout calendar;
+    private StreakCompanionView companion;
+
+    private Switch protectionAuto;
+    private boolean updatingProtection=false;
+
+    @Override protected void onCreate(Bundle b){
+        super.onCreate(b);
+        Ui.prepareActivity(this);
+        if(getIntent()!=null&&"time".equals(getIntent().getStringExtra("record_mode"))){
+            Ui.launchNoAnimation(this,new Intent(this,TimeLogActivity.class).putExtra("record_mode","time"));
+            Ui.finishNoAnimation(this);
+            return;
+        }
+
+        StreakGrowth.ensure(this);
+        StreakProtection.ensure(this);
+        buildUi();
+        refresh();
+    }
+
+    @Override protected void onResume(){super.onResume();if(companion!=null)companion.onResume();refresh();}
+    @Override protected void onPause(){if(companion!=null)companion.onPause();super.onPause();}
+
+    private void buildUi(){
+        LinearLayout root=new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setBackground(Ui.screenGradient(this));
+
+        LinearLayout top=new LinearLayout(this);
+        top.setOrientation(LinearLayout.VERTICAL);
+        top.setPadding(Ui.dp(this,22),Ui.dp(this,15),Ui.dp(this,22),Ui.dp(this,10));
+        top.addView(Ui.overline(this,"è¨˜éŒ²"));
+        TextView title=Ui.title(this,"èµ·åºŠã¨æ™‚é–“ã®è¨˜éŒ²",27);
+        title.setPadding(0,Ui.dp(this,3),0,0);
+        top.addView(title);
+        root.addView(top);
+
+        addRecordSegment(root,true);
+
+        ScrollView scroll=new ScrollView(this);
+        scroll.setFillViewport(true);
+        scroll.setVerticalScrollBarEnabled(false);
+        body=new LinearLayout(this);
+        body.setOrientation(LinearLayout.VERTICAL);
+        body.setPadding(Ui.dp(this,18),Ui.dp(this,12),Ui.dp(this,18),Ui.dp(this,28));
+        scroll.addView(body);
+        root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
+        root.addView(bottomNav());
+        setContentView(root);
+        Ui.applySystemBarInsets(this,root);
+
+        addStreakCard();
+        addMetrics();
+        addProtectionCard();
+        addCalendar();
+    }
+
+    private void addRecordSegment(LinearLayout parent,boolean streakSelected){
+        LinearLayout shell=new LinearLayout(this);
+        shell.setOrientation(LinearLayout.HORIZONTAL);
+        shell.setPadding(Ui.dp(this,4),Ui.dp(this,4),Ui.dp(this,4),Ui.dp(this,4));
+        shell.setBackground(Ui.roundStroke(Ui.BG_2,Ui.BORDER,18,this));
+        shell.setElevation(0f);
+        Button streak=segmentButton("èµ·åºŠ",streakSelected);
+        Button time=segmentButton("æ™‚é–“",!streakSelected);
+        shell.addView(streak,new LinearLayout.LayoutParams(0,Ui.dp(this,46),1));
+        shell.addView(time,new LinearLayout.LayoutParams(0,Ui.dp(this,46),1));
+        streak.setOnClickListener(v->{if(!streakSelected)openRecords("streak");});
+        time.setOnClickListener(v->{if(streakSelected)openRecords("time");});
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);
+        lp.setMargins(Ui.dp(this,18),0,Ui.dp(this,18),0);
+        parent.addView(shell,lp);
+    }
+
+    private Button segmentButton(String label,boolean selected){
+        Button b=new Button(this);
+        b.setText(I18n.tr(this,label));
+        b.setAllCaps(false);
+        b.setTextSize(14);
+        b.setIncludeFontPadding(false);
+        b.setTypeface(Ui.designTypeface(selected?Typeface.BOLD:Typeface.NORMAL));
+        b.setTextColor(selected?Ui.ACCENT_2:Ui.MUTED);
+        b.setGravity(Gravity.CENTER);
+        b.setMinHeight(Ui.dp(this,46));
+        b.setPadding(Ui.dp(this,8),0,Ui.dp(this,8),0);
+        b.setBackground(selected?Ui.roundStroke(Ui.SURFACE,Ui.withAlpha(Ui.ACCENT_2,0x55),15,this):Ui.round(0x00ffffff,15,this));
+        if(android.os.Build.VERSION.SDK_INT>=21)b.setElevation(selected?Ui.dp(this,1):0);
+        return b;
+    }
+
+    private void openRecords(String mode){
+        Intent next;
+        if("time".equals(mode))next=new Intent(this,TimeLogActivity.class).putExtra("record_mode","time");
+        else next=new Intent(this,StatsActivity.class).putExtra("record_mode","streak");
+        Ui.launchNoAnimation(this,next);
+        Ui.finishNoAnimation(this);
+    }
+
+    private void addStreakCard(){
+        LinearLayout card=Ui.card(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(Ui.dp(this,20),Ui.dp(this,17),Ui.dp(this,20),Ui.dp(this,17));
+        card.setBackground(Ui.gradientRound(this,22,Ui.HERO_START,Ui.HERO_END));
+
+        TextView eyebrow=Ui.overline(this,"ç¾åœ¨ã®ã‚¹ãƒˆãƒªãƒ¼ã‚¯");
+        eyebrow.setTextColor(Ui.HERO_TEXT);
+        card.addView(eyebrow);
+        LinearLayout highlight=new LinearLayout(this);
+        highlight.setGravity(Gravity.CENTER_VERTICAL);
+        highlight.setPadding(0,Ui.dp(this,6),0,Ui.dp(this,4));
+        companion=new StreakCompanionView(this);
+        companion.setBackground(Ui.round(Ui.SURFACE_2,18,this));
+        LinearLayout.LayoutParams companionLp=new LinearLayout.LayoutParams(Ui.dp(this,86),Ui.dp(this,94));
+        companionLp.setMargins(0,0,Ui.dp(this,12),0);
+        highlight.addView(companion,companionLp);
+        LinearLayout streakCopy=new LinearLayout(this);
+        streakCopy.setOrientation(LinearLayout.VERTICAL);
+        streakCopy.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout streakRow=new LinearLayout(this);
+        streakRow.setGravity(Gravity.BOTTOM);
+        currentValue=Ui.title(this,"0",48);
+        currentValue.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));
+        currentValue.setTextColor(Ui.HERO_TEXT);
+        currentValue.setSingleLine(true);
+        currentValue.setPadding(0,Ui.dp(this,2),0,Ui.dp(this,4));
+        streakRow.addView(currentValue);
+        streakUnit=Ui.text(this,streakUnitLabel(0),16,Ui.HERO_TEXT);
+        streakUnit.setPadding(Ui.dp(this,3),0,0,Ui.dp(this,9));
+        streakRow.addView(streakUnit);
+        streakCopy.addView(streakRow);
+        growthLevel=Ui.text(this,"Lv.1",13,Ui.HERO_TEXT);
+        growthLevel.setTypeface(null,Typeface.BOLD);
+        growthLevel.setPadding(0,Ui.dp(this,1),0,0);
+        streakCopy.addView(growthLevel);
+        growthForm=Ui.text(this,"ç«ç¨®",12,Ui.HERO_TEXT);
+        growthForm.setAlpha(.86f);
+        growthForm.setPadding(0,Ui.dp(this,2),0,0);
+        streakCopy.addView(growthForm);
+        highlight.addView(streakCopy,new LinearLayout.LayoutParams(0,-2,1));
+        card.addView(highlight);
+        LinearLayout weekHeading=new LinearLayout(this);
+        weekHeading.setGravity(Gravity.CENTER_VERTICAL);
+        weekHeading.setPadding(0,Ui.dp(this,8),0,Ui.dp(this,7));
+        TextView weekLabel=Ui.text(this,"ç›´è¿‘7æ—¥",12,Ui.HERO_TEXT);
+        weekLabel.setTypeface(null,Typeface.BOLD);
+        weekHeading.addView(weekLabel,new LinearLayout.LayoutParams(0,-2,1));
+        TextView weekLegend=Ui.text(this,"â— "+I18n.tr(this,"æˆåŠŸ")+"   â—‹ "+I18n.tr(this,"ä¿è­·"),9,Ui.withAlpha(Ui.HERO_TEXT,0xCC));
+        weekLegend.setGravity(Gravity.CENTER_VERTICAL);
+        weekHeading.addView(weekLegend);
+        card.addView(weekHeading);
+        recentWeek=new LinearLayout(this);
+        recentWeek.setOrientation(LinearLayout.HORIZONTAL);
+        card.addView(recentWeek,new LinearLayout.LayoutParams(-1,Ui.dp(this,57)));
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);
+        lp.setMargins(0,0,0,Ui.dp(this,14));
+        body.addView(card,lp);
+    }
+
+    private void addMetrics(){
+        LinearLayout row=new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        bestValue=addMetric(row,"æœ€é«˜","0æ—¥");
+        totalValue=addMetric(row,"æˆåŠŸ","0å›ž");
+        protectionMetricValue=addMetric(row,"ä¿è­·","0 / 3");
+        body.addView(row);
+    }
+
+    private TextView addMetric(LinearLayout row,String label,String value){
+        LinearLayout cell=Ui.card(this);
+        cell.setOrientation(LinearLayout.VERTICAL);
+        cell.setPadding(Ui.dp(this,11),Ui.dp(this,12),Ui.dp(this,8),Ui.dp(this,12));
+        TextView name=Ui.text(this,label,12,Ui.MUTED);
+        cell.addView(name);
+        TextView number=Ui.title(this,value,18);
+        number.setPadding(0,Ui.dp(this,4),0,0);
+        number.setSingleLine(true);
+        cell.addView(number);
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,-2,1);
+        lp.setMargins(Ui.dp(this,3),0,Ui.dp(this,3),0);
+        row.addView(cell,lp);
+        return number;
+    }
+
+    private void addProtectionCard(){
+        TextView header=Ui.sectionHeader(this,"ã‚¹ãƒˆãƒªãƒ¼ã‚¯ä¿è­·");
+        header.setPadding(Ui.dp(this,2),Ui.dp(this,23),0,Ui.dp(this,8));
+        body.addView(header);
+
+        LinearLayout card=Ui.card(this);
+        LinearLayout balance=Ui.row(this);
+        balance.setPadding(0,0,0,Ui.dp(this,8));
+        TextView label=Ui.title(this,"ä¿è­·æ—¥",16);
+        balance.addView(label,new LinearLayout.LayoutParams(0,-2,1));
+        protectionValue=Ui.title(this,"0 / 3",19);
+        protectionValue.setTextColor(Ui.ACCENT);
+        balance.addView(protectionValue);
+        card.addView(balance);
+
+        protectionAuto=new Switch(this);
+        protectionAuto.setText(I18n.tr(this,"è‡ªå‹•ã§ä¿è­·æ—¥ã‚’ä½¿ã†"));
+        protectionAuto.setTextColor(Ui.TEXT);
+        protectionAuto.setTextSize(15);
+        protectionAuto.setMinHeight(Ui.dp(this,48));
+        protectionAuto.setPadding(0,Ui.dp(this,4),0,Ui.dp(this,4));
+        protectionAuto.setOnCheckedChangeListener((button,checked)->{
+            if(updatingProtection)return;
+            StreakProtection.setAutoEnabled(this,checked);
+            refreshProtection();
+        });
+        card.addView(protectionAuto,new LinearLayout.LayoutParams(-1,-2));
+        TextView rule=Ui.text(this,I18n.tr(this,"æ¯Žæœˆ1æ—¥ã«2æ—¥åˆ†å›žå¾©ã—ã€æœ€å¤§3æ—¥ã¾ã§æŒã¦ã¾ã™ã€‚èµ·ãã‚‰ã‚Œãªã‹ã£ãŸå¯¾è±¡æ—¥ã«1æ—¥ã ã‘è‡ªå‹•ä½¿ç”¨ã—ã¦ã‚¹ãƒˆãƒªãƒ¼ã‚¯ã‚’å®ˆã‚Šã¾ã™ã€‚ä¿è­·æ—¥ã¯ã‚¹ãƒˆãƒªãƒ¼ã‚¯ã‚’ç¶­æŒã—ã¾ã™ãŒã€æˆåŠŸå›žæ•°ã«ã¯åŠ ç®—ã•ã‚Œã¾ã›ã‚“ã€‚"),13,Ui.MUTED);
+        rule.setPadding(0,Ui.dp(this,6),0,0);
+        card.addView(rule);
+        TextView bonus=Ui.text(this,"30æ—¥é€£ç¶šã§å®Ÿéš›ã«èµ·åºŠæˆåŠŸã™ã‚‹ã”ã¨ã«ã€ä¿è­·æ—¥ã‚’1æ—¥è¿½åŠ ã—ã¾ã™ï¼ˆæœ€å¤§3æ—¥ï¼‰ã€‚",13,Ui.MUTED);
+        bonus.setPadding(0,Ui.dp(this,7),0,0);
+        card.addView(bonus);
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);
+        body.addView(card,lp);
+    }
+
+    private void addCalendar(){
+        TextView header=Ui.sectionHeader(this,"ã‚«ãƒ¬ãƒ³ãƒ€ãƒ¼");
+        header.setPadding(Ui.dp(this,2),Ui.dp(this,23),0,Ui.dp(this,7));
+        body.addView(header);
+
+        LinearLayout monthRow=new LinearLayout(this);
+        monthRow.setGravity(Gravity.CENTER_VERTICAL);
+        monthRow.setPadding(Ui.dp(this,3),0,Ui.dp(this,3),Ui.dp(this,4));
+        Button previous=monthButton("â€¹","å‰ã®æœˆ");
+        previous.setOnClickListener(v->{month=month.minusMonths(1);renderCalendar();});
+        monthRow.addView(previous,new LinearLayout.LayoutParams(Ui.dp(this,48),Ui.dp(this,48)));
+        monthTitle=Ui.title(this,"",19);
+        monthTitle.setGravity(Gravity.CENTER);
+        monthRow.addView(monthTitle,new LinearLayout.LayoutParams(0,Ui.dp(this,48),1));
+        Button next=monthButton("â€º","æ¬¡ã®æœˆ");
+        next.setOnClickListener(v->{month=month.plusMonths(1);renderCalendar();});
+        monthRow.addView(next,new LinearLayout.LayoutParams(Ui.dp(this,48),Ui.dp(this,48)));
+        body.addView(monthRow);
+
+        LinearLayout card=Ui.card(this);
+        card.setPadding(Ui.dp(this,8),Ui.dp(this,9),Ui.dp(this,8),Ui.dp(this,12));
+        calendar=new GridLayout(this);
+        calendar.setColumnCount(7);
+        calendar.setUseDefaultMargins(false);
+        card.addView(calendar,new LinearLayout.LayoutParams(-1,-2));
+        monthSummary=Ui.text(this,"",13,Ui.MUTED);
+        monthSummary.setPadding(Ui.dp(this,7),Ui.dp(this,9),0,0);
+        card.addView(monthSummary);
+        LinearLayout.LayoutParams clp=new LinearLayout.LayoutParams(-1,-2);
+        body.addView(card,clp);
+
+        LinearLayout legend=new LinearLayout(this);
+        legend.setGravity(Gravity.CENTER_VERTICAL);
+        legend.setPadding(Ui.dp(this,6),Ui.dp(this,8),Ui.dp(this,4),0);
+        addLegendItem(legend,true,"æˆåŠŸ");
+        View gap=new View(this);
+        legend.addView(gap,new LinearLayout.LayoutParams(Ui.dp(this,18),1));
+        addLegendItem(legend,false,"ä¿è­·");
+        body.addView(legend);
+        TextView note=Ui.text(this,I18n.tr(this,"èµ·åºŠã«æˆåŠŸã—ãŸæœ¬ç•ªã‚¢ãƒ©ãƒ¼ãƒ ã‚’è¨˜éŒ²ã—ã¾ã™ã€‚ä¿è­·æ—¥ã¯ã‚¹ãƒˆãƒªãƒ¼ã‚¯ã ã‘ã‚’ç¶­æŒã—ã€ãƒ†ã‚¹ãƒˆã‚¢ãƒ©ãƒ¼ãƒ ã¯è¨˜éŒ²ã—ã¾ã›ã‚“ã€‚"),12,Ui.MUTED);
+        note.setPadding(Ui.dp(this,6),Ui.dp(this,8),Ui.dp(this,6),0);
+        body.addView(note);
+    }
+
+    private Button monthButton(String glyph,String description){
+        Button b=new Button(this);
+        b.setText(glyph);
+        b.setTextSize(28);
+        b.setTextColor(Ui.TEXT);
+        b.setAllCaps(false);
+        b.setGravity(Gravity.CENTER);
+        b.setPadding(0,0,0,0);
+        b.setContentDescription(I18n.tr(this,description));
+        b.setBackground(Ui.round(Ui.SURFACE_2,16,this));
+        return b;
+    }
+
+    private void addLegendItem(LinearLayout legend,boolean success,String label){
+        CalendarMarker marker=new CalendarMarker(this,success?CalendarMarker.SUCCESS:CalendarMarker.PROTECTED);
+        legend.addView(marker,new LinearLayout.LayoutParams(Ui.dp(this,12),Ui.dp(this,12)));
+        TextView text=Ui.text(this,label,13,Ui.MUTED);
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-2,-2);
+        lp.setMargins(Ui.dp(this,6),0,0,0);
+        legend.addView(text,lp);
+    }
+
+    private LinearLayout bottomNav(){
+        LinearLayout nav=new LinearLayout(this);
+        nav.setGravity(Gravity.CENTER);
+        nav.setPadding(Ui.dp(this,7),Ui.dp(this,5),Ui.dp(this,7),Ui.dp(this,7));
+        nav.setBackground(Ui.navigationSurface(this));
+        LinearLayout alarm=Ui.bottomTab(this,"ã‚¢ãƒ©ãƒ¼ãƒ ",false);
+        LinearLayout clock=Ui.bottomTab(this,"æ™‚è¨ˆ",false);
+        LinearLayout records=Ui.bottomTab(this,"è¨˜éŒ²",true);
+        LinearLayout settings=Ui.bottomTab(this,"è¨­å®š",false);
+        nav.addView(alarm,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));
+        nav.addView(clock,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));
+        nav.addView(records,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));
+        nav.addView(settings,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));
+        alarm.setOnClickListener(v->navigateRoot("alarm"));
+        clock.setOnClickListener(v->navigateRoot("clock"));
+        settings.setOnClickListener(v->navigateRoot("settings"));
+        return nav;
+    }
+
+    private void navigateRoot(String destination){
+        Intent next=null;
+        if("alarm".equals(destination))next=new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);
         else if("clock".equals(destination))next=new Intent(this,ClockActivity.class).putExtra("mode","world").addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);
         else if("settings".equals(destination))next=new Intent(this,SystemSettingsActivity.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);
         if(next!=null)Ui.launchNoAnimation(this,next);
