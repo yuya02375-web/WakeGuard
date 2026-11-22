@@ -110,7 +110,10 @@ public final class VisualDesigns {
     /** Uniform motif ink on pages, heroes and samples, in both light and dark mode. */
     public static final int PATTERN_ALPHA = 0x42;
 
-    public static int patternColor(int accent) { return withAlpha(accent, PATTERN_ALPHA); }
+    public static int patternColor(int accent) {
+        int sourceAlpha=(accent>>>24)&0xFF;
+        return withAlpha(accent,Math.min(sourceAlpha,PATTERN_ALPHA));
+    }
 
     /** Density is pixels per dp in the caller's canvas, including any preview scale. */
     public static void drawPattern(Canvas canvas, String pattern, RectF bounds, int accent, float density) {
@@ -169,9 +172,10 @@ public final class VisualDesigns {
         p.setAntiAlias(true);
         p.setShader(null);
         p.setPathEffect(null);
+        int sourceAlpha=(source.getColor()>>>24)&0xFF;
         int inkColor = patternColor(source.getColor());
-        int detailColor = withAlpha(source.getColor(), 0x38);
-        int softColor = withAlpha(source.getColor(), 0x18);
+        int detailColor = withAlpha(source.getColor(), Math.min(sourceAlpha,0x38));
+        int softColor = withAlpha(source.getColor(), Math.min(sourceAlpha,0x18));
         p.setColor(inkColor);
         p.setStyle(Paint.Style.STROKE);
         p.setStrokeWidth(.75f * unit);

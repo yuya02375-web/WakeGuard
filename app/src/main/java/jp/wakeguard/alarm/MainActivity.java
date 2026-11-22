@@ -23,6 +23,7 @@ public class MainActivity extends Activity {
     private android.widget.GridLayout tileGrid;
     private TextView nextText,nextMeta;
     private FrameLayout nextCard;
+    private android.graphics.drawable.Drawable scheduledHeroBackground, emptyHeroBackground;
     private LinearLayout heroContent, emptyHero;
     private TextView emptyHeading, emptyNote;
     private View sunriseAccent;
@@ -71,7 +72,9 @@ public class MainActivity extends Activity {
 
         nextCard=new FrameLayout(this);nextCard.setClipChildren(true);nextCard.setClipToPadding(true);
         nextCard.setMinimumHeight(Ui.dp(this,HomeMetrics.HERO_HEIGHT_DP));
-        nextCard.setBackground(Ui.gradientRound(this,24,Ui.HERO_START,Ui.HERO_END));
+        scheduledHeroBackground=Ui.gradientRound(this,24,Ui.HERO_START,Ui.HERO_END);
+        emptyHeroBackground=Ui.gradientRoundPlain(this,24,Ui.HERO_START,Ui.HERO_END);
+        nextCard.setBackground(scheduledHeroBackground);
         if ("none".equals(Ui.DESIGN_PATTERN) || "rules".equals(Ui.DESIGN_PATTERN)) {
             sunriseAccent=new SunriseAccentView(this);
             nextCard.addView(sunriseAccent,
@@ -433,6 +436,7 @@ public class MainActivity extends Activity {
     private void showEmptyHero(boolean empty){
         int height=Ui.dp(this,empty?HomeMetrics.HERO_EMPTY_HEIGHT_DP:HomeMetrics.HERO_HEIGHT_DP);
         nextCard.setMinimumHeight(height);
+        nextCard.setBackground(empty?emptyHeroBackground:scheduledHeroBackground);
         LinearLayout.LayoutParams cardParams=(LinearLayout.LayoutParams)nextCard.getLayoutParams();
         if(cardParams.height!=height){cardParams.height=height;nextCard.setLayoutParams(cardParams);}
         if(sunriseAccent!=null){

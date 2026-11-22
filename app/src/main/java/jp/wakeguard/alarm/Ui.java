@@ -262,6 +262,14 @@ public final class Ui {
         return d;
     }
 
+    /** Same theme gradient without the selected motif; used for quiet empty states. */
+    public static GradientDrawable gradientRoundPlain(Activity a, float radius, int... colors) {
+        int[] c = (colors != null && colors.length >= 2) ? colors : new int[]{SURFACE_2, SURFACE_3};
+        GradientDrawable d = new GradientDrawable(GradientDrawable.Orientation.TL_BR, c);
+        d.setCornerRadius(dp(a, Math.max(0, (int)(radius * CORNER_SCALE))));
+        return d;
+    }
+
     /** Adds the selected design's shared motif to the home hero gradient. */
     private static final class HeroGradientDrawable extends GradientDrawable {
         private final Context context;
