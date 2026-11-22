@@ -30,16 +30,23 @@ public final class StreakGrowth {
         if(now<Long.MAX_VALUE)p(c).edit().putLong("level",now+1L).apply();
     }
 
-    private static final long[] MILESTONES={1L,4L,12L,30L,80L,180L,400L,1000L};
+    private static final long[] MILESTONES={1L,12L,30L,80L,180L,400L,1000L};
+    private static final long[] ART_MILESTONES={1L,12L,30L,80L,180L};
 
-    /** The artwork tier advances from egg to ember, flame, hatchling, then adult. */
+    /** Adjacent forms blend over many wake-ups; no form appears all at once on a milestone. */
     public static int artStage(long level){
         long lv=Math.max(1L,level);
-        if(lv<4L)return 0;
-        if(lv<12L)return 1;
-        if(lv<30L)return 2;
-        if(lv<80L)return 3;
-        return 4;
+        for(int i=0;i<ART_MILESTONES.length-1;i++)if(lv<ART_MILESTONES[i+1])return i;
+        return ART_MILESTONES.length-1;
+    }
+
+    /** Fraction of the transition from the current illustration to the next one. */
+    public static float artTransitionProgress(long level){
+        long lv=Math.max(1L,level);
+        int stage=artStage(lv);
+        if(stage>=ART_MILESTONES.length-1)return 0f;
+        long start=ART_MILESTONES[stage],end=ART_MILESTONES[stage+1];
+        return Math.max(0f,Math.min(1f,(lv-start)/(float)(end-start)));
     }
 
     /** Scales continuously with permanent wake-ups, including after the adult form appears. */
@@ -86,11 +93,10 @@ public final class StreakGrowth {
 
     private static String descriptor(Context c,long level){
         long lv=Math.max(1L,level);
-        if(lv<4L)return I18n.tr(c,"竜の卵");
-        if(lv<12L)return I18n.tr(c,"火種");
-        if(lv<30L)return I18n.tr(c,"小さな炎");
-        if(lv<80L)return I18n.tr(c,"幼炎竜");
-        if(lv<180L)return I18n.tr(c,"炎竜");
+        if(lv<12L)return I18n.tr(c,"竜の卵");
+        if(lv<30L)return I18n.tr(c,"火種");
+        if(lv<80L)return I18n.tr(c,"小さな炎");
+        if(lv<180L)return I18n.tr(c,"幼炎竜");
         if(lv<400L)return I18n.tr(c,"天炎竜");
         if(lv<1000L)return I18n.tr(c,"恒星炎竜");
         return I18n.tr(c,"無限炎竜");
