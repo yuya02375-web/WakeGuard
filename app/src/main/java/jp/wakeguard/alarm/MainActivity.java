@@ -23,6 +23,7 @@ public class MainActivity extends Activity {
     private TextView nextText,nextMeta;
     private FrameLayout nextCard;
     private LinearLayout heroContent, emptyHero;
+    private TextView emptyHeading, emptyNote;
     private View sunriseAccent;
 
     private FrameLayout horizonTrack;
@@ -150,11 +151,13 @@ public class MainActivity extends Activity {
         boolean hasNext=refreshNext();
         List<AlarmStore.Entry> alarms=AlarmProfiles.all(this);
         alarms.sort(Comparator.comparingInt((AlarmStore.Entry e)->e.hour).thenComparingInt(e->e.minute));
-        boolean isEmpty=alarms.isEmpty()&&!hasNext;
-        showEmptyHero(isEmpty);
+        int enabled=0;for(AlarmStore.Entry e:alarms)if(e.enabled)enabled++;
+        boolean noUpcomingAlarm=!hasNext;
+        showEmptyHero(noUpcomingAlarm);
+        if(noUpcomingAlarm)updateEmptyHero(alarms.isEmpty(),enabled==0);
         if(alarms.isEmpty()){
             // A pending snooze can outlive the last saved alarm: keep its live hero.
-            if(!isEmpty){
+            if(hasNext){
                 LinearLayout empty=buildEmptyContent(false);
                 LinearLayout.LayoutParams emptyLp=Ui.cardParams(this);
                 emptyLp.topMargin=Ui.dp(this,8);
@@ -162,7 +165,6 @@ public class MainActivity extends Activity {
             }
             return;
         }
-        int enabled=0;for(AlarmStore.Entry e:alarms)if(e.enabled)enabled++;
         LinearLayout listHeading=Ui.row(this);
         listHeading.setPadding(Ui.dp(this,2),Ui.dp(this,2),Ui.dp(this,2),Ui.dp(this,3));
         TextView listTitle=Ui.sectionHeader(this,I18n.tr(this,"アラーム一覧"));
@@ -206,6 +208,7 @@ public class MainActivity extends Activity {
                 "最初のアラームを追加しましょう",
                 "Add your first alarm",
                 "첫 알람을 추가해 보세요"),16);
+        if(onHero)emptyHeading=heading;
         heading.setTextColor(onHero?Ui.HERO_TEXT:Ui.TEXT);
         heading.setMaxLines(2);
         heading.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -214,12 +217,45 @@ public class MainActivity extends Activity {
                 "時刻と曜日を決めると、ここに一覧で表示されます。",
                 "Set a time and days to see it listed here.",
                 "시간과 요일을 정하면 여기에 목록으로 표시됩니다."),12,onHero?Ui.HERO_TEXT:Ui.MUTED);
+        if(onHero)emptyNote=note;
         note.setMaxLines(2);
         note.setEllipsize(android.text.TextUtils.TruncateAt.END);
         note.setPadding(0,Ui.dp(this,3),0,0);
         if(onHero)note.setAlpha(.82f);
         copy.addView(note);
         return content;
+    }
+
+    private void updateEmptyHero(boolean noSavedAlarms,boolean allAlarmsDisabled){
+        if(emptyHeading==null||emptyNote==null)return;
+        if(noSavedAlarms){
+            emptyHeading.setText(localized(
+                    "最初のアラームを追加しましょう",
+                    "Add your first alarm",
+                    "첫 알람을 추가해 보세요"));
+            emptyNote.setText(localized(
+                    "時刻と曜日を決めると、ここに一覧で表示されます。",
+                    "Set a time and days to see it listed here.",
+                    "시간과 요일을 정하면 여기에 목록으로 표시됩니다."));
+        }else if(allAlarmsDisabled){
+            emptyHeading.setText(localized(
+                    "アラームがオフです",
+                    "Alarms are off",
+                    "알람이 꺼져 있습니다"));
+            emptyNote.setText(localized(
+                    "一覧のスイッチをオンにすると、次の時刻がここに表示されます。",
+                    "Turn on an alarm below to see the next wake-up time here.",
+                    "아래에서 알람을 켜면 다음 기상 시간이 여기에 표시됩니다."));
+        }else{
+            emptyHeading.setText(localized(
+                    "次の起床予定がありません",
+                    "No upcoming alarm",
+                    "예정된 알람이 없습니다"));
+            emptyNote.setText(localized(
+                    "一覧でアラームの時刻や曜日を確認してください。",
+                    "Check the alarm times and days in the list below.",
+                    "아래 목록에서 알람 시간과 요일을 확인하세요."));
+        }
     }
 
     private String localized(String ja,String en,String ko){
