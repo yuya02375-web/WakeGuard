@@ -2,6 +2,7 @@ package jp.wakeguard.alarm;
 
 import android.content.Context;
 import android.graphics.ImageDecoder;
+import android.graphics.drawable.Animatable;
 import android.graphics.drawable.AnimatedImageDrawable;
 import android.graphics.drawable.Drawable;
 import android.view.Gravity;
@@ -11,16 +12,15 @@ import android.widget.ImageView;
 import java.io.IOException;
 
 /**
- * IGNIDO 2.8.9: one consistent hand-made RPG pixel-art evolution system.
- * Every form uses dedicated real animation frames, not zoom/rotation of a static image.
- * No EGL, Filament, GL context, native 3D renderer, or UI redraw loop.
+ * One consistent hand-made RPG pixel-art evolution system.
+ * Animated WebP and late-stage wing-flap frames loop while visible.
  * Artist credit and asset provenance are bundled in the source distribution.
  */
 public final class StreakCompanionView extends FrameLayout {
     private final FrameLayout artLayer;
     private final ImageView sprite;
     private final ImageView successorSprite;
-    private AnimatedImageDrawable currentAnimation,successorAnimation;
+    private Animatable currentAnimation,successorAnimation;
     private int currentTier=-1,successorTier=-1;
     private long permanentLevel=1L;
     private boolean animationEnabled=true;
@@ -53,36 +53,48 @@ public final class StreakCompanionView extends FrameLayout {
             case 1:return R.drawable.ignido_stage_ember;
             case 2:return R.drawable.ignido_stage_flame;
             case 3:return R.drawable.ignido_stage_hatchling;
-            default:return R.drawable.ignido_stage_adult;
+            case 4:return R.drawable.ignido_stage_adult;
+            case 5:return R.drawable.ignido_stage_stellar_idle;
+            default:return R.drawable.ignido_stage_infinite_idle;
         }
     }
 
+    private int staticFallbackForTier(int stage){
+        if(stage==5)return R.drawable.ignido_stage_stellar;
+        if(stage>=6)return R.drawable.ignido_stage_infinite;
+        return drawableForTier(stage);
+    }
+
     private void stopCurrentAnimation(){
-        if(currentAnimation != null){
-            currentAnimation.stop();
-            currentAnimation=null;
-        }
+        if(currentAnimation!=null){currentAnimation.stop();currentAnimation=null;}
     }
 
     private void stopSuccessorAnimation(){
         if(successorAnimation!=null){successorAnimation.stop();successorAnimation=null;}
     }
 
-    private AnimatedImageDrawable loadStage(ImageView target,int stage){
+    private Animatable loadStage(ImageView target,int stage){
         final int asset=drawableForTier(stage);
         try{
-            ImageDecoder.Source source=ImageDecoder.createSource(getResources(),asset);
-            Drawable image=ImageDecoder.decodeDrawable(source);
+            Drawable image;
+            if(stage>=5){
+                image=getContext().getDrawable(asset);
+            }else{
+                ImageDecoder.Source source=ImageDecoder.createSource(getResources(),asset);
+                image=ImageDecoder.decodeDrawable(source);
+            }
             target.setImageDrawable(image);
             if(image instanceof AnimatedImageDrawable){
-                AnimatedImageDrawable animation=(AnimatedImageDrawable)image;
-                animation.setRepeatCount(AnimatedImageDrawable.REPEAT_INFINITE);
+                ((AnimatedImageDrawable)image).setRepeatCount(AnimatedImageDrawable.REPEAT_INFINITE);
+            }
+            if(image instanceof Animatable){
+                Animatable animation=(Animatable)image;
                 if(animationEnabled&&attached)animation.start();
                 return animation;
             }
             return null;
         }catch(IOException | RuntimeException ex){
-            target.setImageResource(asset);
+            target.setImageResource(staticFallbackForTier(stage));
             return null;
         }
     }
@@ -107,7 +119,7 @@ public final class StreakCompanionView extends FrameLayout {
         boolean animateGrowth=growthInitialized&&nextLevel>previousLevel&&nextLevel-previousLevel==1L;
         permanentLevel=nextLevel;
         int stage=StreakGrowth.artStage(permanentLevel);
-        int successor=stage<4?stage+1:-1;
+        int successor=stage<6?stage+1:-1;
         boolean stagePairChanged=stage!=currentTier||successor!=successorTier;
         chooseStages(stage,successor);
         float blend=successor<0?0f:StreakGrowth.artTransitionProgress(permanentLevel);
@@ -139,7 +151,7 @@ public final class StreakCompanionView extends FrameLayout {
         setRunning(successorAnimation,enabled&&attached);
     }
 
-    private void setRunning(AnimatedImageDrawable animation,boolean shouldRun){
+    private void setRunning(Animatable animation,boolean shouldRun){
         if(animation==null)return;
         if(shouldRun&&!animation.isRunning())animation.start();
         else if(!shouldRun&&animation.isRunning())animation.stop();
@@ -151,6 +163,10 @@ public final class StreakCompanionView extends FrameLayout {
     @Override protected void onAttachedToWindow(){
         super.onAttachedToWindow();
         attached=true;
+        if(currentTier<0){
+            int stage=StreakGrowth.artStage(permanentLevel);
+            chooseStages(stage,stage<6?stage+1:-1);
+        }
         setRunning(currentAnimation,animationEnabled);
         setRunning(successorAnimation,animationEnabled);
     }
@@ -163,3 +179,4 @@ public final class StreakCompanionView extends FrameLayout {
         super.onDetachedFromWindow();
     }
 }
+

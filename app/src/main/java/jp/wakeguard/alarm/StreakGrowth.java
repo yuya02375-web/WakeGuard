@@ -31,7 +31,7 @@ public final class StreakGrowth {
     }
 
     private static final long[] MILESTONES={1L,12L,30L,80L,180L,400L,1000L};
-    private static final long[] ART_MILESTONES={1L,12L,30L,80L,180L};
+    private static final long[] ART_MILESTONES={1L,12L,30L,80L,180L,400L,1000L};
 
     /** Adjacent forms blend over many wake-ups; no form appears all at once on a milestone. */
     public static int artStage(long level){
@@ -49,7 +49,7 @@ public final class StreakGrowth {
         return Math.max(0f,Math.min(1f,(lv-start)/(float)(end-start)));
     }
 
-    /** Scales continuously with permanent wake-ups, including after the adult form appears. */
+    /** Scales continuously through the final form and reaches its cap at level 1000. */
     public static float visualScale(long level){
         double progress=Math.log(Math.max(1L,level))/Math.log(1000.0);
         return (float)(0.78+0.46*Math.max(0.0,Math.min(1.0,progress)));
