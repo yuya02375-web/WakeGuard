@@ -107,7 +107,7 @@ public class TimeLogActivity extends Activity {
             addEmptyFolders();return;
         }
         TextView heading=Ui.sectionHeader(this,"フォルダー");heading.setPadding(Ui.dp(this,3),Ui.dp(this,17),0,Ui.dp(this,8));body.addView(heading);
-        ArrayList<Folder> sorted=new ArrayList<>(folders);sorted.sort((a,b)->Long.compare(b.createdAt,a.createdAt));
+        ArrayList<Folder> sorted=foldersByRecentActivity();
         for(Folder f:sorted) addFolderCard(f);
     }
 
@@ -288,7 +288,7 @@ public class TimeLogActivity extends Activity {
         if(folders.isEmpty()){
             new AlertDialog.Builder(this).setTitle(I18n.tr(this,"時間記録に追加")).setMessage(I18n.tr(this,"追加先のフォルダーを作成してください。")).setNegativeButton(I18n.tr(this,"キャンセル"),(d,w)->clearPendingImport()).setPositiveButton(I18n.tr(this,"フォルダー作成"),(d,w)->showFolderDialog(null)).show();return;
         }
-        ArrayList<Folder> sorted=new ArrayList<>(folders);sorted.sort((a,b)->Long.compare(b.createdAt,a.createdAt));String[] names=new String[sorted.size()+1];for(int i=0;i<sorted.size();i++)names[i]=sorted.get(i).name;names[sorted.size()]=I18n.tr(this,"＋ 新しいフォルダー");
+        ArrayList<Folder> sorted=foldersByRecentActivity();String[] names=new String[sorted.size()+1];for(int i=0;i<sorted.size();i++)names[i]=sorted.get(i).name;names[sorted.size()]=I18n.tr(this,"＋ 新しいフォルダー");
         new AlertDialog.Builder(this).setTitle(I18n.tr(this,pendingImportLabel+"を追加")).setItems(names,(d,which)->{if(which==sorted.size())showFolderDialog(null);else addPendingImport(sorted.get(which));}).setNegativeButton(I18n.tr(this,"キャンセル"),(d,w)->clearPendingImport()).show();
     }
     private void addPendingImport(Folder folder){
@@ -322,6 +322,21 @@ public class TimeLogActivity extends Activity {
 
     private ArrayList<LocalDate> daysWithEntries(String folderId){TreeSet<LocalDate> days=new TreeSet<>(Comparator.reverseOrder());for(Entry e:entries){if(!folderId.equals(e.folderId)||e.end<=e.start)continue;LocalDate a=Instant.ofEpochMilli(e.start).atZone(zone).toLocalDate(),b=Instant.ofEpochMilli(e.end-1).atZone(zone).toLocalDate();for(LocalDate d=a;!d.isAfter(b);d=d.plusDays(1))days.add(d);}return new ArrayList<>(days);}
     private long recordedAt(Entry e){return e.createdAt>0L?e.createdAt:e.end;}
+    private ArrayList<Folder> foldersByRecentActivity(){
+        HashMap<String,Long> activityAt=new HashMap<>();
+        for(Folder f:folders)activityAt.put(f.id,f.createdAt);
+        for(Entry e:entries){
+            long at=recordedAt(e);
+            Long previous=activityAt.get(e.folderId);
+            if(previous==null||at>previous)activityAt.put(e.folderId,at);
+        }
+        ArrayList<Folder> sorted=new ArrayList<>(folders);
+        sorted.sort((a,b)->{
+            int activityOrder=Long.compare(activityAt.get(b.id),activityAt.get(a.id));
+            return activityOrder!=0?activityOrder:Long.compare(b.createdAt,a.createdAt);
+        });
+        return sorted;
+    }
     private long newestRecordedAt(String folderId,LocalDate day){long a=day.atStartOfDay(zone).toInstant().toEpochMilli(),b=day.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli(),latest=Long.MIN_VALUE;for(Entry e:entries)if(folderId.equals(e.folderId)&&e.end>a&&e.start<b)latest=Math.max(latest,e.createdAt>0L?e.createdAt:e.end);return latest;}
     private ArrayList<Entry> entriesForDay(String folderId,LocalDate day){long a=day.atStartOfDay(zone).toInstant().toEpochMilli(),b=day.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli();ArrayList<Entry> out=new ArrayList<>();for(Entry e:entries)if(folderId.equals(e.folderId)&&e.end>a&&e.start<b)out.add(e);out.sort((x,y)->{long xc=x.createdAt>0L?x.createdAt:x.end,yc=y.createdAt>0L?y.createdAt:y.end;int order=Long.compare(yc,xc);return order!=0?order:Long.compare(y.start,x.start);});return out;}
     private Folder findFolder(String id){for(Folder f:folders)if(f.id.equals(id))return f;return null;}
@@ -339,4 +354,5 @@ public class TimeLogActivity extends Activity {
     private void load(){folders.clear();entries.clear();try{JSONArray a=new JSONArray(p().getString(KEY_FOLDERS,"[]"));for(int i=0;i<a.length();i++){JSONObject o=a.getJSONObject(i);folders.add(new Folder(o.getString("id"),o.optString("name","フォルダー"),o.optLong("createdAt",0)));}}catch(Throwable ignored){}try{JSONArray a=new JSONArray(p().getString(KEY_ENTRIES,"[]"));for(int i=0;i<a.length();i++){JSONObject o=a.getJSONObject(i);long s=o.optLong("start",0),e=o.optLong("end",0),created=o.optLong("createdAt",e);if(e>s)entries.add(new Entry(o.getString("id"),o.getString("folderId"),s,e,created>0L?created:e));}}catch(Throwable ignored){}}
     private void save(){try{JSONArray fa=new JSONArray();for(Folder f:folders){JSONObject o=new JSONObject();o.put("id",f.id);o.put("name",f.name);o.put("createdAt",f.createdAt);fa.put(o);}JSONArray ea=new JSONArray();for(Entry e:entries){JSONObject o=new JSONObject();o.put("id",e.id);o.put("folderId",e.folderId);o.put("start",e.start);o.put("end",e.end);o.put("createdAt",e.createdAt>0L?e.createdAt:e.end);ea.put(o);}p().edit().putString(KEY_FOLDERS,fa.toString()).putString(KEY_ENTRIES,ea.toString()).apply();}catch(Throwable ignored){}}
 }
+
 
