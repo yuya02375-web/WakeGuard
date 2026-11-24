@@ -21,6 +21,7 @@ public class MainActivity extends Activity {
     private LinearLayout list;
     private LinearLayout addAction;
     private android.widget.GridLayout tileGrid;
+    private int tileColumnCount=2;
     private TextView nextText,nextMeta;
     private FrameLayout nextCard;
     private android.graphics.drawable.Drawable scheduledHeroBackground, emptyHeroBackground;
@@ -193,7 +194,9 @@ public class MainActivity extends Activity {
             list.addView(allSnoozes);list.addView(Ui.divider(this));
         }
         if("tiles".equals(Ui.LAYOUT_MODE)){
-            tileGrid=new android.widget.GridLayout(this);tileGrid.setColumnCount(2);tileGrid.setUseDefaultMargins(false);
+            int screenWidthDp=getResources().getConfiguration().screenWidthDp;
+            tileColumnCount=screenWidthDp<=0?2:(screenWidthDp<380?1:(screenWidthDp>=720?3:2));
+            tileGrid=new android.widget.GridLayout(this);tileGrid.setColumnCount(tileColumnCount);tileGrid.setUseDefaultMargins(false);
             tileGrid.setPadding(0,Ui.dp(this,2),0,0);
             list.addView(tileGrid,new LinearLayout.LayoutParams(-1,-2));
             for(int i=0;i<alarms.size();i++)addAlarmTile(alarms.get(i),i);
@@ -303,16 +306,21 @@ public class MainActivity extends Activity {
         String label=(e.label==null||e.label.trim().isEmpty())?I18n.tr(this,"アラーム"):e.label.trim();
         TextView name=Ui.title(this,label,15);name.setSingleLine(true);name.setEllipsize(android.text.TextUtils.TruncateAt.END);tile.addView(name);
         TextView schedule=Ui.text(this,repeatText(e.dayMask),12,e.enabled?Ui.ACCENT:Ui.MUTED);schedule.setSingleLine(true);schedule.setEllipsize(android.text.TextUtils.TruncateAt.END);schedule.setPadding(0,Ui.dp(this,4),0,0);tile.addView(schedule);
+        long now=System.currentTimeMillis();long next=AlarmScheduler.nextTriggerMillis(this,e);
+        if(e.enabled&&next>now){
+            TextView countdown=Ui.text(this,String.format(I18n.locale(this),I18n.tr(this,"あと %s"),relativeText(next-now)),12,Ui.ACCENT_2);
+            countdown.setSingleLine(true);countdown.setEllipsize(android.text.TextUtils.TruncateAt.END);countdown.setPadding(0,Ui.dp(this,3),0,0);tile.addView(countdown);
+        }
         TextView mission=Ui.text(this,AlarmProfiles.missionIcon(e.missionType)+"  "+I18n.tr(this,AlarmProfiles.missionName(e.missionType)),12,Ui.MUTED);mission.setSingleLine(true);mission.setEllipsize(android.text.TextUtils.TruncateAt.END);mission.setPadding(0,Ui.dp(this,6),0,0);tile.addView(mission);
         long snoozeAt=SnoozeScheduler.scheduledAt(this,e.id);
-        if(snoozeAt>System.currentTimeMillis()){
+        if(snoozeAt>now){
             TextView snooze=Ui.text(this,I18n.tr(this,"スヌーズ中")+"  ·  "+relativeText(snoozeAt-System.currentTimeMillis()),11,Ui.ACCENT_2);
             snooze.setSingleLine(true);snooze.setEllipsize(android.text.TextUtils.TruncateAt.END);snooze.setPadding(0,Ui.dp(this,4),0,0);tile.addView(snooze);
         }
         on.setContentDescription(I18n.tr(this,label)+"  "+I18n.tr(this,"アラーム"));
         on.setOnClickListener(v->{e.enabled=on.isChecked();AlarmProfiles.save(this,e);if(!e.enabled){SnoozeScheduler.cancel(this,e.id);if(e.id>=1000)AlarmScheduler.cancelExtraAlarm(this,e.id);}AlarmScheduler.reschedule(this);render();});
         android.widget.GridLayout.LayoutParams lp=new android.widget.GridLayout.LayoutParams(
-                android.widget.GridLayout.spec(index/2),android.widget.GridLayout.spec(index%2,1f));
+                android.widget.GridLayout.spec(index/Math.max(1,tileColumnCount)),android.widget.GridLayout.spec(index%Math.max(1,tileColumnCount),1f));
         lp.width=0;lp.height=-2;lp.setMargins(Ui.dp(this,3),Ui.dp(this,3),Ui.dp(this,3),Ui.dp(this,8));tileGrid.addView(tile,lp);
     }
 
