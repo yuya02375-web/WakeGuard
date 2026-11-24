@@ -30,22 +30,23 @@ public final class StreakGrowth {
         if(now<Long.MAX_VALUE)p(c).edit().putLong("level",now+1L).apply();
     }
 
-    private static final long[] MILESTONES={1L,12L,30L,80L,180L,400L,1000L};
-    private static final long[] ART_MILESTONES={1L,12L,30L,80L,180L,400L,1000L};
+    // Keep form labels, progress, and sprite transitions on one timeline.
+    private static final long[] MILESTONES={1L,12L,30L,45L,120L,360L,1000L};
+    private static final String[] FORM_NAMES={"竜の卵","火種","小さな炎","幼炎竜","天炎竜","恒星炎竜","無限炎竜"};
 
     /** Adjacent forms blend over many wake-ups; no form appears all at once on a milestone. */
     public static int artStage(long level){
         long lv=Math.max(1L,level);
-        for(int i=0;i<ART_MILESTONES.length-1;i++)if(lv<ART_MILESTONES[i+1])return i;
-        return ART_MILESTONES.length-1;
+        for(int i=0;i<MILESTONES.length-1;i++)if(lv<MILESTONES[i+1])return i;
+        return MILESTONES.length-1;
     }
 
     /** Fraction of the transition from the current illustration to the next one. */
     public static float artTransitionProgress(long level){
         long lv=Math.max(1L,level);
         int stage=artStage(lv);
-        if(stage>=ART_MILESTONES.length-1)return 0f;
-        long start=ART_MILESTONES[stage],end=ART_MILESTONES[stage+1];
+        if(stage>=MILESTONES.length-1)return 0f;
+        long start=MILESTONES[stage],end=MILESTONES[stage+1];
         return Math.max(0f,Math.min(1f,(lv-start)/(float)(end-start)));
     }
 
@@ -93,12 +94,7 @@ public final class StreakGrowth {
 
     private static String descriptor(Context c,long level){
         long lv=Math.max(1L,level);
-        if(lv<12L)return I18n.tr(c,"竜の卵");
-        if(lv<30L)return I18n.tr(c,"火種");
-        if(lv<80L)return I18n.tr(c,"小さな炎");
-        if(lv<180L)return I18n.tr(c,"幼炎竜");
-        if(lv<400L)return I18n.tr(c,"天炎竜");
-        if(lv<1000L)return I18n.tr(c,"恒星炎竜");
-        return I18n.tr(c,"無限炎竜");
+        return I18n.tr(c,FORM_NAMES[artStage(lv)]);
     }
 }
+
