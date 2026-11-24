@@ -74,14 +74,14 @@ public final class AppThemes {
                 surface3 = 0xFFE5EDF1;
                 border = 0xFFD2DEE4;
                 borderHot = withAlpha(accent2, 0x70);
-                cyan = 0xFF277C83;
-                blue = 0xFF3E66A0;
-                violet = 0xFF71599C;
-                pink = 0xFFAA526C;
+                cyan = accessibleTextColor(0xFF277C83, bg, bg2, surface, surface2, surface3);
+                blue = accessibleTextColor(0xFF3E66A0, bg, bg2, surface, surface2, surface3);
+                violet = accessibleTextColor(0xFF71599C, bg, bg2, surface, surface2, surface3);
+                pink = accessibleTextColor(0xFFAA526C, bg, bg2, surface, surface2, surface3);
                 muted = accessibleTextColor(0xFF52636D, bg, surface, surface2, surface3);
                 muted2 = accessibleTextColor(0xFF5B6870, bg, surface, surface2, surface3);
-                success = 0xFF2E745A;
-                danger = 0xFFAD3F36;
+                success = accessibleTextColor(0xFF2E745A, bg, bg2, surface, surface2, surface3);
+                danger = accessibleTextColor(0xFFAD3F36, bg, bg2, surface, surface2, surface3);
                 heroStart = accent;
                 heroEnd = accent2;
                 heroText = bestForeground(heroStart, heroEnd);
@@ -96,15 +96,15 @@ public final class AppThemes {
                 borderHot = withAlpha(accent2, 0x70);
 
                 // Keep semantic hues recognizable while gently carrying each theme's accent hue.
-                cyan = mix(isDark ? 0xFF62CED3 : 0xFF247E86, accent, .12f);
-                blue = mix(isDark ? 0xFF8EB6F7 : 0xFF3D66A0, accent, .12f);
-                violet = mix(isDark ? 0xFFC6A9F0 : 0xFF71599C, accent, .12f);
-                pink = mix(isDark ? 0xFFE99DB5 : 0xFFAA526C, accent, .12f);
+                cyan = accessibleTextColor(mix(isDark ? 0xFF62CED3 : 0xFF247E86, accent, .12f), bg, bg2, surface, surface2, surface3);
+                blue = accessibleTextColor(mix(isDark ? 0xFF8EB6F7 : 0xFF3D66A0, accent, .12f), bg, bg2, surface, surface2, surface3);
+                violet = accessibleTextColor(mix(isDark ? 0xFFC6A9F0 : 0xFF71599C, accent, .12f), bg, bg2, surface, surface2, surface3);
+                pink = accessibleTextColor(mix(isDark ? 0xFFE99DB5 : 0xFFAA526C, accent, .12f), bg, bg2, surface, surface2, surface3);
 
                 muted = accessibleTextColor(mix(text, bg, .23f), bg, surface, surface2, surface3);
                 muted2 = accessibleTextColor(mix(text, bg, .35f), bg, surface, surface2, surface3);
-                success = isDark ? 0xFF79D59B : 0xFF286B4D;
-                danger = isDark ? 0xFFFF8F98 : 0xFFA52C39;
+                success = accessibleTextColor(isDark ? 0xFF79D59B : 0xFF286B4D, bg, bg2, surface, surface2, surface3);
+                danger = accessibleTextColor(isDark ? 0xFFFF8F98 : 0xFFA52C39, bg, bg2, surface, surface2, surface3);
 
                 heroStart = isDark ? mix(bg2, accent, .26f) : accent;
                 heroEnd = isDark ? mix(bg2, accent2, .34f) : accent2;

@@ -466,25 +466,25 @@ public class MainActivity extends Activity {
 
         LinearLayout summary=new LinearLayout(this);
         summary.setOrientation(LinearLayout.VERTICAL);
-        summary.setPadding(Ui.dp(this,10),Ui.dp(this,6),Ui.dp(this,10),Ui.dp(this,6));
-        summary.setBackground(Ui.round(Ui.withAlpha(0xff08111a,0xB8),12,this));
+        summary.setPadding(Ui.dp(this,14),Ui.dp(this,9),Ui.dp(this,14),Ui.dp(this,9));
+        summary.setBackground(Ui.roundStroke(Ui.withAlpha(0xff08111a,0xC8),Ui.withAlpha(Ui.HERO_TEXT,0x50),14,this));
 
         LinearLayout titleRow=new LinearLayout(this);
         titleRow.setGravity(Gravity.CENTER_VERTICAL);
-        dragonFormText=Ui.text(this,I18n.tr(this,"竜の卵"),12,Ui.HERO_TEXT);
+        dragonFormText=Ui.text(this,I18n.tr(this,"竜の卵"),13,Ui.HERO_TEXT);
         dragonFormText.setTypeface(android.graphics.Typeface.create("sans-serif-medium",android.graphics.Typeface.BOLD));
         dragonFormText.setSingleLine(true);
         dragonFormText.setEllipsize(android.text.TextUtils.TruncateAt.END);
         titleRow.addView(dragonFormText,new LinearLayout.LayoutParams(0,-2,1));
-        dragonLevelText=Ui.text(this,"Lv.1",11,Ui.HERO_TEXT);
-        dragonLevelText.setTypeface(null,android.graphics.Typeface.BOLD);
-        titleRow.addView(dragonLevelText);
+        dragonLevelText=Ui.text(this,"Lv.1",12,0xFFFFD28A);
+        dragonLevelText.setTypeface(null,android.graphics.Typeface.BOLD);dragonLevelText.setGravity(Gravity.CENTER);dragonLevelText.setPadding(Ui.dp(this,8),Ui.dp(this,4),Ui.dp(this,8),Ui.dp(this,4));dragonLevelText.setBackground(Ui.roundStroke(Ui.withAlpha(0xFFFFD28A,0x20),Ui.withAlpha(0xFFFFD28A,0x80),8,this));
+        LinearLayout.LayoutParams levelLp=new LinearLayout.LayoutParams(-2,-2);levelLp.leftMargin=Ui.dp(this,8);titleRow.addView(dragonLevelText,levelLp);
         summary.addView(titleRow);
 
-        dragonProgressText=Ui.text(this,"",10,Ui.HERO_TEXT);
+        dragonProgressText=Ui.text(this,"",11,Ui.HERO_TEXT);
         dragonProgressText.setSingleLine(true);
         dragonProgressText.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        dragonProgressText.setAlpha(.88f);
+        dragonProgressText.setAlpha(1f);
         dragonProgressText.setPadding(0,Ui.dp(this,1),0,Ui.dp(this,3));
         summary.addView(dragonProgressText);
 
@@ -493,10 +493,10 @@ public class MainActivity extends Activity {
         dragonProgressFill=new View(this);
         dragonProgressFill.setBackground(Ui.round(0xffffc66d,4,this));
         dragonProgressTrack.addView(dragonProgressFill,new FrameLayout.LayoutParams(0,-1,Gravity.START));
-        summary.addView(dragonProgressTrack,new LinearLayout.LayoutParams(-1,Ui.dp(this,4)));
+        summary.addView(dragonProgressTrack,new LinearLayout.LayoutParams(-1,Ui.dp(this,5)));
 
         FrameLayout.LayoutParams summaryLp=new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM|Gravity.START);
-        summaryLp.setMargins(Ui.dp(this,16),0,Ui.dp(this,136),Ui.dp(this,9));
+        summaryLp.setMargins(Ui.dp(this,16),0,Ui.dp(this,16),Ui.dp(this,9));
         nextCard.addView(summary,summaryLp);
     }
 
