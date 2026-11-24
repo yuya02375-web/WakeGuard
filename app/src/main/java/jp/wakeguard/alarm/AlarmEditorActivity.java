@@ -19,8 +19,10 @@ import java.util.Locale;
 public class AlarmEditorActivity extends Activity {
     private static final int REQ_AUDIO=81,REQ_VIDEO=82;
     private static final String[] MISSION_KEYS={"NONE","STEPS","MATH","TAP","CODE","SHAKE","MEMORY","TYPE","HOLD","SWIPE","ORDER","REVERSE","RANDOM"};
+    private static final int[] DAY_PRESET_MASKS={0,31,96,127};
+    private static final String[] DAY_PRESET_LABELS={"一回だけ","平日","週末","毎日"};
     private long alarmId; private AlarmStore.Entry draft;
-    private EditText label,steps,missionCount; private Button time,sound,ringDuration,fullStopDuration,preNotify,snooze,preview,missionChange; private CheckBox[] days=new CheckBox[7];
+    private EditText label,steps,missionCount; private Button time,sound,ringDuration,fullStopDuration,preNotify,snooze,preview,missionChange; private CheckBox[] days=new CheckBox[7]; private TextView[] dayPresetViews=new TextView[4];
     private Switch enabled,ringAutoStop,fullAutoStop,snoozeEnabled; private LinearLayout snoozeIntervalRow; private boolean renderingSnooze; private SeekBar volume; private TextView volumeText,soundStatus,stepsLabel,countLabel,missionNote,daySummary,autoStopSummary,autoStopWarning;
     private LinearLayout missionSelectionPanel,stepsControl,countControl; private TextView selectedMissionTitle; private Button[] missionTiles=new Button[MISSION_KEYS.length];
     private RadioGroup vibration; private RadioButton[] vibrationChoices=new RadioButton[3]; private String selectedMission="NONE"; private MediaPlayer previewPlayer;
@@ -55,13 +57,21 @@ public class AlarmEditorActivity extends Activity {
             day.setTextColor(Ui.TEXT);
             day.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));
             day.setOnCheckedChangeListener((v,checked)->{
-                day.setTextColor(checked?Ui.ON_ACCENT:Ui.TEXT);
+                day.setTextColor(checked?Ui.readableTextColor(Ui.ON_ACCENT,Ui.ACCENT_2):Ui.TEXT);
                 day.setBackground(checked?Ui.round(Ui.ACCENT_2,14,this):Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));
                 refreshDaySummary();
             });
             LinearLayout.LayoutParams cell=new LinearLayout.LayoutParams(0,Ui.dp(this,48),1f);
             cell.setMargins(Ui.dp(this,2),0,Ui.dp(this,2),0);dayRow.addView(day,cell);
-        }timeHero.addView(dayRow,Ui.gapTop(this,8));daySummary=Ui.text(this,I18n.tr(this,"曜日を選ばなければ1回だけ鳴ります"),12,Ui.HERO_TEXT);timeHero.addView(daySummary,Ui.gapTop(this,4));body.addView(timeHero,Ui.cardParams(this));
+        }timeHero.addView(dayRow,Ui.gapTop(this,8));
+        HorizontalScrollView presetScroll=new HorizontalScrollView(this);presetScroll.setHorizontalScrollBarEnabled(false);
+        LinearLayout presetRow=new LinearLayout(this);presetRow.setOrientation(LinearLayout.HORIZONTAL);
+        for(int i=0;i<DAY_PRESET_LABELS.length;i++){
+            final int mask=DAY_PRESET_MASKS[i];TextView preset=Ui.text(this,DAY_PRESET_LABELS[i],12,Ui.TEXT);preset.setGravity(Gravity.CENTER);preset.setSingleLine(true);preset.setMinHeight(Ui.dp(this,48));preset.setPadding(Ui.dp(this,12),0,Ui.dp(this,12),0);preset.setClickable(true);preset.setFocusable(true);preset.setContentDescription(I18n.tr(this,DAY_PRESET_LABELS[i]));preset.setOnClickListener(v->applyDayPreset(mask));dayPresetViews[i]=preset;
+            LinearLayout.LayoutParams presetLp=new LinearLayout.LayoutParams(-2,Ui.dp(this,48));presetLp.setMargins(0,0,Ui.dp(this,6),0);presetRow.addView(preset,presetLp);
+        }
+        presetScroll.addView(presetRow);timeHero.addView(presetScroll,Ui.gapTop(this,7));
+        daySummary=Ui.text(this,I18n.tr(this,"曜日を選ばなければ1回だけ鳴ります"),12,Ui.HERO_TEXT);timeHero.addView(daySummary,Ui.gapTop(this,4));body.addView(timeHero,Ui.cardParams(this));updateDayPresetStyles();
 
         LinearLayout nameCard=Ui.card(this);nameCard.addView(Ui.sectionHeader(this,I18n.tr(this,"名前")));label=input(I18n.tr(this,"学校、休日など"),InputType.TYPE_CLASS_TEXT);nameCard.addView(label,Ui.gapTop(this,4));body.addView(nameCard,Ui.cardParams(this));
 
@@ -125,6 +135,27 @@ public class AlarmEditorActivity extends Activity {
         StringBuilder selected=new StringBuilder();String[]labels={"月","火","水","木","金","土","日"};
         for(int i=0;i<days.length;i++)if(days[i]!=null&&days[i].isChecked()){if(selected.length()>0)selected.append("  ");selected.append(I18n.tr(this,labels[i]));}
         daySummary.setText(selected.length()==0?I18n.tr(this,"曜日を選ばなければ1回だけ鳴ります"):selected.toString());
+        updateDayPresetStyles();
+    }
+
+    private void applyDayPreset(int mask){
+        for(int i=0;i<days.length;i++)if(days[i]!=null)days[i].setChecked((mask&(1<<i))!=0);
+        refreshDaySummary();
+    }
+
+    private int currentDayMask(){
+        int mask=0;for(int i=0;i<days.length;i++)if(days[i]!=null&&days[i].isChecked())mask|=1<<i;return mask;
+    }
+
+    private void updateDayPresetStyles(){
+        if(dayPresetViews==null)return;int current=currentDayMask();
+        for(int i=0;i<dayPresetViews.length;i++){
+            TextView preset=dayPresetViews[i];if(preset==null)continue;boolean selected=current==DAY_PRESET_MASKS[i];
+            int fill=selected?Ui.ACCENT_2:Ui.SURFACE_2;int ink=selected?Ui.readableTextColor(Ui.ON_ACCENT,fill):Ui.TEXT;
+            preset.setTextColor(ink);android.graphics.drawable.Drawable shape=selected?Ui.round(fill,14,this):Ui.roundStroke(fill,Ui.BORDER,14,this);
+            preset.setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(Ui.withAlpha(Ui.TEXT,0x1A)),shape,Ui.round(Ui.TEXT,14,this)));
+            preset.setSelected(selected);
+        }
     }
 
     private void toggleMissionPicker(){boolean show=missionSelectionPanel.getVisibility()!=View.VISIBLE;missionSelectionPanel.setVisibility(show?View.VISIBLE:View.GONE);missionChange.setText((show?editorText("選択を閉じる","Close selection","선택 닫기"):I18n.tr(this,"ミッションを選択"))+"  "+(show?"⌃":"›"));}

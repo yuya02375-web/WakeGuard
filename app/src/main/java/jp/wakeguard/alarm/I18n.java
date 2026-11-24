@@ -62,7 +62,7 @@ public final class I18n {
         put("アラームが鳴っています","Alarm is ringing","알람이 울리고 있습니다"); put("アラームを停止","Stop alarm","알람 중지");
         put("ミッションを完了してください","Complete the mission","미션을 완료하세요");
         put("戻る・ホームでは停止しません","Back or Home will not stop the alarm","뒤로 가기나 홈 버튼으로는 알람이 중지되지 않습니다");
-        put("一回だけ","One time","한 번만"); put("平日","Weekdays","평일"); put("毎日","Every day","매일");
+        put("一回だけ","One time","한 번만"); put("平日","Weekdays","평일"); put("週末","Weekends","주말"); put("毎日","Every day","매일");
         put("朝の予定","Morning schedule","아침 일정"); put("有効なアラーム","Active alarms","사용 중인 알람");
         put("予定がありません","Nothing scheduled","예약된 일정이 없습니다"); put("起床まで","Until wake-up","기상까지");
         put("次の起床まで","Until next wake-up","다음 기상까지"); put("次のアラームはありません","No upcoming alarm","예정된 알람이 없습니다");
