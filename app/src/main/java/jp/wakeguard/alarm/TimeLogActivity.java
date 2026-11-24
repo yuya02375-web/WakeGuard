@@ -106,7 +106,12 @@ public class TimeLogActivity extends Activity {
         if(folders.isEmpty()){
             addEmptyFolders();return;
         }
-        TextView heading=Ui.sectionHeader(this,"フォルダー");heading.setPadding(Ui.dp(this,3),Ui.dp(this,17),0,Ui.dp(this,8));body.addView(heading);
+        LinearLayout headingRow=Ui.row(this);headingRow.setGravity(Gravity.CENTER_VERTICAL);
+        TextView heading=Ui.sectionHeader(this,"フォルダー");heading.setPadding(Ui.dp(this,3),Ui.dp(this,16),0,Ui.dp(this,8));
+        headingRow.addView(heading,new LinearLayout.LayoutParams(0,-2,1));
+        TextView order=Ui.pill(this,I18n.tr(this,"最近の記録順"));
+        LinearLayout.LayoutParams orderLp=new LinearLayout.LayoutParams(-2,-2);orderLp.setMargins(Ui.dp(this,8),Ui.dp(this,7),0,0);headingRow.addView(order,orderLp);
+        body.addView(headingRow);
         ArrayList<Folder> sorted=foldersByRecentActivity();
         HashMap<String,Entry> latestEntries=newestEntriesByFolder();
         String newestRecordFolderId=mostRecentFolderId(latestEntries);
@@ -137,27 +142,45 @@ public class TimeLogActivity extends Activity {
 
     private void addFolderCard(Folder f,Entry latestEntry,boolean mostRecentRecord){
         boolean tracking=isTrackingFolder(f.id);
-        LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(Ui.dp(this,17),Ui.dp(this,15),Ui.dp(this,17),Ui.dp(this,14));card.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,20,this));
-        LinearLayout titleRow=Ui.row(this);titleRow.setPadding(0,0,0,0);TextView name=Ui.title(this,f.name,19);titleRow.addView(name,new LinearLayout.LayoutParams(0,-2,1));
+        LinearLayout card=Ui.card(this);card.setPadding(Ui.dp(this,17),Ui.dp(this,13),Ui.dp(this,14),Ui.dp(this,13));
+        LinearLayout titleRow=Ui.row(this);titleRow.setGravity(Gravity.CENTER_VERTICAL);
+        TextView name=Ui.title(this,f.name,19);name.setMaxLines(2);name.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        titleRow.addView(name,new LinearLayout.LayoutParams(0,-2,1));
+        android.widget.ImageView open=new android.widget.ImageView(this);open.setImageResource(R.drawable.ic_v293_chevron_right);
+        open.setImageTintList(android.content.res.ColorStateList.valueOf(Ui.MUTED));open.setContentDescription(I18n.tr(this,"フォルダーを開く"));
+        LinearLayout.LayoutParams openLp=new LinearLayout.LayoutParams(Ui.dp(this,22),Ui.dp(this,22));openLp.setMargins(Ui.dp(this,8),0,0,0);titleRow.addView(open,openLp);card.addView(titleRow);
+        LinearLayout badges=Ui.row(this);badges.setGravity(Gravity.CENTER_VERTICAL);badges.setPadding(0,Ui.dp(this,6),0,0);
         if(tracking||mostRecentRecord){
-            TextView status=text(I18n.tr(this,tracking?"計測中":"最近記録"),11,tracking?Ui.HERO_TEXT:Ui.ACCENT_2);
-            status.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));status.setGravity(Gravity.CENTER);status.setPadding(Ui.dp(this,9),Ui.dp(this,5),Ui.dp(this,9),Ui.dp(this,5));
-            status.setBackground(Ui.round(tracking?Ui.HERO_START:Ui.withAlpha(Ui.ACCENT_2,0x18),14,this));
-            LinearLayout.LayoutParams statusLp=new LinearLayout.LayoutParams(-2,-2);statusLp.setMargins(Ui.dp(this,6),0,Ui.dp(this,8),0);titleRow.addView(status,statusLp);
+            TextView status=tracking?Ui.accentPill(this,I18n.tr(this,"計測中")):Ui.pill(this,I18n.tr(this,"最近記録"));
+            badges.addView(status);
         }
-        TextView count=text(entryCount(f.id)+I18n.tr(this,"件"),12,Ui.HERO_TEXT);count.setGravity(Gravity.CENTER);count.setPadding(Ui.dp(this,10),Ui.dp(this,5),Ui.dp(this,10),Ui.dp(this,5));count.setBackground(Ui.round(Ui.HERO_START,14,this));titleRow.addView(count);card.addView(titleRow);
-        TextView lastRecord=text(lastRecordSummary(latestEntry),12,latestEntry==null?Ui.MUTED:(mostRecentRecord?Ui.ACCENT_2:Ui.MUTED));lastRecord.setSingleLine(true);lastRecord.setEllipsize(android.text.TextUtils.TruncateAt.END);lastRecord.setPadding(0,Ui.dp(this,5),0,0);card.addView(lastRecord);
+        TextView count=Ui.pill(this,entryCount(f.id)+I18n.tr(this,"件"));
+        LinearLayout.LayoutParams countLp=new LinearLayout.LayoutParams(-2,-2);countLp.setMargins((tracking||mostRecentRecord)?Ui.dp(this,6):0,0,0,0);badges.addView(count,countLp);card.addView(badges);
+        TextView lastRecord=text(lastRecordSummary(latestEntry),12,latestEntry==null?Ui.MUTED:(mostRecentRecord?Ui.ACCENT_2:Ui.MUTED));
+        lastRecord.setSingleLine(true);lastRecord.setEllipsize(android.text.TextUtils.TruncateAt.END);lastRecord.setPadding(0,Ui.dp(this,5),0,0);card.addView(lastRecord);
         LocalDate now=LocalDate.now();
         long today=durationForDay(f.id,now);long week=durationForRange(f.id,weekStart(now),weekStart(now).plusDays(7));long total=totalDuration(f.id);
-        LinearLayout details=new LinearLayout(this);details.setOrientation(LinearLayout.HORIZONTAL);details.setPadding(0,Ui.dp(this,13),0,0);
+        LinearLayout details=new LinearLayout(this);details.setOrientation(LinearLayout.HORIZONTAL);details.setPadding(0,Ui.dp(this,11),0,0);
         addFolderMetric(details,"今日",fmt(today));addFolderMetric(details,"今週",fmt(week));addFolderMetric(details,"合計",fmt(total));card.addView(details);
-        TextView average=text(I18n.tr(this,"1日平均")+"  "+fmt(averagePerRecordedDay(f.id)),13,Ui.MUTED);average.setPadding(0,Ui.dp(this,10),0,0);card.addView(average);
-        card.setOnClickListener(v->{selectedFolderId=f.id;showFolder(f.id);});
+        LinearLayout averageRow=Ui.row(this);averageRow.setGravity(Gravity.CENTER_VERTICAL);averageRow.setPadding(0,Ui.dp(this,9),0,0);
+        TextView averageLabel=text(I18n.tr(this,"1日平均"),12,Ui.MUTED);averageRow.addView(averageLabel,new LinearLayout.LayoutParams(0,-2,1));
+        TextView average=text(fmt(averagePerRecordedDay(f.id)),13,Ui.TEXT);average.setTypeface(Ui.designTypeface(Typeface.BOLD));averageRow.addView(average);card.addView(averageRow);
+        card.setContentDescription(f.name+", "+lastRecordSummary(latestEntry)+", "+entryCount(f.id)+I18n.tr(this,"件")+". "+I18n.tr(this,"フォルダーを開く"));
+        card.setFocusable(true);card.setOnClickListener(v->{selectedFolderId=f.id;showFolder(f.id);});
+        if(android.os.Build.VERSION.SDK_INT>=21){
+            android.graphics.drawable.Drawable content=card.getBackground();
+            card.setBackground(new android.graphics.drawable.RippleDrawable(
+                    android.content.res.ColorStateList.valueOf(Ui.withAlpha(Ui.TEXT,0x16)),content,Ui.round(Ui.TEXT,20,this)));
+        }
         LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.setMargins(0,0,0,Ui.dp(this,9));body.addView(card,lp);
     }
 
     private void addFolderMetric(LinearLayout parent,String label,String value){
-        LinearLayout item=new LinearLayout(this);item.setOrientation(LinearLayout.VERTICAL);TextView key=text(label,11,Ui.MUTED);item.addView(key);TextView number=Ui.title(this,value,14);number.setPadding(0,Ui.dp(this,3),0,0);item.addView(number);parent.addView(item,new LinearLayout.LayoutParams(0,-2,1));
+        LinearLayout item=new LinearLayout(this);item.setOrientation(LinearLayout.VERTICAL);item.setPadding(Ui.dp(this,9),Ui.dp(this,7),Ui.dp(this,7),Ui.dp(this,7));
+        item.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,13,this));
+        TextView key=text(label,11,Ui.MUTED);key.setSingleLine(true);item.addView(key);
+        TextView number=Ui.title(this,value,14);number.setSingleLine(true);number.setEllipsize(android.text.TextUtils.TruncateAt.END);number.setPadding(0,Ui.dp(this,2),0,0);item.addView(number);
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,-2,1);if(parent.getChildCount()>0)lp.setMargins(Ui.dp(this,6),0,0,0);parent.addView(item,lp);
     }
 
     private void showFolder(String folderId){

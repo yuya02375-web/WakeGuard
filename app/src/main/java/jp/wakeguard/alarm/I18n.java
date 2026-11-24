@@ -22,6 +22,7 @@ public final class I18n {
         put("全期間の合計","All-time total","전체 기간 합계"); put("今日の合計","Today's total","오늘 합계");
         put("まだフォルダーがありません","No folders yet","폴더가 없습니다");
         put("フォルダーを作ると、時間の記録を整理できます。","Create a folder to organize your time logs.","폴더를 만들어 시간 기록을 정리할 수 있습니다.");
+        put("最近の記録順","Most recently recorded","최근 기록 순"); put("フォルダーを開く","Open folder","폴더 열기");
         put("最近記録","Latest","최근"); put("最終記録","Last recorded","마지막 기록"); put("まだ記録がありません","No records yet","아직 기록이 없습니다");
         put("まだ時間記録がありません","No time entries yet","시간 기록이 없습니다");
         put("計測するか、時間を手動で追加できます。","Track time or add an entry manually.","시간을 측정하거나 직접 추가할 수 있습니다.");
