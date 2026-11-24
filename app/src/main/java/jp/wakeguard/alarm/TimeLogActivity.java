@@ -108,7 +108,9 @@ public class TimeLogActivity extends Activity {
         }
         TextView heading=Ui.sectionHeader(this,"フォルダー");heading.setPadding(Ui.dp(this,3),Ui.dp(this,17),0,Ui.dp(this,8));body.addView(heading);
         ArrayList<Folder> sorted=foldersByRecentActivity();
-        for(Folder f:sorted) addFolderCard(f);
+        HashMap<String,Entry> latestEntries=newestEntriesByFolder();
+        String newestRecordFolderId=mostRecentFolderId(latestEntries);
+        for(Folder f:sorted)addFolderCard(f,latestEntries.get(f.id),f.id.equals(newestRecordFolderId));
     }
 
     private void addOverviewCard(){
@@ -133,10 +135,18 @@ public class TimeLogActivity extends Activity {
         body.addView(card);
     }
 
-    private void addFolderCard(Folder f){
+    private void addFolderCard(Folder f,Entry latestEntry,boolean mostRecentRecord){
+        boolean tracking=isTrackingFolder(f.id);
         LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(Ui.dp(this,17),Ui.dp(this,15),Ui.dp(this,17),Ui.dp(this,14));card.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,20,this));
         LinearLayout titleRow=Ui.row(this);titleRow.setPadding(0,0,0,0);TextView name=Ui.title(this,f.name,19);titleRow.addView(name,new LinearLayout.LayoutParams(0,-2,1));
+        if(tracking||mostRecentRecord){
+            TextView status=text(I18n.tr(this,tracking?"計測中":"最近記録"),11,tracking?Ui.HERO_TEXT:Ui.ACCENT_2);
+            status.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));status.setGravity(Gravity.CENTER);status.setPadding(Ui.dp(this,9),Ui.dp(this,5),Ui.dp(this,9),Ui.dp(this,5));
+            status.setBackground(Ui.round(tracking?Ui.HERO_START:Ui.withAlpha(Ui.ACCENT_2,0x18),14,this));
+            LinearLayout.LayoutParams statusLp=new LinearLayout.LayoutParams(-2,-2);statusLp.setMargins(Ui.dp(this,6),0,Ui.dp(this,8),0);titleRow.addView(status,statusLp);
+        }
         TextView count=text(entryCount(f.id)+I18n.tr(this,"件"),12,Ui.HERO_TEXT);count.setGravity(Gravity.CENTER);count.setPadding(Ui.dp(this,10),Ui.dp(this,5),Ui.dp(this,10),Ui.dp(this,5));count.setBackground(Ui.round(Ui.HERO_START,14,this));titleRow.addView(count);card.addView(titleRow);
+        TextView lastRecord=text(lastRecordSummary(latestEntry),12,latestEntry==null?Ui.MUTED:(mostRecentRecord?Ui.ACCENT_2:Ui.MUTED));lastRecord.setSingleLine(true);lastRecord.setEllipsize(android.text.TextUtils.TruncateAt.END);lastRecord.setPadding(0,Ui.dp(this,5),0,0);card.addView(lastRecord);
         LocalDate now=LocalDate.now();
         long today=durationForDay(f.id,now);long week=durationForRange(f.id,weekStart(now),weekStart(now).plusDays(7));long total=totalDuration(f.id);
         LinearLayout details=new LinearLayout(this);details.setOrientation(LinearLayout.HORIZONTAL);details.setPadding(0,Ui.dp(this,13),0,0);
@@ -322,6 +332,29 @@ public class TimeLogActivity extends Activity {
 
     private ArrayList<LocalDate> daysWithEntries(String folderId){TreeSet<LocalDate> days=new TreeSet<>(Comparator.reverseOrder());for(Entry e:entries){if(!folderId.equals(e.folderId)||e.end<=e.start)continue;LocalDate a=Instant.ofEpochMilli(e.start).atZone(zone).toLocalDate(),b=Instant.ofEpochMilli(e.end-1).atZone(zone).toLocalDate();for(LocalDate d=a;!d.isAfter(b);d=d.plusDays(1))days.add(d);}return new ArrayList<>(days);}
     private long recordedAt(Entry e){return e.createdAt>0L?e.createdAt:e.end;}
+    private HashMap<String,Entry> newestEntriesByFolder(){
+        HashMap<String,Entry> newest=new HashMap<>();
+        for(Entry e:entries){
+            Entry previous=newest.get(e.folderId);
+            if(previous==null||recordedAt(e)>recordedAt(previous)||(recordedAt(e)==recordedAt(previous)&&e.end>previous.end))newest.put(e.folderId,e);
+        }
+        return newest;
+    }
+    private String mostRecentFolderId(HashMap<String,Entry> newestEntries){
+        String newestFolderId=null;long latest=Long.MIN_VALUE;
+        for(Map.Entry<String,Entry> item:newestEntries.entrySet()){
+            long at=recordedAt(item.getValue());
+            if(at>latest){latest=at;newestFolderId=item.getKey();}
+        }
+        return newestFolderId;
+    }
+    private String lastRecordSummary(Entry entry){
+        if(entry==null)return I18n.tr(this,"まだ記録がありません");
+        ZonedDateTime time=Instant.ofEpochMilli(recordedAt(entry)).atZone(zone);
+        LocalDate date=time.toLocalDate(),today=LocalDate.now(zone);
+        String day=date.equals(today)?I18n.tr(this,"今日"):(date.equals(today.minusDays(1))?I18n.tr(this,"昨日"):date.format(DateTimeFormatter.ofPattern(I18n.datePattern(this,"short"),I18n.locale(this))));
+        return I18n.tr(this,"最終記録")+" · "+day+" "+time.format(DateTimeFormatter.ofPattern("HH:mm",I18n.locale(this)));
+    }
     private ArrayList<Folder> foldersByRecentActivity(){
         HashMap<String,Long> activityAt=new HashMap<>();
         for(Folder f:folders)activityAt.put(f.id,f.createdAt);
