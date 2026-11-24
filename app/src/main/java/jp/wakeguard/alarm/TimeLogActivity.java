@@ -35,6 +35,8 @@ public class TimeLogActivity extends Activity {
     private String pendingImportLabel="ストップウォッチ";
     private boolean returnToClockWhenBack=false;
     private Button streakSegment,timeSegment;
+    private EditText folderSearch;
+    private LinearLayout folderResults;
 
     static final class Folder {
         String id,name; long createdAt;
@@ -112,10 +114,36 @@ public class TimeLogActivity extends Activity {
         TextView order=Ui.pill(this,I18n.tr(this,"最近の記録順"));
         LinearLayout.LayoutParams orderLp=new LinearLayout.LayoutParams(-2,-2);orderLp.setMargins(Ui.dp(this,8),Ui.dp(this,7),0,0);headingRow.addView(order,orderLp);
         body.addView(headingRow);
+        folderSearch=new EditText(this);folderSearch.setSingleLine(true);folderSearch.setTextSize(15);folderSearch.setHint(I18n.tr(this,"フォルダー名で検索"));folderSearch.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),0);Ui.styleInput(folderSearch,this,Ui.SURFACE_2,14);
+        body.addView(folderSearch,Ui.gapTop(this,4));
+        folderResults=new LinearLayout(this);folderResults.setOrientation(LinearLayout.VERTICAL);body.addView(folderResults,Ui.gapTop(this,12));
+        folderSearch.addTextChangedListener(new android.text.TextWatcher(){
+            public void beforeTextChanged(CharSequence s,int start,int count,int after){}
+            public void onTextChanged(CharSequence s,int start,int before,int count){renderFolderResults();}
+            public void afterTextChanged(android.text.Editable e){}
+        });
+        renderFolderResults();
+    }
+
+    private void renderFolderResults(){
+        if(folderResults==null)return;
+        folderResults.removeAllViews();
         ArrayList<Folder> sorted=foldersByRecentActivity();
         HashMap<String,Entry> latestEntries=newestEntriesByFolder();
         String newestRecordFolderId=mostRecentFolderId(latestEntries);
-        for(Folder f:sorted)addFolderCard(f,latestEntries.get(f.id),f.id.equals(newestRecordFolderId));
+        String query=folderSearch==null?"":folderSearch.getText().toString().trim().toLowerCase(Locale.ROOT);
+        int matches=0;
+        for(Folder f:sorted){
+            if(!query.isEmpty()&&!f.name.toLowerCase(Locale.ROOT).contains(query))continue;
+            addFolderCard(folderResults,f,latestEntries.get(f.id),f.id.equals(newestRecordFolderId));matches++;
+        }
+        if(matches==0){
+            LinearLayout empty=Ui.card(this);empty.setOrientation(LinearLayout.VERTICAL);empty.setPadding(Ui.dp(this,17),Ui.dp(this,16),Ui.dp(this,17),Ui.dp(this,15));empty.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,18,this));
+            TextView message=Ui.title(this,I18n.tr(this,"一致するフォルダーがありません"),16);empty.addView(message);
+            TextView hint=text(I18n.tr(this,"別の名前で検索するか、入力を消してください。"),13,Ui.MUTED);hint.setPadding(0,Ui.dp(this,4),0,Ui.dp(this,10));empty.addView(hint);
+            Button clear=Ui.ghostButton(this,I18n.tr(this,"検索をクリア"));clear.setOnClickListener(v->{if(folderSearch!=null)folderSearch.setText("");});empty.addView(clear,new LinearLayout.LayoutParams(-1,Ui.dp(this,44)));
+            folderResults.addView(empty);
+        }
     }
 
     private void addOverviewCard(){
@@ -140,7 +168,7 @@ public class TimeLogActivity extends Activity {
         body.addView(card);
     }
 
-    private void addFolderCard(Folder f,Entry latestEntry,boolean mostRecentRecord){
+    private void addFolderCard(LinearLayout parent,Folder f,Entry latestEntry,boolean mostRecentRecord){
         boolean tracking=isTrackingFolder(f.id);
         LinearLayout card=Ui.card(this);card.setPadding(Ui.dp(this,17),Ui.dp(this,13),Ui.dp(this,14),Ui.dp(this,13));
         LinearLayout titleRow=Ui.row(this);titleRow.setGravity(Gravity.CENTER_VERTICAL);
@@ -172,7 +200,7 @@ public class TimeLogActivity extends Activity {
             card.setBackground(new android.graphics.drawable.RippleDrawable(
                     android.content.res.ColorStateList.valueOf(Ui.withAlpha(Ui.TEXT,0x16)),content,Ui.round(Ui.TEXT,20,this)));
         }
-        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.setMargins(0,0,0,Ui.dp(this,9));body.addView(card,lp);
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.setMargins(0,0,0,Ui.dp(this,9));parent.addView(card,lp);
     }
 
     private void addFolderMetric(LinearLayout parent,String label,String value){

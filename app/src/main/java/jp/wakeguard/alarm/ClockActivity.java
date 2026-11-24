@@ -1055,14 +1055,15 @@ public class ClockActivity extends Activity {
     }
 
     private void buildTimer() {
+        LinearLayout composer=Ui.card(this);composer.setOrientation(LinearLayout.VERTICAL);composer.setPadding(Ui.dp(this,18),Ui.dp(this,18),Ui.dp(this,18),Ui.dp(this,18));composer.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,24,this));
         LinearLayout titleRow=Ui.row(this);titleRow.setGravity(Gravity.CENTER_VERTICAL);
-        TextView quickTitle=Ui.title(this,"タイマーを作る",25);titleRow.addView(quickTitle,new LinearLayout.LayoutParams(0,-2,1));
+        TextView quickTitle=Ui.title(this,I18n.tr(this,"タイマーを作る"),25);titleRow.addView(quickTitle,new LinearLayout.LayoutParams(0,-2,1));
         savedTimersButton=Ui.ghostButton(this,savedTimersButtonLabel());savedTimersButton.setTextSize(12);savedTimersButton.setSingleLine(true);savedTimersButton.setPadding(Ui.dp(this,10),0,Ui.dp(this,10),0);savedTimersButton.setOnClickListener(v->showSavedTimersDialog());titleRow.addView(savedTimersButton);
-        body.addView(titleRow);
-        TextView quickHint=Ui.text(this,"保存・今回だけ準備・今すぐ開始を選べます",13,Ui.MUTED);quickHint.setPadding(0,Ui.dp(this,4),0,0);body.addView(quickHint);
+        composer.addView(titleRow);
+        TextView quickHint=Ui.text(this,I18n.tr(this,"時間を決めて、使い方を選びます"),13,Ui.MUTED);quickHint.setPadding(0,Ui.dp(this,4),0,0);composer.addView(quickHint);
 
-        quickLabel=new EditText(this);quickLabel.setHint(I18n.tr(this,"名前（例: お湯）"));quickLabel.setSingleLine(true);quickLabel.setTextSize(16);quickLabel.setTextColor(Ui.TEXT);quickLabel.setHintTextColor(Ui.MUTED_2);quickLabel.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),0);Ui.styleInput(quickLabel,this,Ui.SURFACE_2,14);body.addView(quickLabel,new LinearLayout.LayoutParams(-1,Ui.dp(this,52)));
-        quickFolder=timerTextAction("保存時のフォルダ："+selectedQuickFolder,13,Ui.TEXT);quickFolder.setGravity(Gravity.CENTER_VERTICAL|Gravity.START);quickFolder.setOnClickListener(v->showFolderPicker(selectedQuickFolder,name->{selectedQuickFolder=name;quickFolder.setText(I18n.tr(this,"保存時のフォルダ：")+name);}));body.addView(quickFolder,Ui.gapTop(this,8));
+        quickLabel=new EditText(this);quickLabel.setHint(I18n.tr(this,"名前（例: お湯）"));quickLabel.setSingleLine(true);quickLabel.setTextSize(16);quickLabel.setTextColor(Ui.TEXT);quickLabel.setHintTextColor(Ui.MUTED_2);quickLabel.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),0);Ui.styleInput(quickLabel,this,Ui.SURFACE_2,14);composer.addView(quickLabel,new LinearLayout.LayoutParams(-1,Ui.dp(this,52)));
+        quickFolder=timerTextAction("保存時のフォルダ："+selectedQuickFolder,13,Ui.TEXT);quickFolder.setGravity(Gravity.CENTER_VERTICAL|Gravity.START);quickFolder.setOnClickListener(v->showFolderPicker(selectedQuickFolder,name->{selectedQuickFolder=name;quickFolder.setText(I18n.tr(this,"保存時のフォルダ：")+name);}));composer.addView(quickFolder,Ui.gapTop(this,8));
 
         LinearLayout durationRow=new LinearLayout(this); durationRow.setGravity(Gravity.CENTER_VERTICAL); durationRow.setPadding(0,Ui.dp(this,12),0,0);
         quickHours=quickNumber("時"); quickMinutes=quickNumber("分"); quickSeconds=quickNumber("秒");
@@ -1073,30 +1074,36 @@ public class ClockActivity extends Activity {
         TextView c2=text(":",27,Ui.MUTED);c2.setGravity(Gravity.CENTER);durationRow.addView(c2,new LinearLayout.LayoutParams(Ui.dp(this,24),-1));
         durationRow.addView(quickSeconds,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));
         LinearLayout durationCard=Ui.card(this);
-        durationCard.setPadding(Ui.dp(this,14),Ui.dp(this,9),Ui.dp(this,14),Ui.dp(this,15));
+        durationCard.setOrientation(LinearLayout.VERTICAL);durationCard.setPadding(Ui.dp(this,14),Ui.dp(this,12),Ui.dp(this,14),Ui.dp(this,14));durationCard.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,18,this));
+        TextView durationHeading=Ui.sectionHeader(this,I18n.tr(this,"タイマー時間"));durationHeading.setPadding(0,0,0,Ui.dp(this,2));durationCard.addView(durationHeading);
         durationCard.addView(durationRow);
-        body.addView(durationCard,Ui.gapTop(this,12));
+        composer.addView(durationCard,Ui.gapTop(this,12));
 
-        TextView presetLabel=text("よく使う時間",12,Ui.MUTED); body.addView(presetLabel,Ui.gapTop(this,12));
+        TextView presetLabel=text(I18n.tr(this,"よく使う時間"),12,Ui.MUTED); composer.addView(presetLabel,Ui.gapTop(this,12));
         HorizontalScrollView presetsScroll=new HorizontalScrollView(this);presetsScroll.setHorizontalScrollBarEnabled(false); LinearLayout presets=new LinearLayout(this);
         String[] presetNames={"30秒","1分","3分","5分","10分","30分","1時間"}; long[] presetMs={30000L,60000L,180000L,300000L,600000L,1800000L,3600000L};
-        for(int i=0;i<presetNames.length;i++){final long value=presetMs[i];TextView a=timerTextAction(presetNames[i],13,Ui.TEXT);a.setOnClickListener(v->setQuickDuration(value));presets.addView(a);} presetsScroll.addView(presets);body.addView(presetsScroll,Ui.gapTop(this,2));
+        for(int i=0;i<presetNames.length;i++){final long value=presetMs[i];TextView a=timerTextAction(presetNames[i],13,Ui.TEXT);a.setOnClickListener(v->setQuickDuration(value));presets.addView(a);} presetsScroll.addView(presets);composer.addView(presetsScroll,Ui.gapTop(this,2));
 
-        TextView adjustLabel=text("細かく調整  ▾",14,Ui.MUTED);adjustLabel.setClickable(true);adjustLabel.setPadding(0,Ui.dp(this,8),0,Ui.dp(this,8));adjustLabel.setMinHeight(Ui.dp(this,48));adjustLabel.setGravity(Gravity.CENTER_VERTICAL|Gravity.START); body.addView(adjustLabel,Ui.gapTop(this,8));
+        TextView adjustLabel=text("細かく調整  ▾",14,Ui.MUTED);adjustLabel.setClickable(true);adjustLabel.setPadding(0,Ui.dp(this,8),0,Ui.dp(this,8));adjustLabel.setMinHeight(Ui.dp(this,48));adjustLabel.setGravity(Gravity.CENTER_VERTICAL|Gravity.START); composer.addView(adjustLabel,Ui.gapTop(this,8));
         HorizontalScrollView adjustScroll=new HorizontalScrollView(this);adjustScroll.setHorizontalScrollBarEnabled(false);LinearLayout adjust=new LinearLayout(this);
         String[] labels={"−1秒","＋1秒","−10秒","＋10秒","−30秒","＋30秒","−1分","＋1分","−5分","＋5分","−10分","＋10分","−1時間","＋1時間"}; long[] deltas={-1000L,1000L,-10000L,10000L,-30000L,30000L,-60000L,60000L,-300000L,300000L,-600000L,600000L,-3600000L,3600000L};
-        for(int i=0;i<labels.length;i++){final long delta=deltas[i];TextView a=timerTextAction(labels[i],13,Ui.TEXT);a.setOnClickListener(v->adjustQuickDuration(delta));adjust.addView(a);} adjustScroll.addView(adjust);body.addView(adjustScroll,Ui.gapTop(this,2));
+        for(int i=0;i<labels.length;i++){final long delta=deltas[i];TextView a=timerTextAction(labels[i],13,Ui.TEXT);a.setOnClickListener(v->adjustQuickDuration(delta));adjust.addView(a);} adjustScroll.addView(adjust);composer.addView(adjustScroll,Ui.gapTop(this,2));
         adjustScroll.setVisibility(View.GONE);
         adjustLabel.setOnClickListener(v->{boolean open=adjustScroll.getVisibility()!=View.VISIBLE;adjustScroll.setVisibility(open?View.VISIBLE:View.GONE);adjustLabel.setText(I18n.tr(this,open?"細かく調整  ▴":"細かく調整  ▾"));});
 
-        LinearLayout saveRow=Ui.row(this); saveRow.setPadding(0,Ui.dp(this,10),0,Ui.dp(this,4)); TextView saveLabel=text("開始時に保存リストにも登録",14,Ui.TEXT);saveRow.addView(saveLabel,new LinearLayout.LayoutParams(0,-2,1)); quickSave=new Switch(this);quickSave.setChecked(true);Ui.styleSwitch(quickSave,this);saveRow.addView(quickSave);body.addView(saveRow);
+        LinearLayout actionCard=Ui.card(this);actionCard.setOrientation(LinearLayout.VERTICAL);actionCard.setPadding(Ui.dp(this,14),Ui.dp(this,13),Ui.dp(this,14),Ui.dp(this,14));actionCard.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,18,this));
+        TextView actionHeading=Ui.sectionHeader(this,I18n.tr(this,"使い方を選ぶ"));actionCard.addView(actionHeading);
+        TextView actionHint=text(I18n.tr(this,"保存すると後から再利用できます。準備では時間は進みません。"),12,Ui.MUTED);actionHint.setPadding(0,Ui.dp(this,3),0,Ui.dp(this,5));actionCard.addView(actionHint);
+        LinearLayout saveRow=Ui.row(this); saveRow.setPadding(0,Ui.dp(this,6),0,Ui.dp(this,7)); TextView saveLabel=text(I18n.tr(this,"開始時に保存リストにも登録"),14,Ui.TEXT);saveRow.addView(saveLabel,new LinearLayout.LayoutParams(0,-2,1)); quickSave=new Switch(this);quickSave.setChecked(true);Ui.styleSwitch(quickSave,this);saveRow.addView(quickSave);actionCard.addView(saveRow);
         LinearLayout timerActions=new LinearLayout(this);timerActions.setOrientation(LinearLayout.HORIZONTAL);
         Button save=Ui.button(this,"保存",false);save.setOnClickListener(v->saveQuickTimer());
         Button once=Ui.button(this,"今回だけ準備",false);once.setOnClickListener(v->prepareQuickTimer());
         LinearLayout.LayoutParams actionLp=new LinearLayout.LayoutParams(0,Ui.dp(this,52),1);timerActions.addView(save,actionLp);
         LinearLayout.LayoutParams onceLp=new LinearLayout.LayoutParams(0,Ui.dp(this,52),1);onceLp.setMargins(Ui.dp(this,8),0,0,0);timerActions.addView(once,onceLp);
-        body.addView(timerActions,Ui.gapTop(this,8));
-        Button start=Ui.button(this,"今すぐ開始",true);start.setOnClickListener(v->startQuickEditor());body.addView(start,Ui.gapTop(this,8));
+        actionCard.addView(timerActions,Ui.gapTop(this,7));
+        Button start=Ui.button(this,I18n.tr(this,"今すぐ開始"),true);start.setOnClickListener(v->startQuickEditor());actionCard.addView(start,Ui.gapTop(this,8));
+        composer.addView(actionCard,Ui.gapTop(this,16));
+        body.addView(composer,Ui.gapTop(this,5));
         body.addView(Ui.divider(this),Ui.dividerTop(this,18));
 
         timerList=new LinearLayout(this);timerList.setOrientation(LinearLayout.VERTICAL);body.addView(timerList);renderTimers();

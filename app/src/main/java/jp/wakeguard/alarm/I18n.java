@@ -14,7 +14,13 @@ public final class I18n {
     static {
         // Japanese source text -> English, Korean. Japanese remains the canonical source text.
         put("アラーム","Alarm","알람"); put("時計","Clock","시계"); put("世界時計","World clock","세계 시계");
-        put("タイマー","Timer","타이머"); put("ストップウォッチ","Stopwatch","스톱워치"); put("設定","Settings","설정");
+        put("タイマー","Timer","타이머");
+        put("タイマーを作る","Create a timer","타이머 만들기"); put("時間を決めて、使い方を選びます","Set a duration, then choose how to use it","시간을 정하고 사용할 방법을 선택하세요");
+        put("タイマー時間","Timer duration","타이머 시간"); put("使い方を選ぶ","Choose how to use it","사용 방법 선택");
+        put("保存すると後から再利用できます。準備では時間は進みません。","Save to reuse later. Prepare keeps the timer stopped.","저장하면 나중에 다시 쓸 수 있습니다. 준비 상태에서는 시간이 흐르지 않습니다.");
+        put("フォルダー名で検索","Search folders","폴더 이름 검색"); put("一致するフォルダーがありません","No matching folders","일치하는 폴더가 없습니다");
+        put("別の名前で検索するか、入力を消してください。","Try another name or clear the search.","다른 이름으로 검색하거나 입력을 지우세요."); put("検索をクリア","Clear search","검색 지우기");
+ put("ストップウォッチ","Stopwatch","스톱워치"); put("設定","Settings","설정");
         put("記録","Records","기록"); put("起床","Wake-ups","기상"); put("時間の記録","Time log","시간 기록");
         put("起床と時間の記録","Wake-ups and time","기상 및 시간 기록"); put("時間記録","Time log","시간 기록");
         put("時計ツール","Clock tools","시계 도구"); put("計測 / ラップ","Time / lap","측정 / 랩");
