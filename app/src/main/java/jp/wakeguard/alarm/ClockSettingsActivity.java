@@ -38,7 +38,7 @@ public class ClockSettingsActivity extends Activity {
     private void addWidgetButton(String label,Class<?> provider){Button b=Ui.button(this,label,false);b.setOnClickListener(v->showSizePicker(provider,label));body.addView(b,Ui.gapTop(this,8));}
     private void showSizePicker(Class<?> provider,String name){
         Class<?>[] v=variants(provider);String[] labels=sizeLabels(provider);
-        new AlertDialog.Builder(this).setTitle(I18n.tr(this,name)+" ・ "+I18n.tr(this,"サイズ")).setItems(labels,(d,which)->{
+        Ui.dialogBuilder(this).setTitle(I18n.tr(this,name)+" ・ "+I18n.tr(this,"サイズ")).setItems(labels,(d,which)->{
             Class<?> chosen=v[Math.max(0,Math.min(which,v.length-1))];
             if(provider==WorldClockWidgetProvider.class){Intent i=new Intent(this,WorldClockWidgetConfigActivity.class).putExtra("pin_provider_class",chosen.getName());startActivity(i);}
             else pinWidget(chosen,name);

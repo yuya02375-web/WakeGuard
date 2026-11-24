@@ -727,7 +727,7 @@ public class ClockActivity extends Activity {
         if(found.isEmpty()){Toast.makeText(this,I18n.tr(this,"オンライン候補が見つかりませんでした"),Toast.LENGTH_SHORT).show();return;}
         if(found.size()==1){String label=found.values().iterator().next();search.setText(label);search.setSelection(search.length());return;}
         ArrayList<String> codes=new ArrayList<>(found.keySet());String[] labels=new String[codes.size()];for(int i=0;i<codes.size();i++)labels[i]=found.get(codes.get(i));
-        new AlertDialog.Builder(this).setTitle(I18n.tr(this,"国を選択")).setItems(labels,(d,which)->{search.setText(labels[which]);search.setSelection(search.length());}).setNegativeButton(I18n.tr(this,"キャンセル"),null).show();
+        Ui.dialogBuilder(this).setTitle(I18n.tr(this,"国を選択")).setItems(labels,(d,which)->{search.setText(labels[which]);search.setSelection(search.length());}).setNegativeButton(I18n.tr(this,"キャンセル"),null).show();
     }
 
     private void onlinePlaceLookup(String raw,EditText search,Button online){
@@ -1006,7 +1006,7 @@ public class ClockActivity extends Activity {
         ArrayList<Long> laps=loadLaps();if(laps.isEmpty()){Toast.makeText(this,"ラップがありません",Toast.LENGTH_SHORT).show();return;}
         ArrayList<Long> walls=loadLapWalls();String[] items=new String[laps.size()];
         for(int i=0;i<laps.size();i++){long total=laps.get(i),prev=i==0?0L:laps.get(i-1),split=Math.max(0L,total-prev);items[i]="ラップ "+(i+1)+"   "+formatStopwatch(split);}
-        new AlertDialog.Builder(this).setTitle("時間記録に追加するラップ").setItems(items,(d,which)->{
+        Ui.dialogBuilder(this).setTitle("時間記録に追加するラップ").setItems(items,(d,which)->{
             long total=laps.get(which),prev=which==0?0L:laps.get(which-1),split=Math.max(0L,total-prev);long end=which<walls.size()?walls.get(which):0L;
             if(end<=0L){long ref=p().getBoolean(KEY_SW_RUNNING,false)?System.currentTimeMillis():p().getLong(KEY_SW_STOPPED_WALL,System.currentTimeMillis());end=ref-Math.max(0L,stopwatchElapsed()-total);}
             openTimeLogImport(split,end,"ラップ "+(which+1));
@@ -1329,14 +1329,14 @@ public class ClockActivity extends Activity {
 
     private void editTimerName(long id){
         TimerStore.Entry e=TimerStore.find(this,id);if(e==null)return;EditText input=new EditText(this);input.setSingleLine(true);input.setText(e.label);input.setHint(I18n.tr(this,"タイマー名"));input.setTextColor(Ui.TEXT);input.setHintTextColor(Ui.MUTED_2);input.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),0);Ui.styleInput(input,this,Ui.SURFACE_2,14);
-        new AlertDialog.Builder(this).setTitle(I18n.tr(this,"名前を変更")).setView(input).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"保存"),(d,w)->{e.label=input.getText().toString().trim();TimerStore.update(this,e);renderTimers();}).show();
+        Ui.dialogBuilder(this).setTitle(I18n.tr(this,"名前を変更")).setView(input).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"保存"),(d,w)->{e.label=input.getText().toString().trim();TimerStore.update(this,e);renderTimers();}).show();
     }
 
     private void showSavePresetDialog(TimerStore.Entry source){
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(Ui.dp(this,18),0,Ui.dp(this,18),0);
         EditText label=new EditText(this);label.setSingleLine(true);label.setText(source.label);label.setHint(I18n.tr(this,"名前（例: お湯）"));label.setTextSize(16);label.setTextColor(Ui.TEXT);label.setHintTextColor(Ui.MUTED_2);label.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),0);Ui.styleInput(label,this,Ui.SURFACE_2,14);box.addView(label,new LinearLayout.LayoutParams(-1,Ui.dp(this,52)));
         final String[] folder={TimerStore.UNFILED};TextView choose=timerTextAction("保存時のフォルダ："+folder[0],13,Ui.TEXT);choose.setGravity(Gravity.CENTER_VERTICAL|Gravity.START);choose.setOnClickListener(v->showFolderPicker(folder[0],name->{folder[0]=name;choose.setText(I18n.tr(this,"保存時のフォルダ：")+name);}));box.addView(choose,Ui.gapTop(this,8));
-        new AlertDialog.Builder(this).setTitle(I18n.tr(this,"保存リストに追加")).setView(box).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"保存"),(d,w)->{source.label=label.getText().toString().trim();TimerStore.duplicateAsSaved(this,source,folder[0]);renderTimers();Toast.makeText(this,I18n.tr(this,"保存したタイマーに追加しました"),Toast.LENGTH_SHORT).show();}).show();
+        Ui.dialogBuilder(this).setTitle(I18n.tr(this,"保存リストに追加")).setView(box).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"保存"),(d,w)->{source.label=label.getText().toString().trim();TimerStore.duplicateAsSaved(this,source,folder[0]);renderTimers();Toast.makeText(this,I18n.tr(this,"保存したタイマーに追加しました"),Toast.LENGTH_SHORT).show();}).show();
     }
 
     private void showFolderPicker(String current,Consumer<String> selected){
@@ -1409,7 +1409,7 @@ public class ClockActivity extends Activity {
             public void onTextChanged(CharSequence s,int start,int before,int count){adapter.getFilter().filter(s);}
             public void afterTextChanged(Editable e){}
         });
-        AlertDialog dialog=new AlertDialog.Builder(this)
+        AlertDialog dialog=Ui.dialogBuilder(this)
             .setView(box)
             .setNeutralButton(I18n.tr(this,"＋ 新しいフォルダ"),(d,w)->promptFolderName("新しいフォルダ",null,name->{TimerStore.createFolder(this,name);selected.accept(name);}))
             .setNegativeButton(I18n.tr(this,"キャンセル"),null)
@@ -1427,18 +1427,18 @@ public class ClockActivity extends Activity {
             String folder=adapter.getItem(position);
             if(folder!=null){dialog.dismiss();selected.accept(folder);}
         });
-        dialog.show();
+        Ui.showDialog(dialog,this);
     }
 
     private void promptFolderName(String title,String initial,Consumer<String> saved){
         EditText input=new EditText(this);input.setSingleLine(true);input.setText(initial==null?"":initial);input.setHint(I18n.tr(this,"フォルダ名"));input.setTextColor(Ui.TEXT);input.setHintTextColor(Ui.MUTED_2);input.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),0);Ui.styleInput(input,this,Ui.SURFACE_2,14);
-        new AlertDialog.Builder(this).setTitle(I18n.tr(this,title)).setView(input).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"保存"),(d,w)->{String name=input.getText().toString().trim();if(name.isEmpty()){Toast.makeText(this,I18n.tr(this,"フォルダ名を入力してください"),Toast.LENGTH_SHORT).show();return;}saved.accept(name);}).show();
+        Ui.dialogBuilder(this).setTitle(I18n.tr(this,title)).setView(input).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"保存"),(d,w)->{String name=input.getText().toString().trim();if(name.isEmpty()){Toast.makeText(this,I18n.tr(this,"フォルダ名を入力してください"),Toast.LENGTH_SHORT).show();return;}saved.accept(name);}).show();
     }
 
     private void showFolderMenu(String folder){
-        new AlertDialog.Builder(this).setTitle(I18n.tr(this,folder)).setItems(new String[]{I18n.tr(this,"名前を変更"),I18n.tr(this,"削除")},(d,which)->{
+        Ui.dialogBuilder(this).setTitle(I18n.tr(this,folder)).setItems(new String[]{I18n.tr(this,"名前を変更"),I18n.tr(this,"削除")},(d,which)->{
             if(which==0)promptFolderName("フォルダ名を変更",folder,name->{boolean duplicate=false;for(String value:TimerStore.folders(this))if(value.equalsIgnoreCase(name)&&!value.equalsIgnoreCase(folder))duplicate=true;if(duplicate){Toast.makeText(this,I18n.tr(this,"同じ名前のフォルダがあります"),Toast.LENGTH_SHORT).show();return;}TimerStore.renameFolder(this,folder,name);renderTimers();});
-            else new AlertDialog.Builder(this).setMessage(I18n.tr(this,"中のタイマーは「未分類」に移動します。フォルダを削除しますか？")).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"削除"),(x,y)->{TimerStore.deleteFolder(this,folder);renderTimers();}).show();
+            else Ui.dialogBuilder(this).setMessage(I18n.tr(this,"中のタイマーは「未分類」に移動します。フォルダを削除しますか？")).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"削除"),(x,y)->{TimerStore.deleteFolder(this,folder);renderTimers();}).show();
         }).show();
     }
 
@@ -1457,7 +1457,7 @@ public class ClockActivity extends Activity {
 
     private void pickTimerSound(long id){
         TimerStore.Entry e=TimerStore.find(this,id);if(e==null)return;
-        new AlertDialog.Builder(this)
+        Ui.dialogBuilder(this)
             .setTitle(I18n.tr(this,"タイマーの音・動画"))
             .setItems(new String[]{I18n.tr(this,"音声を選択"),I18n.tr(this,"動画を選択"),I18n.tr(this,"標準に戻す")},(d,which)->{
                 if(which==0)pickTimerMedia(id,false);
@@ -1513,9 +1513,9 @@ public class ClockActivity extends Activity {
         Switch save=new Switch(this);save.setText(I18n.tr(this,"開始時に保存リストにも登録"));save.setTextColor(Ui.TEXT);save.setChecked(true);Ui.styleSwitch(save,this);box.addView(save,Ui.gapTop(this,12));
         LinearLayout actions=new LinearLayout(this);Button saveOnly=Ui.button(this,"保存",false);Button once=Ui.button(this,"今回だけ",false);Button start=Ui.button(this,"開始",true);
         LinearLayout.LayoutParams actionLp=new LinearLayout.LayoutParams(0,Ui.dp(this,48),1);actions.addView(saveOnly,actionLp);LinearLayout.LayoutParams onceLp=new LinearLayout.LayoutParams(0,Ui.dp(this,48),1);onceLp.setMargins(Ui.dp(this,8),0,0,0);actions.addView(once,onceLp);box.addView(actions,Ui.gapTop(this,14));box.addView(start,Ui.gapTop(this,8));
-        AlertDialog d=new AlertDialog.Builder(this).setTitle(I18n.tr(this,"タイマーを作成")).setView(box).setNegativeButton(I18n.tr(this,"閉じる"),null).create();
+        AlertDialog d=Ui.dialogBuilder(this).setTitle(I18n.tr(this,"タイマーを作成")).setView(box).setNegativeButton(I18n.tr(this,"閉じる"),null).create();
         saveOnly.setOnClickListener(v->createTimerFromDialog(d,label,h,m,sec,folder[0],"save",save.isChecked()));once.setOnClickListener(v->createTimerFromDialog(d,label,h,m,sec,folder[0],"once",false));start.setOnClickListener(v->createTimerFromDialog(d,label,h,m,sec,folder[0],"start",save.isChecked()));
-        d.show();
+        Ui.showDialog(d,this);
     }
 
     private void createTimerFromDialog(AlertDialog d,EditText label,EditText h,EditText m,EditText sec,String folder,String action,boolean keep){
@@ -1574,7 +1574,7 @@ public class ClockActivity extends Activity {
     }
     private void promptTimerVideoFullScreenPermissionIfNeeded(){
         if(Build.VERSION.SDK_INT<34||canUseTimerVideoFullScreen())return;
-        try{new AlertDialog.Builder(this).setTitle(I18n.tr(this,"動画タイマーの全画面表示"))
+        try{Ui.dialogBuilder(this).setTitle(I18n.tr(this,"動画タイマーの全画面表示"))
             .setMessage(I18n.tr(this,"動画をタイマー終了時に画面いっぱいに表示するには、全画面通知の許可をオンにしてください。"))
             .setNegativeButton(I18n.tr(this,"あとで"),null)
             .setPositiveButton(I18n.tr(this,"設定を開く"),(d,w)->{try{android.content.Intent x=new android.content.Intent(android.provider.Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,android.net.Uri.parse("package:"+getPackageName()));startActivity(x);}catch(Throwable ignored){}}).show();}catch(Throwable ignored){}
@@ -1597,7 +1597,7 @@ public class ClockActivity extends Activity {
 
     private void showTimerNotificationSettingsDialog(){
         try{
-            new AlertDialog.Builder(this)
+            Ui.dialogBuilder(this)
                     .setTitle(I18n.tr(this,"時計ツールの通知を表示できません"))
                     .setMessage(I18n.tr(this,"タイマーとストップウォッチの実行中表示を通知に出すには、IGNIDO Wakeの通知を許可してください。"))
                     .setNegativeButton(I18n.tr(this,"閉じる"),null)

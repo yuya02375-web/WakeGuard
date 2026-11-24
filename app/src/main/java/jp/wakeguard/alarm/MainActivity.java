@@ -428,7 +428,7 @@ public class MainActivity extends Activity {
 
     private void confirmDelete(AlarmStore.Entry e){
         if(e==null||e.id<1000)return;
-        new AlertDialog.Builder(this)
+        Ui.dialogBuilder(this)
                 .setTitle(I18n.tr(this,"アラームを削除"))
                 .setMessage(I18n.tr(this,"このアラームだけ削除します。"))
                 .setNegativeButton(I18n.tr(this,"キャンセル"),null)

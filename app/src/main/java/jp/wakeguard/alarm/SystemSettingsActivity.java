@@ -330,7 +330,7 @@ public class SystemSettingsActivity extends Activity {
                 Toast.makeText(this, localize("バックアップを書き出せませんでした", "Could not export the backup", "백업을 내보내지 못했습니다."), Toast.LENGTH_LONG).show();
             }
         } else if (requestCode == REQ_IMPORT_BACKUP) {
-            new AlertDialog.Builder(this)
+            Ui.dialogBuilder(this)
                     .setTitle(localize("バックアップを復元", "Restore backup", "백업 복원"))
                     .setMessage(localize("現在のアラーム・時間記録・ストリークをバックアップ内容で置き換えます。",
                             "Current alarms, time logs, and streak records will be replaced with the backup contents.",

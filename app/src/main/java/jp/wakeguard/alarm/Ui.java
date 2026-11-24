@@ -1,6 +1,7 @@
 package jp.wakeguard.alarm;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
@@ -20,6 +21,7 @@ import android.os.Build;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.widget.Button;
 import android.widget.EditText;
@@ -27,6 +29,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
 
 /**
@@ -194,6 +197,80 @@ public final class Ui {
 
     public static int readableTextColor(int preferred, int background) {
         return readableColor(preferred, background, 4.5);
+    }
+
+    /** Build Android dialogs with the palette selected inside the app. */
+    public static AlertDialog.Builder dialogBuilder(Activity activity) {
+        return new AlertDialog.Builder(activity) {
+            @Override public AlertDialog show() {
+                AlertDialog dialog = super.show();
+                styleDialog(dialog, activity);
+                return dialog;
+            }
+        };
+    }
+
+    /** Show a dialog created with {@link AlertDialog.Builder#create()} and apply app colors. */
+    public static AlertDialog showDialog(AlertDialog dialog, Activity activity) {
+        if (dialog == null || activity == null) return dialog;
+        if (!dialog.isShowing()) dialog.show();
+        styleDialog(dialog, activity);
+        return dialog;
+    }
+
+    private static void styleDialog(AlertDialog dialog, Activity activity) {
+        if (dialog == null || activity == null) return;
+        android.view.Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(roundStroke(SURFACE, BORDER, 24, activity));
+            window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+            android.view.WindowManager.LayoutParams params = window.getAttributes();
+            params.dimAmount = .48f;
+            window.setAttributes(params);
+        }
+        View decor = window == null ? null : window.getDecorView();
+        if (decor != null) {
+            styleDialogView(decor, activity);
+            decor.post(() -> styleDialogView(decor, activity));
+        }
+        ListView list = dialog.getListView();
+        if (list != null) {
+            list.setBackgroundColor(SURFACE);
+            list.setCacheColorHint(SURFACE);
+            list.setDivider(new ColorDrawable(withAlpha(BORDER, DARK_THEME ? 0xA0 : 0x88)));
+            list.setDividerHeight(dp(activity, 1));
+            list.setOnHierarchyChangeListener(new ViewGroup.OnHierarchyChangeListener() {
+                @Override public void onChildViewAdded(View parent, View child) {
+                    styleDialogView(child, activity);
+                }
+                @Override public void onChildViewRemoved(View parent, View child) {}
+            });
+        }
+    }
+
+    private static void styleDialogView(View view, Activity activity) {
+        if (view instanceof EditText) {
+            styleInput((EditText) view, activity, SURFACE, 14);
+            return;
+        }
+        if (view instanceof TextView) {
+            TextView label = (TextView) view;
+            int preferred = label.getId() == android.R.id.message ? MUTED : label.getCurrentTextColor();
+            if (contrastRatio(preferred, SURFACE) < 4.5) preferred = label.getId() == android.R.id.message ? MUTED : TEXT;
+            label.setTextColor(readableColor(preferred, SURFACE, 4.5));
+            Typeface current = label.getTypeface();
+            label.setTypeface(designTypeface(current == null ? Typeface.NORMAL : current.getStyle()));
+        }
+        if (view instanceof android.widget.CompoundButton && Build.VERSION.SDK_INT >= 21) {
+            android.widget.CompoundButton choice = (android.widget.CompoundButton) view;
+            choice.setButtonTintList(new ColorStateList(
+                    new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
+                    new int[]{ACCENT_2, readableColor(MUTED, SURFACE, 3.0)}));
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) styleDialogView(group.getChildAt(i), activity);
+        }
     }
 
     private static double contrastRatio(int foreground, int background) {
