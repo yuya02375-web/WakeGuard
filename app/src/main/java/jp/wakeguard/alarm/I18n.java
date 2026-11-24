@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 14505)
-Total output lines: 332
-
 package jp.wakeguard.alarm;
 
 import android.app.LocaleManager;
@@ -145,7 +142,41 @@ public final class I18n {
         put("歩数センサーを利用できません","Step sensor is unavailable","걸음 수 센서를 사용할 수 없습니다"); put("加速度センサーを利用できません","Accelerometer is unavailable","가속도 센서를 사용할 수 없습니다");
         put("身体活動権限を確認してください","Check physical activity permission","신체 활동 권한을 확인하세요"); put("シェイクを検出できません","Unable to detect shaking","흔들기를 감지할 수 없습니다");
         put("正確なアラーム","Exact alarms","정확한 알람"); put("全画面アラーム","Full-screen alarms","전체 화면 알람"); put("他のアプリの上に表示","Display over other apps","다른 앱 위에 표시");
-        put("通知とロック画面表示","Notifications & lock screen","알…2505 tokens truncated…bers from 1 through 6 in order.","섞여 있는 숫자를 1부터 6까지 순서대로 탭합니다."); put("1 → 6 の順番でタップ","Tap in order: 1 → 6","1 → 6 순서로 탭"); put("まず1をタップ","Tap 1 first","먼저 1을 탭하세요"); put("順番が違います。1からやり直し","Wrong order. Start again from 1.","순서가 틀렸습니다. 1부터 다시 시작하세요"); put("次は","Next","다음은");
+        put("通知とロック画面表示","Notifications & lock screen","알림 및 잠금 화면 표시"); put("バッテリー最適化から除外","Exclude from battery optimization","배터리 최적화 제외"); put("アプリ情報","App info","앱 정보");
+        put("設定済み","Configured","설정됨"); put("確認が必要です","Needs attention","확인 필요"); put("この設定画面を端末が提供していません","This settings page is unavailable on this device","이 설정 화면은 기기에서 제공하지 않습니다");
+        put("ロック画面で確実に鳴らすために必要な端末側の設定です。","Device settings required for reliable lock-screen alarms.","잠금 화면에서 안정적으로 울리기 위해 필요한 기기 설정입니다.");
+        put("realmeではアプリ情報内の「ロック画面に表示」「バックグラウンドでポップアップ」「バックグラウンドアクティビティ」も許可してください。","On realme, also allow lock-screen display, background pop-ups, and background activity in App info.","realme에서는 앱 정보에서 잠금 화면 표시, 백그라운드 팝업, 백그라운드 활동도 허용하세요.");
+        put("月","Mon","월"); put("火","Tue","화"); put("水","Wed","수"); put("木","Thu","목"); put("金","Fri","금"); put("土","Sat","토"); put("日","Sun","일");
+        put("時","h","시"); put("分","min","분"); put("秒","sec","초"); put("歩","steps","걸음"); put("回","times","회"); put("問","questions","문제"); put("文","sentences","문장");
+        put("東京","Tokyo","도쿄"); put("ソウル","Seoul","서울"); put("ニューヨーク","New York","뉴욕"); put("ロサンゼルス","Los Angeles","로스앤젤레스");
+        put("シカゴ","Chicago","시카고"); put("ロンドン","London","런던"); put("パリ","Paris","파리"); put("ベルリン","Berlin","베를린"); put("ドバイ","Dubai","두바이");
+        put("デリー / インド","Delhi / India","델리 / 인도"); put("バンコク","Bangkok","방콕"); put("シンガポール","Singapore","싱가포르"); put("香港","Hong Kong","홍콩"); put("上海","Shanghai","상하이"); put("シドニー","Sydney","시드니"); put("ホノルル","Honolulu","호놀룰루");
+
+        put("鳴動時間","Ring duration","알람 울림 시간"); put("無限","Infinite","무제한"); put("無限（停止するまで）","Infinite (until dismissed)","무제한 (직접 해제할 때까지)");
+        put("無限、プリセット、または1秒単位で細かく設定できます。","Choose infinite, a preset, or set an exact duration down to the second.","무제한, 프리셋 또는 1초 단위로 세밀하게 설정할 수 있습니다.");
+        put("設定時間後は音と振動だけ停止します。ミッション画面は解除するまで残ります。","After this duration, sound and vibration stop. The mission stays until you dismiss it.","설정 시간이 지나면 소리와 진동만 멈추며, 미션 화면은 해제할 때까지 유지됩니다.");
+        put("カスタム","Custom","사용자 지정"); put("時計をタップするとデジタル / アナログが一括で切り替わります","Tap any clock to switch all clocks between digital and analog","시계를 탭하면 모든 시계가 디지털/아날로그로 한꺼번에 전환됩니다");
+        put("タップで表示切替  ·  長押しで大きく表示","Tap to switch view  ·  Long-press for full screen","탭하여 표시 전환  ·  길게 눌러 크게 보기");
+        put("時計をタップでデジタル / アナログ切替  ·  左右スワイプも対応","Tap the clock to switch digital / analog  ·  Swipe also works","시계를 탭하여 디지털/아날로그 전환  ·  좌우 스와이프도 지원");
+        put("端末との差","Difference from device","기기와의 차이"); put("夏時間","DST","서머타임");
+        put("学校、休日など","School, day off, etc.","학교, 휴일 등"); put("オフ","Off","끄기"); put("不規則","Irregular","불규칙"); put("強い連続パルス","Strong continuous pulses","강한 연속 진동");
+        put("回数","Count","횟수"); put("解除に必要な歩数","Steps required to dismiss","해제에 필요한 걸음 수"); put("正解する問題数","Number of correct answers","정답 문제 수");
+        put("タップ回数","Tap count","탭 횟수"); put("入力するコード数","Number of codes","입력할 코드 수"); put("シェイク回数","Shake count","흔들기 횟수");
+        put("記憶問題の数","Memory questions","기억 문제 수"); put("入力する文章数","Number of texts","입력할 문장 수"); put("長押しする秒数","Hold duration in seconds","길게 누를 초 수");
+        put("歩数が選ばれた場合の歩数","Steps when Steps is selected","걸음 수 미션 선택 시 걸음 수"); put("その他の回数 / 秒数","Other count / seconds","기타 횟수 / 초");
+        put("実際に歩いて解除します。","Walk to dismiss the alarm.","실제로 걸어서 알람을 해제합니다."); put("足し算・引き算・掛け算を解きます。","Solve addition, subtraction, and multiplication.","덧셈·뺄셈·곱셈 문제를 풉니다.");
+        put("画面のボタンを指定回数タップします。","Tap the on-screen button the required number of times.","화면 버튼을 지정 횟수만큼 탭합니다.");
+        put("表示された6桁コードを正確に入力します。","Enter the displayed 6-digit code exactly.","표시된 6자리 코드를 정확히 입력합니다.");
+        put("スマホを大きく振って解除します。","Shake the phone firmly to dismiss.","휴대폰을 크게 흔들어 해제합니다.");
+        put("数秒だけ表示される数字を覚えて入力します。","Memorize the number shown briefly, then enter it.","몇 초간 표시되는 숫자를 기억한 뒤 입력합니다.");
+        put("表示された短い文章をそのまま入力します。","Type the short sentence exactly as shown.","표시된 짧은 문장을 그대로 입력합니다.");
+        put("ボタンを離さず長押しします。2〜30秒がおすすめです。","Press and hold without releasing. 2–30 seconds is recommended.","버튼을 떼지 않고 길게 누릅니다. 2~30초를 권장합니다.");
+        put("鳴るたびに8種類のミッションから1つ選びます。","One of 8 missions is chosen each time the alarm rings.","알람이 울릴 때마다 8가지 미션 중 하나가 선택됩니다.");
+        put("追加の解除操作なし。停止ボタンを押すだけで解除できます。","No extra challenge. Just tap the stop button to dismiss.","추가 해제 동작 없이 중지 버튼만 누르면 해제됩니다.");
+        put("追加の解除操作はありません","No extra dismissal challenge","추가 해제 동작이 없습니다"); put("停止ボタンを押すとアラームを停止します","Tap the stop button to stop the alarm","중지 버튼을 누르면 알람이 중지됩니다"); put("停止","Stop","중지"); put("世界時計ウィジェット","World clock widget","세계 시계 위젯"); put("正方形・縦長・横長にサイズ変更できます","Resize it as square, tall, or wide","정사각형·세로형·가로형으로 크기를 바꿀 수 있습니다"); put("表示するタイムゾーンを選択","Choose a time zone to display","표시할 시간대를 선택하세요"); put("タイムゾーンを検索","Search time zones","시간대 검색"); put("24時間表示は世界時計の設定と連動します","24-hour display follows World Clock settings","24시간 표시는 세계 시계 설정과 연동됩니다"); put("現在のタイムゾーン","Current time zone","현재 시간대"); put("ウィジェット","Widgets","위젯"); put("世界時計ウィジェットを追加","Add world clock widget","세계 시계 위젯 추가"); put("次のアラームウィジェットを追加","Add next alarm widget","다음 알람 위젯 추가"); put("次のアラーム","Next alarm","다음 알람"); put("アラームなし","No alarms","알람 없음"); put("今日","Today","오늘"); put("明日","Tomorrow","내일"); put("追加画面を開きました","Opened widget add screen","위젯 추가 화면을 열었습니다"); put("このホーム画面では直接追加できません","This launcher cannot add it directly","이 홈 화면에서는 직접 추가할 수 없습니다"); put("ホーム画面を長押し → ウィジェット → IGNIDO Wake から追加してください","Long-press the Home screen → Widgets → IGNIDO Wake","홈 화면 길게 누르기 → 위젯 → IGNIDO Wake에서 추가하세요"); put("下の停止ボタンを押してください","Tap the stop button below","아래 중지 버튼을 누르세요"); put("解除できます","Ready to dismiss","해제할 수 있습니다"); put("そのまま停止","Direct stop","바로 중지"); put("そのまま停止できます","You can stop it directly","바로 중지할 수 있습니다");
+        put("昨日","Yesterday","어제");
+        put("スワイプ回数","Swipe count","스와이프 횟수"); put("画面を左右に大きくスワイプして解除します。","Swipe widely left or right to dismiss.","화면을 좌우로 크게 스와이프해 해제합니다."); put("下のボタンを左右に大きくスワイプ","Swipe the button widely left or right","아래 버튼을 좌우로 크게 스와이프하세요"); put("スワイプを認識しました","Swipe detected","스와이프를 인식했습니다"); put("もっと大きくスワイプしてください","Swipe farther","더 크게 스와이프하세요");
+        put("順番タップの回数","Ordered-tap rounds","순서 탭 횟수"); put("ばらばらに並んだ数字を1から6まで順番にタップします。","Tap the shuffled numbers from 1 through 6 in order.","섞여 있는 숫자를 1부터 6까지 순서대로 탭합니다."); put("1 → 6 の順番でタップ","Tap in order: 1 → 6","1 → 6 순서로 탭"); put("まず1をタップ","Tap 1 first","먼저 1을 탭하세요"); put("順番が違います。1からやり直し","Wrong order. Start again from 1.","순서가 틀렸습니다. 1부터 다시 시작하세요"); put("次は","Next","다음은");
         put("逆順入力の問題数","Reverse-entry questions","역순 입력 문제 수"); put("表示された数字を逆の順番で入力します。","Enter the displayed digits in reverse order.","표시된 숫자를 역순으로 입력합니다."); put("逆の順番で入力","Enter in reverse order","역순으로 입력"); put("逆順の5桁を入力","Enter the 5 digits reversed","5자리를 역순으로 입력"); put("逆順が違います","Incorrect reverse order","역순이 틀렸습니다");
         put("鳴るたびに11種類のミッションから1つ選びます。","One of 11 missions is chosen each time the alarm rings.","알람이 울릴 때마다 11가지 미션 중 하나가 선택됩니다.");
 
