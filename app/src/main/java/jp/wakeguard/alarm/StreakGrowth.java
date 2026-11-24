@@ -25,13 +25,23 @@ public final class StreakGrowth {
     public static long level(Context c){ensure(c);return Math.max(1L,p(c).getLong("level",1L));}
 
     public static void onWakeSuccess(Context c){
+        onWakeSuccess(c,java.time.LocalDate.now().toEpochDay());
+    }
+
+    public static void onWakeSuccess(Context c,long epochDay){
         ensure(c);
+        if(epochDay<=0L)return;
+        SharedPreferences sp=p(c);
+        long lastGrowthDay=sp.getLong("last_growth_epoch_day",Prefs.lastSuccessEpochDay(c));
+        if(lastGrowthDay==epochDay)return;
         long now=level(c);
-        if(now<Long.MAX_VALUE)p(c).edit().putLong("level",now+1L).apply();
+        SharedPreferences.Editor edit=sp.edit().putLong("last_growth_epoch_day",epochDay);
+        if(now<Long.MAX_VALUE)edit.putLong("level",now+1L);
+        edit.apply();
     }
 
     // Keep form labels, progress, and sprite transitions on one timeline.
-    private static final long[] MILESTONES={1L,12L,30L,45L,120L,360L,1000L};
+    private static final long[] MILESTONES={1L,7L,14L,30L,60L,180L,600L};
     private static final String[] FORM_NAMES={"竜の卵","火種","小さな炎","幼炎竜","天炎竜","恒星炎竜","無限炎竜"};
 
     /** Adjacent forms blend over many wake-ups; no form appears all at once on a milestone. */
@@ -97,4 +107,3 @@ public final class StreakGrowth {
         return I18n.tr(c,FORM_NAMES[artStage(lv)]);
     }
 }
-
