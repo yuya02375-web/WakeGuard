@@ -29,28 +29,45 @@ public final class StreakTracker {
     }
 
     public static synchronized void recordWakeSuccess(Context c,long alarmId,long epochDay){
-        if(epochDay<=0)return;
-        LocalDate day=LocalDate.ofEpochDay(epochDay);
-        long last=Prefs.lastSuccessEpochDay(c);if(last==epochDay)return;
+        if (epochDay <= 0) return;
+        LocalDate day = LocalDate.ofEpochDay(epochDay);
+        long last = Prefs.lastSuccessEpochDay(c);
+        if (last == epochDay || Prefs.wasSuccessful(c,day)) return;
 
-        int mask=AlarmProfiles.get(c,alarmId).dayMask;
-        boolean continues=false;
-        if(last>0){
-            LocalDate lastDay=LocalDate.ofEpochDay(last);
-            continues=coverGap(c,lastDay,day,mask);
+        if (epochDay < last) {
+            // An alarm snoozed across midnight can finish after a newer wake-up.
+            // Retain its success without moving the current streak backwards.
+            recordSuccessDate(c,day);
+            refreshWidgets(c);
+            return;
         }
-        int next=continues?Prefs.streak(c)+1:1;
 
-        int oldBest=Prefs.bestStreak(c);
+        int mask = AlarmProfiles.get(c,alarmId).dayMask;
+        boolean continues = last > 0 && coverGap(c,LocalDate.ofEpochDay(last),day,mask);
+        int next = continues ? Prefs.streak(c)+1 : 1;
+
+        int oldBest = Prefs.bestStreak(c);
         Prefs.streak(c,next);
-        if(next>oldBest){Prefs.bestStreak(c,next);if(oldBest>0)Prefs.pendingRecordStreak(c,next);}
-        Prefs.totalWakeups(c,Prefs.totalWakeups(c)+1);
-        StreakGrowth.onWakeSuccess(c,epochDay);
+        if (next > oldBest) {
+            Prefs.bestStreak(c,next);
+            if (oldBest > 0) Prefs.pendingRecordStreak(c,next);
+        }
+        recordSuccessDate(c,day);
         Prefs.lastSuccessEpochDay(c,epochDay);
-        Prefs.addSuccessDay(c,day);
 
         StreakProtection.onSuccessfulWake(c,next);
-        try{WidgetSuite.refreshAll(c);}catch(Throwable ignored){}
+        refreshWidgets(c);
+    }
+
+    private static void recordSuccessDate(Context c,LocalDate day) {
+        // Initialise companion migration from the previous total before adding this wake-up.
+        StreakGrowth.onWakeSuccess(c,day.toEpochDay());
+        Prefs.totalWakeups(c,Prefs.totalWakeups(c)+1);
+        Prefs.addSuccessDay(c,day);
+    }
+
+    private static void refreshWidgets(Context c) {
+        try { WidgetSuite.refreshAll(c); } catch (Throwable ignored) {}
     }
 
     /**

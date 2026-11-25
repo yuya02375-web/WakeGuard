@@ -19,6 +19,7 @@ public class AlarmService extends Service implements SensorEventListener {
     public static final String ACTION_RESTORE = "jp.wakeguard.alarm.RESTORE";
     public static final String EXTRA_EPOCH_DAY = "epochDay";
     public static final String EXTRA_ALARM_ID = "alarmId";
+    static final String EXTRA_REGULAR_OCCURRENCE = "regularOccurrence";
     public static final String EXTRA_EXPECTED_AT = "expectedAt";
     public static final String ACTION_STOP = "jp.wakeguard.alarm.STOP";
     public static final String ACTION_SNOOZE = "jp.wakeguard.alarm.SNOOZE";
@@ -112,6 +113,9 @@ public class AlarmService extends Service implements SensorEventListener {
     private int handleStartCommand(Intent intent, int flags, int startId) {
         String action = intent == null ? null : intent.getAction();
         android.util.Log.i("IGNIDO_ALARM", "Service action=" + action + " running=" + running + " active=" + Prefs.active(this));
+        if (ACTION_FIRE_TEST.equals(action) && running && Prefs.active(this) && !Prefs.sessionIsTest(this)) {
+            return START_STICKY;
+        }
         // Only a new alarm attempt clears a previous error. Auxiliary updates
         // must not erase the evidence of a disappearing ring screen.
         if (ACTION_FIRE_NEW.equals(action) || ACTION_FIRE_TEST.equals(action)) Prefs.lastAlarmError(this, "");
@@ -138,17 +142,21 @@ public class AlarmService extends Service implements SensorEventListener {
         boolean restoreSession = ACTION_RESTORE.equals(action) || (intent == null && Prefs.active(this));
         boolean newSession = scheduledSession || testSession;
 
+        long regularAlarmId = -1L;
         if (newSession) {
             long requestedAlarmId = intent == null ? AlarmScheduler.PRIMARY_ALARM_ID
                     : intent.getLongExtra(EXTRA_ALARM_ID, AlarmScheduler.PRIMARY_ALARM_ID);
             long requestedEpochDay = scheduledSession && intent != null ? intent.getLongExtra(EXTRA_EPOCH_DAY, -1L) : -1L;
             long requestedExpectedAt = scheduledSession && intent != null ? intent.getLongExtra(EXTRA_EXPECTED_AT, -1L) : -1L;
-            if (scheduledSession && running && Prefs.active(this)) {
+            boolean regular = scheduledSession && intent.getBooleanExtra(EXTRA_REGULAR_OCCURRENCE, false);
+            if (scheduledSession && running && Prefs.active(this) && !Prefs.sessionIsTest(this)) {
                 boolean sameActive = Prefs.activeAlarmId(this) == requestedAlarmId
                         && Prefs.sessionEpochDay(this) == requestedEpochDay
                         && (requestedExpectedAt <= 0L || Prefs.sessionExpectedAt(this) == requestedExpectedAt);
-                if (!sameActive && !AlarmOccurrenceGuard.wasDelivered(this, requestedAlarmId, requestedExpectedAt, requestedEpochDay))
+                if (!sameActive && !AlarmOccurrenceGuard.wasDelivered(this, requestedAlarmId, requestedExpectedAt, requestedEpochDay)) {
                     PendingAlarmQueue.enqueue(this, requestedAlarmId, requestedEpochDay, requestedExpectedAt);
+                    if (regular) AlarmScheduler.completeRegularDelivery(this, requestedAlarmId);
+                }
                 try {
                     NotificationManager nm=getSystemService(NotificationManager.class);
                     if(nm!=null)nm.notify(42,buildNotification());
@@ -160,7 +168,6 @@ public class AlarmService extends Service implements SensorEventListener {
                 if (!Prefs.active(this)) stopSelf();
                 return START_NOT_STICKY;
             }
-            if (scheduledSession) AlarmOccurrenceGuard.markDelivered(this, requestedAlarmId, requestedExpectedAt, requestedEpochDay);
             Prefs.activeAlarmId(this, requestedAlarmId);
             String chosenMission = intent == null ? "" : intent.getStringExtra("missionType");
             if (chosenMission == null || chosenMission.isEmpty()) chosenMission = AlarmProfiles.resolveSessionMission(this, requestedAlarmId);
@@ -187,12 +194,18 @@ public class AlarmService extends Service implements SensorEventListener {
             cancelVideoFallback();
             Prefs.sessionEpochDay(this, requestedEpochDay);
             Prefs.sessionExpectedAt(this, requestedExpectedAt);
+            if (regular) regularAlarmId = requestedAlarmId;
         } else if (!restoreSession || !Prefs.active(this)) {
             stopSelf();
             return START_NOT_STICKY;
         }
 
         startForeground(42, buildNotification());
+        if (scheduledSession) {
+            AlarmOccurrenceGuard.markDelivered(this, Prefs.activeAlarmId(this),
+                    Prefs.sessionExpectedAt(this), Prefs.sessionEpochDay(this));
+        }
+        if (regularAlarmId > 0) AlarmScheduler.completeRegularDelivery(this, regularAlarmId);
         wakeScreenForAlarm();
         if(applyAutoStopState()) return START_NOT_STICKY;
         if(!Prefs.sessionSilenced(this)) startAlarmOutputs();

@@ -4,10 +4,6 @@ import android.Manifest;
 import android.app.*;
 import android.content.*;
 import android.content.pm.PackageManager;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.RadialGradient;
-import android.graphics.Shader;
 import android.os.*;
 import android.view.Gravity;
 import android.view.View;
@@ -18,16 +14,15 @@ import java.util.*;
 
 public class MainActivity extends Activity {
     private String builtAppearanceKey;
+    private Boolean exactAlarmsAvailable;
     private LinearLayout list;
-    private LinearLayout addAction;
+    private LinearLayout readinessCard;
+    private TextView readinessMessage, dateText;
     private android.widget.GridLayout tileGrid;
     private int tileColumnCount=2;
     private TextView nextText,nextMeta;
-    private FrameLayout nextCard;
-    private android.graphics.drawable.Drawable scheduledHeroBackground, emptyHeroBackground;
-    private LinearLayout heroContent, emptyHero;
-    private TextView emptyHeading, emptyNote;
-    private View sunriseAccent;
+    private LinearLayout heroContent;
+    private TextView emptyHeading;
     private StreakCompanionView dragonCompanion;
     private TextView dragonFormText,dragonLevelText,dragonProgressText;
     private FrameLayout dragonProgressTrack;
@@ -36,18 +31,37 @@ public class MainActivity extends Activity {
     private FrameLayout horizonTrack;
     private View horizonDot;
     private final Handler countdownHandler=new Handler(Looper.getMainLooper());
-    private final Runnable countdownTick=new Runnable(){@Override public void run(){render();countdownHandler.postDelayed(this,30000L);}};
+    private final List<Runnable> alarmCountdowns = new ArrayList<>();
+    private Map<Long, Boolean> renderedAlarmStates = Collections.emptyMap();
+    private Map<Long, Long> renderedSnoozes = Collections.emptyMap();
+    private final Runnable countdownTick = new Runnable() {
+        @Override public void run() {
+            List<AlarmStore.Entry> alarms = AlarmProfiles.all(MainActivity.this);
+            if (!renderedAlarmStates.equals(alarmStates(alarms))
+                    || !renderedSnoozes.equals(SnoozeScheduler.active(MainActivity.this))) {
+                render();
+            } else {
+                refreshOverview();
+                for (Runnable countdown : alarmCountdowns) countdown.run();
+            }
+            countdownHandler.postDelayed(this, 30000L);
+        }
+    };
 
     @Override protected void onCreate(Bundle b){
         super.onCreate(b); Ui.prepareActivity(this); builtAppearanceKey=appearanceKey(); AlarmService.ensureNotificationChannel(this);
-        buildUi(); requestRuntimePermissions(); AlarmScheduler.reschedule(this);
+        buildUi(); requestRuntimePermissions();
     }
     @Override protected void onResume(){
         super.onResume();
         String currentAppearance=appearanceKey();
         if(builtAppearanceKey!=null&&!builtAppearanceKey.equals(currentAppearance)){recreate();return;}
         if(dragonCompanion!=null)dragonCompanion.onResume();
-        AlarmScheduler.reschedule(this);
+        boolean canSchedule = AlarmScheduler.canScheduleExact(this);
+        if (exactAlarmsAvailable == null || exactAlarmsAvailable != canSchedule) {
+            exactAlarmsAvailable = canSchedule;
+            AlarmScheduler.reschedule(this);
+        }
         for(TimerStore.Entry e:TimerStore.all(this))if(e.running&&e.remaining()>1500L)TimerReceiver.schedule(this,e.id,e.endMs);
         render();countdownHandler.removeCallbacks(countdownTick);countdownHandler.postDelayed(countdownTick,30000L);
     }
@@ -59,50 +73,53 @@ public class MainActivity extends Activity {
 
     private void buildUi(){
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setBackground(Ui.screenGradient(this));
-        // Keep the fixed hero, scrolling list, and footer inside their own viewports.
-        // Allowing overflow here let the list paint through the hero and footer while scrolling.
         root.setClipChildren(true);root.setClipToPadding(true);
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        scroll.addView(content, new ScrollView.LayoutParams(-1, -2));
+        root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
 
         LinearLayout top=new LinearLayout(this);top.setOrientation(LinearLayout.VERTICAL);
         top.setPadding(Ui.dp(this,22),Ui.dp(this,10),Ui.dp(this,22),Ui.dp(this,5));
         LinearLayout brandLine=new LinearLayout(this);brandLine.setGravity(Gravity.CENTER_VERTICAL);
         TextView brand=Ui.overline(this,"IGNIDO  /  WAKE");
         brandLine.addView(brand,new LinearLayout.LayoutParams(0,-2,1));
-        String today=LocalDate.now().format(DateTimeFormatter.ofPattern("M/d · EEE",I18n.locale(this)));
-        TextView date=Ui.text(this,today,11,Ui.MUTED_2);date.setGravity(Gravity.CENTER);
-        date.setSingleLine(true);date.setPadding(Ui.dp(this,10),Ui.dp(this,5),Ui.dp(this,10),Ui.dp(this,5));
-        date.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,11,this));
-        brandLine.addView(date,new LinearLayout.LayoutParams(-2,-2));top.addView(brandLine);
+        dateText=Ui.text(this,"",12,Ui.readableTextColor(Ui.MUTED_2, Ui.SURFACE_2));
+        dateText.setGravity(Gravity.CENTER);
+        dateText.setSingleLine(true);
+        dateText.setPadding(Ui.dp(this,10),Ui.dp(this,5),Ui.dp(this,10),Ui.dp(this,5));
+        dateText.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,11,this));
+        brandLine.addView(dateText,new LinearLayout.LayoutParams(-2,-2));top.addView(brandLine);
         TextView title=Ui.title(this,"アラーム",HomeMetrics.HEADER_TITLE_SP);
-        title.setPadding(0,Ui.dp(this,3),0,0);top.addView(title);root.addView(top);
+        title.setAccessibilityHeading(true);
+        title.setPadding(0,Ui.dp(this,3),0,0);top.addView(title);content.addView(top);
 
-        nextCard=new FrameLayout(this);nextCard.setClipChildren(true);nextCard.setClipToPadding(true);
-        nextCard.setMinimumHeight(Ui.dp(this,HomeMetrics.HERO_HEIGHT_DP));
-        scheduledHeroBackground=Ui.gradientRound(this,24,Ui.HERO_START,Ui.HERO_END);
-        emptyHeroBackground=Ui.gradientRoundPlain(this,24,Ui.HERO_START,Ui.HERO_END);
-        nextCard.setBackground(scheduledHeroBackground);
-        if ("none".equals(Ui.DESIGN_PATTERN) || "rules".equals(Ui.DESIGN_PATTERN)) {
-            sunriseAccent=new SunriseAccentView(this);
-            nextCard.addView(sunriseAccent,
-                    new FrameLayout.LayoutParams(Ui.dp(this,136),Ui.dp(this,HomeMetrics.HERO_HEIGHT_DP),
-                            Gravity.END|Gravity.CENTER_VERTICAL));
-        }
-        View edge=new View(this);edge.setBackgroundColor(Ui.withAlpha(Ui.HERO_TEXT,31));
-        FrameLayout.LayoutParams edgeLp=new FrameLayout.LayoutParams(-1,Ui.dp(this,1),Gravity.TOP);
-        edgeLp.setMargins(Ui.dp(this,HomeMetrics.HERO_SIDE_DP),0,Ui.dp(this,HomeMetrics.HERO_SIDE_DP),0);
-        nextCard.addView(edge,edgeLp);
+        LinearLayout nextCard=new LinearLayout(this);
+        nextCard.setOrientation(LinearLayout.VERTICAL);
+        nextCard.setPadding(Ui.dp(this,16),Ui.dp(this,14),Ui.dp(this,16),Ui.dp(this,12));
+        nextCard.setBackground(Ui.gradientRoundPlain(this,24,Ui.HERO_START,Ui.HERO_END));
+        LinearLayout overview = new LinearLayout(this);
+        overview.setGravity(Gravity.CENTER_VERTICAL);
+        nextCard.addView(overview, new LinearLayout.LayoutParams(-1, -2));
+        LinearLayout schedule = new LinearLayout(this);
+        schedule.setOrientation(LinearLayout.VERTICAL);
+        overview.addView(schedule, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView nextLabel=Ui.overline(this,"次の起床");
+        nextLabel.setTextColor(Ui.HERO_TEXT);
+        schedule.addView(nextLabel);
         heroContent=new LinearLayout(this);heroContent.setOrientation(LinearLayout.VERTICAL);
-        heroContent.setPadding(Ui.dp(this,HomeMetrics.HERO_SIDE_DP),Ui.dp(this,HomeMetrics.HERO_TOP_DP),
-                Ui.dp(this,136),Ui.dp(this,11));
-        TextView nextLabel=Ui.overline(this,"次の起床");nextLabel.setTextColor(Ui.HERO_TEXT);heroContent.addView(nextLabel);
-        nextText=Ui.title(this,"--:--",HomeMetrics.HERO_TIME_SP);nextText.setTextColor(Ui.HERO_TEXT);
+        schedule.addView(heroContent, new LinearLayout.LayoutParams(-1, -2));
+        nextText=Ui.title(this,"",HomeMetrics.HERO_TIME_SP);nextText.setTextColor(Ui.HERO_TEXT);
         nextText.setTypeface(android.graphics.Typeface.create("sans-serif-light",android.graphics.Typeface.NORMAL));
         nextText.setIncludeFontPadding(false);
-        nextText.setAutoSizeTextTypeUniformWithConfiguration(34,HomeMetrics.HERO_TIME_SP,1,android.util.TypedValue.COMPLEX_UNIT_SP);
+        nextText.setSingleLine(true);
+        nextText.setAutoSizeTextTypeUniformWithConfiguration(24,HomeMetrics.HERO_TIME_SP,1,android.util.TypedValue.COMPLEX_UNIT_SP);
         nextText.setPadding(0,Ui.dp(this,2),0,0);
-        heroContent.addView(nextText,new LinearLayout.LayoutParams(-2,-2));
-        nextMeta=Ui.text(this,"次のアラームはありません",13,Ui.HERO_TEXT);
-        nextMeta.setSingleLine(true);nextMeta.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        heroContent.addView(nextText,new LinearLayout.LayoutParams(-1,-2));
+        nextMeta=Ui.text(this,"",14,Ui.HERO_TEXT);
         heroContent.addView(nextMeta);
         horizonTrack=new FrameLayout(this);horizonTrack.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         View horizonLine=new View(this);horizonLine.setBackgroundColor(Ui.HORIZON_LINE);
@@ -113,22 +130,25 @@ public class MainActivity extends Activity {
         horizonTrack.addView(horizonDot,dotLp);
         LinearLayout.LayoutParams trackLp=new LinearLayout.LayoutParams(-1,Ui.dp(this,10));
         trackLp.topMargin=Ui.dp(this,4);heroContent.addView(horizonTrack,trackLp);
-        nextCard.addView(heroContent,new FrameLayout.LayoutParams(-1,-2));
-        emptyHero=buildEmptyContent(true);
-        emptyHero.setMinimumHeight(Ui.dp(this,HomeMetrics.HERO_EMPTY_HEIGHT_DP));
-        emptyHero.setVisibility(View.GONE);
-        nextCard.addView(emptyHero,new FrameLayout.LayoutParams(-1,-2));
-        addDragonGrowthOverlay();
-        LinearLayout.LayoutParams nextLp=new LinearLayout.LayoutParams(-1,Ui.dp(this,HomeMetrics.HERO_HEIGHT_DP));
-        nextLp.setMargins(Ui.dp(this,16),Ui.dp(this,4),Ui.dp(this,16),Ui.dp(this,3));root.addView(nextCard,nextLp);
+        emptyHeading=Ui.title(this,"",19);
+        emptyHeading.setTextColor(Ui.HERO_TEXT);
+        schedule.addView(emptyHeading, Ui.gapTop(this, 6));
 
-        ScrollView sv=new ScrollView(this);sv.setFillViewport(true);sv.setVerticalScrollBarEnabled(false);
-        sv.setClipChildren(true);sv.setClipToPadding(true);
+        dragonCompanion=new StreakCompanionView(this);
+        dragonCompanion.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+        int artworkSize = getResources().getConfiguration().screenWidthDp < 360 ? 84 : 110;
+        LinearLayout.LayoutParams dragonLp = new LinearLayout.LayoutParams(Ui.dp(this,artworkSize), Ui.dp(this,artworkSize));
+        dragonLp.setMarginStart(Ui.dp(this,8));
+        overview.addView(dragonCompanion, dragonLp);
+        addDragonGrowthSummary(nextCard);
+        LinearLayout.LayoutParams nextLp=new LinearLayout.LayoutParams(-1,-2);
+        nextLp.setMargins(Ui.dp(this,16),Ui.dp(this,6),Ui.dp(this,16),Ui.dp(this,5));
+        content.addView(nextCard,nextLp);
+        addReadinessCard(content);
+
         list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);
-        // Leave a little breathing room after the final alarm; the ScrollView clips its
-        // own contents before the fixed add action and navigation are drawn.
-        list.setPadding(Ui.dp(this,18),Ui.dp(this,6),Ui.dp(this,18),Ui.dp(this,24));sv.addView(list);
-        root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
+        list.setPadding(Ui.dp(this,18),Ui.dp(this,6),Ui.dp(this,18),Ui.dp(this,16));
+        content.addView(list,new LinearLayout.LayoutParams(-1,-2));
 
         Button add=Ui.button(this,"アラームを追加",true);
         android.graphics.drawable.Drawable addIcon=getDrawable(R.drawable.ic_v292_action_add).mutate();
@@ -136,7 +156,9 @@ public class MainActivity extends Activity {
         addIcon.setBounds(0,0,addIconSize,addIconSize);
         add.setCompoundDrawablePadding(Ui.dp(this,8));add.setCompoundDrawables(addIcon,null,null,null);
         add.setOnClickListener(v->edit(-1));
-        addAction=new LinearLayout(this);addAction.setPadding(Ui.dp(this,18),Ui.dp(this,5),Ui.dp(this,18),Ui.dp(this,5));
+        LinearLayout addAction=new LinearLayout(this);
+        addAction.setBackground(Ui.navigationSurface(this));
+        addAction.setPadding(Ui.dp(this,18),Ui.dp(this,6),Ui.dp(this,18),Ui.dp(this,4));
         addAction.addView(add,new LinearLayout.LayoutParams(-1,-2));root.addView(addAction);
         root.addView(bottomNav());
         setContentView(root);
@@ -146,7 +168,7 @@ public class MainActivity extends Activity {
     private LinearLayout bottomNav(){
         LinearLayout nav=new LinearLayout(this);nav.setGravity(Gravity.CENTER);nav.setPadding(Ui.dp(this,9),Ui.dp(this,2),Ui.dp(this,9),Ui.dp(this,2));nav.setBackground(Ui.navigationSurface(this));
         LinearLayout alarms=Ui.bottomTab(this,"アラーム",true);LinearLayout clock=Ui.bottomTab(this,"時計",false);LinearLayout records=Ui.bottomTab(this,"記録",false);LinearLayout settings=Ui.bottomTab(this,"設定",false);
-        nav.addView(alarms,new LinearLayout.LayoutParams(0,Ui.dp(this,HomeMetrics.NAV_TAB_HEIGHT_DP),1));nav.addView(clock,new LinearLayout.LayoutParams(0,Ui.dp(this,HomeMetrics.NAV_TAB_HEIGHT_DP),1));nav.addView(records,new LinearLayout.LayoutParams(0,Ui.dp(this,HomeMetrics.NAV_TAB_HEIGHT_DP),1));nav.addView(settings,new LinearLayout.LayoutParams(0,Ui.dp(this,HomeMetrics.NAV_TAB_HEIGHT_DP),1));
+        nav.addView(alarms,new LinearLayout.LayoutParams(0,-2,1));nav.addView(clock,new LinearLayout.LayoutParams(0,-2,1));nav.addView(records,new LinearLayout.LayoutParams(0,-2,1));nav.addView(settings,new LinearLayout.LayoutParams(0,-2,1));
         clock.setOnClickListener(v->openClock("world"));records.setOnClickListener(v->Ui.launchNoAnimation(this,new Intent(this,StatsActivity.class)));settings.setOnClickListener(v->Ui.launchNoAnimation(this,new Intent(this,SystemSettingsActivity.class)));return nav;
     }
 
@@ -155,32 +177,88 @@ public class MainActivity extends Activity {
     }
     private void edit(long id){startActivity(new Intent(this,AlarmEditorActivity.class).putExtra("alarmId",id));}
 
+    private void addReadinessCard(LinearLayout content) {
+        readinessCard = Ui.card(this);
+        readinessCard.setPadding(Ui.dp(this,16),Ui.dp(this,12),Ui.dp(this,16),Ui.dp(this,10));
+        TextView title = Ui.title(this, localized("端末設定を確認", "Check device settings", "기기 설정 확인"), 16);
+        title.setAccessibilityHeading(true);
+        readinessCard.addView(title);
+        readinessMessage = Ui.text(this, "", 14, Ui.readableTextColor(Ui.TEXT, Ui.SURFACE));
+        readinessCard.addView(readinessMessage, Ui.gapTop(this, 4));
+        Button settings = Ui.ghostButton(this, localized("設定を開く", "Open settings", "설정 열기"));
+        settings.setOnClickListener(v ->
+                Ui.launchNoAnimation(this, new Intent(this, SystemSettingsActivity.class)));
+        readinessCard.addView(settings, Ui.gapTop(this, 4));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
+        params.setMargins(Ui.dp(this,16), Ui.dp(this,5), Ui.dp(this,16), Ui.dp(this,4));
+        content.addView(readinessCard, params);
+    }
+
+    private void refreshReadiness() {
+        NotificationManager manager = getSystemService(NotificationManager.class);
+        List<String> issues = new ArrayList<>();
+        if (!AlarmScheduler.canScheduleExact(this)) {
+            issues.add(localized("正確なアラームが許可されていません。", "Exact alarms are disabled.", "정확한 알람이 허용되지 않았습니다."));
+        }
+        if (manager != null && !manager.areNotificationsEnabled()) {
+            issues.add(localized("アプリの通知がオフです。", "App notifications are off.", "앱 알림이 꺼져 있습니다."));
+        } else if (Build.VERSION.SDK_INT >= 34 && manager != null && !manager.canUseFullScreenIntent()) {
+            issues.add(localized("ロック画面の全画面表示が許可されていません。", "Full-screen alerts on the lock screen are disabled.", "잠금 화면의 전체 화면 알림이 허용되지 않았습니다."));
+        }
+        readinessCard.setVisibility(issues.isEmpty() ? View.GONE : View.VISIBLE);
+        readinessMessage.setText(String.join("\n", issues));
+    }
+
+    private static Map<Long, Boolean> alarmStates(List<AlarmStore.Entry> alarms) {
+        Map<Long, Boolean> states = new HashMap<>();
+        for (AlarmStore.Entry alarm : alarms) states.put(alarm.id, alarm.enabled);
+        return states;
+    }
+
+    private void refreshOverview() {
+        String date = LocalDate.now().format(DateTimeFormatter.ofPattern("M/d · EEE",I18n.locale(this)));
+        if (!date.contentEquals(dateText.getText())) dateText.setText(date);
+        boolean hasNext = refreshNext();
+        heroContent.setVisibility(hasNext ? View.VISIBLE : View.GONE);
+        emptyHeading.setVisibility(hasNext ? View.GONE : View.VISIBLE);
+        if (!hasNext) {
+            boolean anyEnabled = renderedAlarmStates.containsValue(true);
+            emptyHeading.setText(!anyEnabled && !renderedAlarmStates.isEmpty()
+                    ? localized("アラームはオフです", "Alarms are off", "알람이 꺼져 있습니다")
+                    : localized("予定はありません", "No alarm scheduled", "예정된 알람이 없습니다"));
+        }
+    }
+
     private void render(){
         list.removeAllViews();
-        list.setGravity(Gravity.TOP);
-        list.setPadding(Ui.dp(this,18),Ui.dp(this,6),Ui.dp(this,18),Ui.dp(this,24));
-        boolean hasNext=refreshNext();
+        alarmCountdowns.clear();
         List<AlarmStore.Entry> alarms=AlarmProfiles.all(this);
+        renderedAlarmStates = alarmStates(alarms);
+        renderedSnoozes = SnoozeScheduler.active(this);
         alarms.sort(Comparator.comparingInt((AlarmStore.Entry e)->e.hour).thenComparingInt(e->e.minute));
         int enabled=0;for(AlarmStore.Entry e:alarms)if(e.enabled)enabled++;
-        boolean noUpcomingAlarm=!hasNext;
-        addAction.setVisibility(alarms.isEmpty()?View.GONE:View.VISIBLE);
-        showEmptyHero(noUpcomingAlarm);
+        refreshOverview();
+        refreshReadiness();
         refreshDragonGrowth();
-        if(noUpcomingAlarm)updateEmptyHero(alarms.isEmpty(),enabled==0);
         if(alarms.isEmpty()){
-            list.setGravity(Gravity.CENTER);
-            list.setPadding(Ui.dp(this,18),Ui.dp(this,14),Ui.dp(this,18),Ui.dp(this,18));
-            list.addView(buildEmptyContent(false),new LinearLayout.LayoutParams(-1,-2));
+            LinearLayout empty = Ui.card(this);
+            TextView hint = Ui.text(this, localized(
+                    "起床する時刻と曜日を決めて、最初のアラームを追加できます。",
+                    "Choose a time and days for your first alarm.",
+                    "시간과 요일을 정해 첫 알람을 추가할 수 있습니다."),
+                    15, Ui.readableTextColor(Ui.MUTED, Ui.SURFACE));
+            empty.addView(hint);
+            list.addView(empty, Ui.cardParams(this));
             return;
         }
         LinearLayout listHeading=Ui.row(this);
         listHeading.setPadding(Ui.dp(this,2),Ui.dp(this,2),Ui.dp(this,2),Ui.dp(this,3));
         TextView listTitle=Ui.sectionHeader(this,I18n.tr(this,"アラーム一覧"));
+        listTitle.setAccessibilityHeading(true);
         listTitle.setPadding(0,Ui.dp(this,5),0,Ui.dp(this,5));
         listHeading.addView(listTitle,new LinearLayout.LayoutParams(0,-2,1));
         listHeading.addView(Ui.pill(this,I18n.tr(this,"有効なアラーム")+"  "+enabled));list.addView(listHeading);
-        Map<Long,Long> snoozes=SnoozeScheduler.active(this);
+        Map<Long,Long> snoozes=renderedSnoozes;
         if(snoozes.size()>1){
             LinearLayout allSnoozes=Ui.row(this);allSnoozes.setGravity(Gravity.CENTER_VERTICAL);
             allSnoozes.setPadding(Ui.dp(this,4),Ui.dp(this,8),Ui.dp(this,4),Ui.dp(this,8));
@@ -195,7 +273,8 @@ public class MainActivity extends Activity {
         }
         if("tiles".equals(Ui.LAYOUT_MODE)){
             int screenWidthDp=getResources().getConfiguration().screenWidthDp;
-            tileColumnCount=screenWidthDp<=0?2:(screenWidthDp<380?1:(screenWidthDp>=720?3:2));
+            boolean largeText = getResources().getConfiguration().fontScale >= 1.3f;
+            tileColumnCount=screenWidthDp<380 || (largeText && screenWidthDp<600) ? 1 : (screenWidthDp>=720 && !largeText ? 3 : 2);
             tileGrid=new android.widget.GridLayout(this);tileGrid.setColumnCount(tileColumnCount);tileGrid.setUseDefaultMargins(false);
             tileGrid.setPadding(0,Ui.dp(this,2),0,0);
             list.addView(tileGrid,new LinearLayout.LayoutParams(-1,-2));
@@ -204,90 +283,6 @@ public class MainActivity extends Activity {
         }
         tileGrid=null;
         for(AlarmStore.Entry e:alarms)addAlarmRow(e);
-    }
-
-    private LinearLayout buildEmptyContent(boolean onHero){
-        LinearLayout content=onHero?new LinearLayout(this):Ui.card(this);
-        content.setOrientation(LinearLayout.VERTICAL);
-        content.setGravity(onHero?Gravity.CENTER_VERTICAL:Gravity.CENTER);
-        content.setPadding(Ui.dp(this,onHero?16:20),Ui.dp(this,onHero?10:22),
-                Ui.dp(this,onHero?136:20),Ui.dp(this,onHero?10:20));
-        if(onHero)content.setMinimumHeight(Ui.dp(this,HomeMetrics.HERO_EMPTY_HEIGHT_DP));
-        LinearLayout copy=new LinearLayout(this);
-        copy.setOrientation(LinearLayout.VERTICAL);
-        if(!onHero)copy.setGravity(Gravity.CENTER_HORIZONTAL);
-        if(!onHero){
-            FrameLayout iconPlate=new FrameLayout(this);
-            iconPlate.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,20,this));
-            android.widget.ImageView icon=new android.widget.ImageView(this);
-            android.graphics.drawable.Drawable alarmIcon=getDrawable(R.drawable.ic_v292_nav_alarm_outline).mutate();
-            alarmIcon.setTint(Ui.ACCENT_2);icon.setImageDrawable(alarmIcon);
-            int iconSize=Ui.dp(this,28);
-            iconPlate.addView(icon,new FrameLayout.LayoutParams(iconSize,iconSize,Gravity.CENTER));
-            LinearLayout.LayoutParams iconLp=new LinearLayout.LayoutParams(Ui.dp(this,56),Ui.dp(this,56));
-            iconLp.bottomMargin=Ui.dp(this,14);content.addView(iconPlate,iconLp);
-        }
-        content.addView(copy,new LinearLayout.LayoutParams(-1,-2));
-        TextView heading=Ui.title(this,localized(
-                onHero?"最初のアラームを追加しましょう":"アラームを設定しましょう",
-                onHero?"Add your first alarm":"Set up your alarm",
-                onHero?"첫 알람을 추가해 보세요":"알람을 설정해 보세요"),onHero?16:19);
-        if(onHero)emptyHeading=heading;
-        heading.setTextColor(onHero?Ui.HERO_TEXT:Ui.TEXT);
-        heading.setMaxLines(2);
-        heading.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        if(!onHero)heading.setGravity(Gravity.CENTER);
-        copy.addView(heading);
-        TextView note=Ui.text(this,localized(
-                onHero?"時刻と曜日を決めると、ここに一覧で表示されます。":"起床する時刻と曜日を決めると、ここに表示されます。",
-                onHero?"Set a time and days to see it listed here.":"Choose a wake-up time and days to see it here.",
-                onHero?"시간과 요일을 정하면 여기에 목록으로 표시됩니다.":"기상 시간과 요일을 정하면 여기에 표시됩니다."),onHero?12:13,onHero?Ui.HERO_TEXT:Ui.MUTED);
-        if(onHero)emptyNote=note;
-        note.setMaxLines(2);
-        note.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        note.setPadding(0,Ui.dp(this,3),0,0);
-        if(onHero)note.setAlpha(.82f);
-        else note.setGravity(Gravity.CENTER);
-        copy.addView(note);
-        if(!onHero){
-            Button create=Ui.button(this,localized("最初のアラームを作成","Create your first alarm","첫 알람 만들기"),true);
-            create.setOnClickListener(v->edit(-1));
-            LinearLayout.LayoutParams createLp=new LinearLayout.LayoutParams(-1,-2);
-            createLp.topMargin=Ui.dp(this,18);content.addView(create,createLp);
-        }
-        return content;
-    }
-
-    private void updateEmptyHero(boolean noSavedAlarms,boolean allAlarmsDisabled){
-        if(emptyHeading==null||emptyNote==null)return;
-        if(noSavedAlarms){
-            emptyHeading.setText(localized(
-                    "次の起床予定はありません",
-                    "No upcoming wake-up",
-                    "예정된 기상 시간이 없습니다"));
-            emptyNote.setText(localized(
-                    "中央のボタンから、最初のアラームを作成できます。",
-                    "Create your first alarm using the button below.",
-                    "아래 버튼으로 첫 알람을 만들 수 있습니다."));
-        }else if(allAlarmsDisabled){
-            emptyHeading.setText(localized(
-                    "アラームがオフです",
-                    "Alarms are off",
-                    "알람이 꺼져 있습니다"));
-            emptyNote.setText(localized(
-                    "一覧のスイッチをオンにすると、次の時刻がここに表示されます。",
-                    "Turn on an alarm below to see the next wake-up time here.",
-                    "아래에서 알람을 켜면 다음 기상 시간이 여기에 표시됩니다."));
-        }else{
-            emptyHeading.setText(localized(
-                    "次の起床予定がありません",
-                    "No upcoming alarm",
-                    "예정된 알람이 없습니다"));
-            emptyNote.setText(localized(
-                    "一覧でアラームの時刻や曜日を確認してください。",
-                    "Check the alarm times and days in the list below.",
-                    "아래 목록에서 알람 시간과 요일을 확인하세요."));
-        }
     }
 
     private String localized(String ja,String en,String ko){
@@ -306,17 +301,12 @@ public class MainActivity extends Activity {
         String label=(e.label==null||e.label.trim().isEmpty())?I18n.tr(this,"アラーム"):e.label.trim();
         TextView name=Ui.title(this,label,15);name.setSingleLine(true);name.setEllipsize(android.text.TextUtils.TruncateAt.END);tile.addView(name);
         TextView schedule=Ui.text(this,repeatText(e.dayMask),12,e.enabled?Ui.ACCENT:Ui.MUTED);schedule.setSingleLine(true);schedule.setEllipsize(android.text.TextUtils.TruncateAt.END);schedule.setPadding(0,Ui.dp(this,4),0,0);tile.addView(schedule);
-        long now=System.currentTimeMillis();long next=AlarmScheduler.nextTriggerMillis(this,e);
-        if(e.enabled&&next>now){
-            TextView countdown=Ui.text(this,String.format(I18n.locale(this),I18n.tr(this,"あと %s"),relativeText(next-now)),12,Ui.ACCENT_2);
-            countdown.setSingleLine(true);countdown.setEllipsize(android.text.TextUtils.TruncateAt.END);countdown.setPadding(0,Ui.dp(this,3),0,0);tile.addView(countdown);
-        }
+        TextView countdown=Ui.text(this,"",13,Ui.readableTextColor(Ui.ACCENT_2, Ui.SURFACE));
+        countdown.setPadding(0,Ui.dp(this,3),0,0);
+        tile.addView(countdown);
+        bindCountdown(countdown, e);
         TextView mission=Ui.text(this,AlarmProfiles.missionIcon(e.missionType)+"  "+I18n.tr(this,AlarmProfiles.missionName(e.missionType)),12,Ui.MUTED);mission.setSingleLine(true);mission.setEllipsize(android.text.TextUtils.TruncateAt.END);mission.setPadding(0,Ui.dp(this,6),0,0);tile.addView(mission);
-        long snoozeAt=SnoozeScheduler.scheduledAt(this,e.id);
-        if(snoozeAt>now){
-            TextView snooze=Ui.text(this,I18n.tr(this,"スヌーズ中")+"  ·  "+relativeText(snoozeAt-System.currentTimeMillis()),11,Ui.ACCENT_2);
-            snooze.setSingleLine(true);snooze.setEllipsize(android.text.TextUtils.TruncateAt.END);snooze.setPadding(0,Ui.dp(this,4),0,0);tile.addView(snooze);
-        }
+        addSnoozeActions(tile, e);
         on.setContentDescription(I18n.tr(this,label)+"  "+I18n.tr(this,"アラーム"));
         on.setOnClickListener(v->{e.enabled=on.isChecked();AlarmProfiles.save(this,e);if(!e.enabled){SnoozeScheduler.cancel(this,e.id);if(e.id>=1000)AlarmScheduler.cancelExtraAlarm(this,e.id);}AlarmScheduler.reschedule(this);render();});
         android.widget.GridLayout.LayoutParams lp=new android.widget.GridLayout.LayoutParams(
@@ -351,15 +341,9 @@ public class MainActivity extends Activity {
         name.setSingleLine(true);name.setEllipsize(android.text.TextUtils.TruncateAt.END);
         details.addView(name);
         String scheduleText=repeatText(e.dayMask);
-        long now=System.currentTimeMillis();
-        long next=AlarmScheduler.nextTriggerMillis(this,e);
-        String remaining=(e.enabled&&next>now)?String.format(I18n.locale(this),I18n.tr(this,"あと %s"),relativeText(next-now)):"";
-        if(!remaining.isEmpty()){
-            TextView countdown=Ui.text(this,remaining,11,Ui.ACCENT_2);
-            countdown.setSingleLine(true);countdown.setEllipsize(android.text.TextUtils.TruncateAt.END);
-            LinearLayout.LayoutParams countdownLp=new LinearLayout.LayoutParams(-1,-2);
-            countdownLp.topMargin=Ui.dp(this,2);details.addView(countdown,countdownLp);
-        }
+        TextView countdown=Ui.text(this,"",13,Ui.readableTextColor(Ui.ACCENT_2, Ui.SURFACE));
+        details.addView(countdown, Ui.gapTop(this,2));
+        bindCountdown(countdown, e);
         TextView schedule=Ui.text(this,scheduleText,11.5f,e.enabled?Ui.ACCENT_2:Ui.MUTED_2);
         schedule.setSingleLine(true);schedule.setEllipsize(android.text.TextUtils.TruncateAt.END);
         schedule.setMaxWidth(Ui.dp(this,260));
@@ -400,20 +384,7 @@ public class MainActivity extends Activity {
         detailLp.setMargins(Ui.dp(this,7),0,0,0);missionRow.addView(detail,detailLp);
         row.addView(missionRow);
 
-        long snoozeAt=SnoozeScheduler.scheduledAt(this,e.id);
-        if(snoozeAt>now){
-            LinearLayout snoozeRow=new LinearLayout(this);snoozeRow.setGravity(Gravity.CENTER_VERTICAL);
-            snoozeRow.setPadding(0,Ui.dp(this,4),0,0);snoozeRow.setOnClickListener(v->{});
-            String snoozeText=String.format(I18n.locale(this),I18n.tr(this,"スヌーズ中  ·  あと %s"),relativeText(snoozeAt-now));
-            TextView snoozeState=Ui.text(this,snoozeText,12,Ui.ACCENT_2);
-            snoozeRow.addView(snoozeState,new LinearLayout.LayoutParams(0,-2,1));
-            Button awake=Ui.ghostButton(this,I18n.tr(this,"起きた"));awake.setTextSize(12);
-            awake.setTextColor(Ui.SUCCESS);awake.setOnClickListener(v->{SnoozeScheduler.markAwake(this,e.id);render();});
-            snoozeRow.addView(awake);
-            Button cancel=Ui.ghostButton(this,I18n.tr(this,"取消"));cancel.setTextSize(12);
-            cancel.setTextColor(Ui.ACCENT_2);cancel.setOnClickListener(v->{SnoozeScheduler.cancel(this,e.id);render();});
-            snoozeRow.addView(cancel);row.addView(snoozeRow);
-        }
+        addSnoozeActions(row, e);
         on.setOnClickListener(v->{
             e.enabled=on.isChecked();AlarmProfiles.save(this,e);
             if(!e.enabled){SnoozeScheduler.cancel(this,e.id);if(e.id>=1000)AlarmScheduler.cancelExtraAlarm(this,e.id);}
@@ -434,6 +405,51 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void bindCountdown(TextView countdown, AlarmStore.Entry alarm) {
+        Runnable update = () -> {
+            long now = System.currentTimeMillis();
+            long next = alarm.enabled ? AlarmScheduler.nextTriggerMillis(this, alarm) : -1L;
+            countdown.setVisibility(next > now ? View.VISIBLE : View.GONE);
+            if (next > now) {
+                String text = String.format(I18n.locale(this), I18n.tr(this,"あと %s"),relativeText(next-now));
+                if (!text.contentEquals(countdown.getText())) countdown.setText(text);
+            }
+        };
+        update.run();
+        if (alarm.enabled) alarmCountdowns.add(update);
+    }
+
+    private void addSnoozeActions(LinearLayout card, AlarmStore.Entry alarm) {
+        Long at = renderedSnoozes.get(alarm.id);
+        if (at == null) return;
+        TextView status = Ui.text(this, "", 13, Ui.readableTextColor(Ui.ACCENT_2, Ui.SURFACE));
+        card.addView(status, Ui.gapTop(this, 7));
+        Runnable update = () -> {
+            long remaining = at - System.currentTimeMillis();
+            String value = remaining > 0
+                    ? String.format(I18n.locale(this),I18n.tr(this,"スヌーズ中  ·  あと %s"),relativeText(remaining))
+                    : I18n.tr(this,"スヌーズ中");
+            if (!value.contentEquals(status.getText())) status.setText(value);
+        };
+        update.run();
+        alarmCountdowns.add(update);
+
+        LinearLayout actions = new LinearLayout(this);
+        actions.setGravity(Gravity.CENTER_VERTICAL);
+        Button awake = Ui.ghostButton(this, "起きた");
+        awake.setTextSize(13);
+        awake.setTextColor(Ui.readableTextColor(Ui.SUCCESS, Ui.SURFACE_2));
+        awake.setOnClickListener(v -> { SnoozeScheduler.markAwake(this,alarm.id); render(); });
+        actions.addView(awake, new LinearLayout.LayoutParams(0,-2,1));
+        Button cancel = Ui.ghostButton(this, "取消");
+        cancel.setTextSize(13);
+        cancel.setOnClickListener(v -> { SnoozeScheduler.cancel(this,alarm.id); render(); });
+        LinearLayout.LayoutParams cancelParams = new LinearLayout.LayoutParams(0,-2,1);
+        cancelParams.setMarginStart(Ui.dp(this,6));
+        actions.addView(cancel, cancelParams);
+        card.addView(actions, Ui.gapTop(this, 4));
+    }
+
     private void confirmDelete(AlarmStore.Entry e){
         if(e==null||e.id<1000)return;
         Ui.dialogBuilder(this)
@@ -441,6 +457,7 @@ public class MainActivity extends Activity {
                 .setMessage(I18n.tr(this,"このアラームだけ削除します。"))
                 .setNegativeButton(I18n.tr(this,"キャンセル"),null)
                 .setPositiveButton(I18n.tr(this,"削除"),(d,w)->{
+                    SnoozeScheduler.cancel(this,e.id);
                     AlarmScheduler.cancelExtraAlarm(this,e.id);
                     AlarmProfiles.delete(this,e.id);
                     AlarmScheduler.reschedule(this);
@@ -448,64 +465,42 @@ public class MainActivity extends Activity {
                 }).show();
     }
 
-    private void showEmptyHero(boolean empty){
-        int height=Ui.dp(this,empty?HomeMetrics.HERO_EMPTY_HEIGHT_DP:HomeMetrics.HERO_HEIGHT_DP);
-        nextCard.setMinimumHeight(height);
-        nextCard.setBackground(empty?emptyHeroBackground:scheduledHeroBackground);
-        LinearLayout.LayoutParams cardParams=(LinearLayout.LayoutParams)nextCard.getLayoutParams();
-        if(cardParams.height!=height){cardParams.height=height;nextCard.setLayoutParams(cardParams);}
-        if(sunriseAccent!=null){
-            FrameLayout.LayoutParams accentParams=(FrameLayout.LayoutParams)sunriseAccent.getLayoutParams();
-            if(accentParams.height!=height){accentParams.height=height;sunriseAccent.setLayoutParams(accentParams);}
-            sunriseAccent.setVisibility(empty?View.GONE:View.VISIBLE);
-        }
-        heroContent.setVisibility(empty?View.GONE:View.VISIBLE);
-        emptyHero.setVisibility(empty?View.VISIBLE:View.GONE);
-
-    }
-
-    private void addDragonGrowthOverlay(){
-        dragonCompanion=new StreakCompanionView(this);
-        FrameLayout.LayoutParams dragonLp=new FrameLayout.LayoutParams(
-                Ui.dp(this,112),Ui.dp(this,124),Gravity.END|Gravity.TOP);
-        dragonLp.rightMargin=Ui.dp(this,8);
-        dragonLp.topMargin=Ui.dp(this,8);
-        nextCard.addView(dragonCompanion,dragonLp);
-
+    private void addDragonGrowthSummary(LinearLayout nextCard){
         LinearLayout summary=new LinearLayout(this);
         summary.setOrientation(LinearLayout.VERTICAL);
         summary.setPadding(Ui.dp(this,14),Ui.dp(this,9),Ui.dp(this,14),Ui.dp(this,9));
-        summary.setBackground(Ui.roundStroke(Ui.withAlpha(0xff08111a,0xC8),Ui.withAlpha(Ui.HERO_TEXT,0x50),14,this));
+        int summaryInk = Ui.readableTextColor(Ui.TEXT, Ui.SURFACE);
+        int summaryDetail = Ui.readableTextColor(Ui.MUTED, Ui.SURFACE);
+        summary.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,16,this));
 
         LinearLayout titleRow=new LinearLayout(this);
         titleRow.setGravity(Gravity.CENTER_VERTICAL);
-        dragonFormText=Ui.text(this,I18n.tr(this,"竜の卵"),13,Ui.HERO_TEXT);
+        dragonFormText=Ui.text(this,"竜の卵",15,summaryInk);
         dragonFormText.setTypeface(android.graphics.Typeface.create("sans-serif-medium",android.graphics.Typeface.BOLD));
-        dragonFormText.setSingleLine(true);
-        dragonFormText.setEllipsize(android.text.TextUtils.TruncateAt.END);
         titleRow.addView(dragonFormText,new LinearLayout.LayoutParams(0,-2,1));
-        dragonLevelText=Ui.text(this,"Lv.1",12,0xFFFFD28A);
-        dragonLevelText.setTypeface(null,android.graphics.Typeface.BOLD);dragonLevelText.setGravity(Gravity.CENTER);dragonLevelText.setPadding(Ui.dp(this,8),Ui.dp(this,4),Ui.dp(this,8),Ui.dp(this,4));dragonLevelText.setBackground(Ui.roundStroke(Ui.withAlpha(0xFFFFD28A,0x20),Ui.withAlpha(0xFFFFD28A,0x80),8,this));
-        LinearLayout.LayoutParams levelLp=new LinearLayout.LayoutParams(-2,-2);levelLp.leftMargin=Ui.dp(this,8);titleRow.addView(dragonLevelText,levelLp);
+        dragonLevelText=Ui.text(this,"",13,Ui.readableTextColor(Ui.ACCENT_2, Ui.SURFACE_2));
+        dragonLevelText.setTypeface(null,android.graphics.Typeface.BOLD);
+        dragonLevelText.setGravity(Gravity.CENTER);
+        dragonLevelText.setPadding(Ui.dp(this,8),Ui.dp(this,4),Ui.dp(this,8),Ui.dp(this,4));
+        dragonLevelText.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,10,this));
+        LinearLayout.LayoutParams levelLp=new LinearLayout.LayoutParams(-2,-2);
+        levelLp.setMarginStart(Ui.dp(this,8));
+        titleRow.addView(dragonLevelText,levelLp);
         summary.addView(titleRow);
 
-        dragonProgressText=Ui.text(this,"",11,Ui.HERO_TEXT);
-        dragonProgressText.setSingleLine(true);
-        dragonProgressText.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        dragonProgressText.setAlpha(1f);
-        dragonProgressText.setPadding(0,Ui.dp(this,1),0,Ui.dp(this,3));
+        dragonProgressText=Ui.text(this,"",13,summaryDetail);
+        dragonProgressText.setPadding(0,Ui.dp(this,4),0,Ui.dp(this,7));
         summary.addView(dragonProgressText);
 
         dragonProgressTrack=new FrameLayout(this);
-        dragonProgressTrack.setBackground(Ui.round(Ui.withAlpha(Ui.HERO_TEXT,0x42),4,this));
+        dragonProgressTrack.setBackground(Ui.round(Ui.SURFACE_3,4,this));
+        dragonProgressTrack.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
         dragonProgressFill=new View(this);
-        dragonProgressFill.setBackground(Ui.round(0xffffc66d,4,this));
+        dragonProgressFill.setBackground(Ui.round(Ui.readableTextColor(Ui.ACCENT_2, Ui.SURFACE_3),4,this));
         dragonProgressTrack.addView(dragonProgressFill,new FrameLayout.LayoutParams(0,-1,Gravity.START));
         summary.addView(dragonProgressTrack,new LinearLayout.LayoutParams(-1,Ui.dp(this,5)));
 
-        FrameLayout.LayoutParams summaryLp=new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM|Gravity.START);
-        summaryLp.setMargins(Ui.dp(this,16),0,Ui.dp(this,16),Ui.dp(this,9));
-        nextCard.addView(summary,summaryLp);
+        nextCard.addView(summary,Ui.gapTop(this,9));
     }
 
     private void refreshDragonGrowth(){
@@ -539,9 +534,11 @@ public class MainActivity extends Activity {
         horizonTrack.post(()->{
             int usable=Math.max(0,horizonTrack.getWidth()-horizonDot.getWidth());
             android.widget.FrameLayout.LayoutParams params=(android.widget.FrameLayout.LayoutParams)horizonDot.getLayoutParams();
-            params.leftMargin=Math.round(usable*(minuteOfDay/1440f));
-            params.gravity=Gravity.START|Gravity.CENTER_VERTICAL;
-            horizonDot.setLayoutParams(params);
+            int offset = Math.round(usable*(minuteOfDay/1440f));
+            if (params.getMarginStart() != offset) {
+                params.setMarginStart(offset);
+                horizonDot.setLayoutParams(params);
+            }
         });
         String when=z.format(DateTimeFormatter.ofPattern(I18n.datePattern(this,"short"),I18n.locale(this)));
         String prefix=(snooze>0&&ms==snooze)?I18n.tr(this,"スヌーズ中")+"  ·  ":"";
@@ -550,44 +547,6 @@ public class MainActivity extends Activity {
     }
     private String relativeText(long ms){long mins=Math.max(1,(long)Math.ceil(ms/60000.0));long h=mins/60,m=mins%60;String duration;if(h==0)duration=m+"分";else if(m==0)duration=h+"時間";else duration=h+"時間"+m+"分";return I18n.tr(this,duration);}
     private String repeatText(int m){if(m==0)return I18n.tr(this,"1回のみ");if((m&127)==127)return I18n.tr(this,"毎日");String[]n={"月","火","水","木","金","土","日"};StringBuilder b=new StringBuilder();for(int i=0;i<7;i++)if((m&(1<<i))!=0){if(b.length()>0)b.append(" ");b.append(I18n.tr(this,n[i]));}return b.toString();}
-
-    /** A quiet sunrise mark gives the next-alarm card a recognizable, non-character focal point. */
-    private static final class SunriseAccentView extends View {
-        private final float density;
-        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        SunriseAccentView(Activity activity) {
-            super(activity);
-            density = activity.getResources().getDisplayMetrics().density;
-            setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-        }
-        @Override protected void onDraw(Canvas canvas) {
-            super.onDraw(canvas);
-            float cx = getWidth() * .68f;
-            float cy = getHeight() * .50f;
-            float r = 31f * density;
-            paint.setStyle(Paint.Style.FILL);
-            paint.setShader(new RadialGradient(cx, cy, r * 1.65f,
-                    new int[]{Ui.withAlpha(Ui.HERO_TEXT, 0x26), Ui.withAlpha(Ui.HERO_TEXT, 0x00)},
-                    null, Shader.TileMode.CLAMP));
-            canvas.drawCircle(cx, cy, r * 1.65f, paint);
-            paint.setShader(null);
-            paint.setColor(Ui.withAlpha(Ui.HERO_TEXT, 0x16));
-            canvas.drawCircle(cx, cy - 5f * density, r * .45f, paint);
-            paint.setColor(Ui.withAlpha(Ui.HERO_TEXT, 0x35));
-            paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(1.1f * density);
-            paint.setStrokeCap(Paint.Cap.ROUND);
-            float horizon = cy + 9f * density;
-            canvas.drawLine(cx-r*.82f, horizon, cx+r*.82f, horizon, paint);
-            for (int i = 0; i < 3; i++) {
-                float half = r * (.24f + .22f*i);
-                float y = horizon + (9f + 8f*i) * density;
-                canvas.drawLine(cx-half, y, cx+half, y, paint);
-            }
-            paint.setStrokeCap(Paint.Cap.BUTT);
-            paint.setStyle(Paint.Style.FILL);
-        }
-    }
 
     private void requestRuntimePermissions(){try{ArrayList<String> req=new ArrayList<>();if(Build.VERSION.SDK_INT>=29&&checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION)!=PackageManager.PERMISSION_GRANTED)req.add(Manifest.permission.ACTIVITY_RECOGNITION);if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)req.add(Manifest.permission.POST_NOTIFICATIONS);if(!req.isEmpty())requestPermissions(req.toArray(new String[0]),41);}catch(Throwable ignored){}}
 }

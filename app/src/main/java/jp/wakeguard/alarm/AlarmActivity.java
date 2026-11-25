@@ -65,54 +65,58 @@ public class AlarmActivity extends Activity {
         catch (Throwable t) { try { Prefs.lastAlarmError(c, "StartLockUi: " + t.getClass().getSimpleName()); } catch (Throwable ignored) {} }
     }
 
-    private void handleLaunchIntent(Intent i) {
-        if (i == null || !ACTION_SCHEDULED_FIRE.equals(i.getAction())) return;
-        long epochDay = i.getLongExtra(AlarmService.EXTRA_EPOCH_DAY, -1L);
-        long alarmId = i.getLongExtra(EXTRA_ALARM_ID, AlarmScheduler.PRIMARY_ALARM_ID);
-        long expectedAt = i.getLongExtra(AlarmScheduler.EXTRA_EXPECTED_AT, -1L);
-        // An AlarmClock/FSI/OEM may re-deliver the same Activity intent after
-        // AlarmService has already marked the occurrence delivered. Never call
-        // finish() on an existing, actively ringing Activity in that case.
-        if (Prefs.active(this) && AlarmService.running) {
-            boolean same = Prefs.activeAlarmId(this) == alarmId
-                    && Prefs.sessionEpochDay(this) == epochDay
-                    && (expectedAt <= 0L || Prefs.sessionExpectedAt(this) == expectedAt);
-            android.util.Log.i("IGNIDO_ALARM", "Reentered scheduled UI: same=" + same);
-            i.setAction(null);
+    private void handleLaunchIntent(Intent intent) {
+        if (intent == null) return;
+        String intentAction = intent.getAction();
+        boolean scheduled = ACTION_SCHEDULED_FIRE.equals(intentAction);
+        boolean followUp = AlarmScheduler.ACTION_SHOW_RUNNING_ALARM.equals(intentAction);
+        if (!scheduled && !followUp) return;
+
+        long epochDay = intent.getLongExtra(AlarmService.EXTRA_EPOCH_DAY, -1L);
+        long alarmId = intent.getLongExtra(EXTRA_ALARM_ID, AlarmScheduler.PRIMARY_ALARM_ID);
+        long expectedAt = intent.getLongExtra(AlarmScheduler.EXTRA_EXPECTED_AT, -1L);
+        intent.setAction(null);
+
+        boolean hasRunningAlarm = Prefs.active(this) && AlarmService.running;
+        boolean matchesSession = Prefs.active(this) && Prefs.activeAlarmId(this) == alarmId
+                && Prefs.sessionEpochDay(this) == epochDay
+                && (expectedAt <= 0L || Prefs.sessionExpectedAt(this) == expectedAt);
+        if (followUp) {
+            // A delayed UI launch belongs only to the occurrence that requested it.
+            if (!matchesSession && !visible) finishStaleAlarmScreen();
             return;
         }
+        if (hasRunningAlarm && matchesSession) return;
+
         if (!AlarmScheduler.isExpectedFire(this, alarmId, epochDay, expectedAt)
                 || AlarmOccurrenceGuard.wasDelivered(this, alarmId, expectedAt, epochDay)) {
-            try { Prefs.lastAlarmError(this, "Blocked stale alarm delivery id=" + alarmId); } catch (Throwable ignored) {}
-            i.setAction(null); finish(); return;
+            if (!hasRunningAlarm) finishStaleAlarmScreen();
+            return;
         }
-        try {
-            AlarmStore.markFiredIfOneShot(this, alarmId);
-            if (alarmId == AlarmScheduler.PRIMARY_ALARM_ID && Prefs.dayMask(this) == 0) Prefs.enabled(this, false);
-        } catch (Throwable ignored) {}
-        boolean alreadyRunning = Prefs.active(this) && AlarmService.running;
-        Prefs.active(this, true);
-        String chosenMission = Prefs.sessionMissionType(this);
-        if (!alreadyRunning) {
-            Prefs.activeAlarmId(this, alarmId);
-            chosenMission = AlarmProfiles.resolveSessionMission(this, alarmId);
-            Prefs.sessionMissionType(this, chosenMission);
-            Prefs.missionProgress(this, 0);
-            Prefs.missionComplete(this, false);
-        }
-        try { AlarmScheduler.reschedule(this); } catch (Throwable ignored) {}
-        Intent s = new Intent(this, AlarmService.class)
+
+        Intent service = new Intent(this, AlarmService.class)
                 .setAction(AlarmService.ACTION_FIRE_NEW)
                 .putExtra(AlarmService.EXTRA_EPOCH_DAY, epochDay)
                 .putExtra(AlarmService.EXTRA_ALARM_ID, alarmId)
                 .putExtra(AlarmService.EXTRA_EXPECTED_AT, expectedAt)
-                .putExtra("missionType", chosenMission);
+                .putExtra(AlarmService.EXTRA_REGULAR_OCCURRENCE, true);
+        String mission = hasRunningAlarm ? null : AlarmProfiles.resolveSessionMission(this, alarmId);
+        if (mission != null) service.putExtra("missionType", mission);
         try {
-            // Always forward the fire. If another alarm is already active, AlarmService queues
-            // this alarm instead of replacing the current session or losing the new one.
-            if (Build.VERSION.SDK_INT >= 26) startForegroundService(s); else startService(s);
-        } catch (Throwable t) { try { Prefs.lastAlarmError(this, "ScheduledStart: " + t.getClass().getSimpleName()); } catch (Throwable ignored) {} }
-        i.setAction(null);
+            startForegroundService(service);
+        } catch (RuntimeException failure) {
+            Prefs.lastAlarmError(this, "ScheduledStart: " + failure.getClass().getSimpleName());
+            if (!hasRunningAlarm) finishStaleAlarmScreen();
+            return;
+        }
+        if (!hasRunningAlarm) {
+            // Initialize the first frame. The service owns subsequent session changes.
+            Prefs.activeAlarmId(this, alarmId);
+            Prefs.sessionMissionType(this, mission);
+            Prefs.missionProgress(this, 0);
+            Prefs.missionComplete(this, false);
+            Prefs.active(this, true);
+        }
     }
 
     private void finishStaleAlarmScreen(){

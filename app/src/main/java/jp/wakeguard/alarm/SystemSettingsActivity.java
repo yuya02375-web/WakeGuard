@@ -265,7 +265,7 @@ public class SystemSettingsActivity extends Activity {
         LinearLayout records = Ui.bottomTab(this, "記録", false);
         LinearLayout settings = Ui.bottomTab(this, "設定", true);
         LinearLayout[] tabs = {alarms, clock, records, settings};
-        for (LinearLayout tab : tabs) nav.addView(tab, new LinearLayout.LayoutParams(0, Ui.dp(this, 64), 1));
+        for (LinearLayout tab : tabs) nav.addView(tab, new LinearLayout.LayoutParams(0, -2, 1));
 
         alarms.setOnClickListener(v -> navigateRoot("alarm"));
         clock.setOnClickListener(v -> navigateRoot("clock"));

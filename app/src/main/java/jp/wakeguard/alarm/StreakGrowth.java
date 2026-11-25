@@ -30,7 +30,7 @@ public final class StreakGrowth {
 
     public static void onWakeSuccess(Context c,long epochDay){
         ensure(c);
-        if(epochDay<=0L)return;
+        if (epochDay <= 0L || Prefs.wasSuccessful(c, java.time.LocalDate.ofEpochDay(epochDay))) return;
         SharedPreferences sp=p(c);
         long lastGrowthDay=sp.getLong("last_growth_epoch_day",Prefs.lastSuccessEpochDay(c));
         if(lastGrowthDay==epochDay)return;

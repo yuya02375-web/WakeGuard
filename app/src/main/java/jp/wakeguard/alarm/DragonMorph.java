@@ -1,7 +1,7 @@
 package jp.wakeguard.alarm;
 
 import android.graphics.Bitmap;
-import java.util.Arrays;
+import java.util.concurrent.CancellationException;
 
 /**
  * Creates one continuously evolving dragon image from two neighboring forms.
@@ -15,6 +15,7 @@ final class DragonMorph {
     private DragonMorph() {}
 
     static Bitmap morph(Bitmap from, Bitmap to, float fraction) {
+        if (Thread.currentThread().isInterrupted()) throw new CancellationException();
         if (from == null || to == null) throw new IllegalArgumentException("Dragon images are required");
         if (from.getWidth() != to.getWidth() || from.getHeight() != to.getHeight()) {
             throw new IllegalArgumentException("Dragon forms must share a canvas");
@@ -36,10 +37,9 @@ final class DragonMorph {
         boolean[] maskB = alphaMask(b);
         float[] distanceA = signedDistance(maskA, width, height);
         float[] distanceB = signedDistance(maskB, width, height);
-        int[] nearestA = nearestOpaque(a, width, height);
-        int[] nearestB = nearestOpaque(b, width, height);
-
         for (int i = 0; i < count; i++) {
+            // A blend of two outside distances cannot put this pixel inside the silhouette.
+            if (!maskA[i] && !maskB[i]) continue;
             float distance = distanceA[i] + (distanceB[i] - distanceA[i]) * t;
             float edge = smoothStep(distance + 0.5f);
             if (edge <= 0f) continue;
@@ -49,12 +49,8 @@ final class DragonMorph {
                 color = blendRgb(a[i], b[i], t);
             } else if (maskA[i]) {
                 color = a[i];
-            } else if (maskB[i]) {
-                color = b[i];
             } else {
-                int colorA = nearestA[i] < 0 ? 0 : a[nearestA[i]];
-                int colorB = nearestB[i] < 0 ? colorA : b[nearestB[i]];
-                color = blendRgb(colorA, colorB, t);
+                color = b[i];
             }
             int alpha = Math.round(edge * 255f);
             out[i] = (alpha << 24) | (color & 0x00ffffff);
@@ -74,11 +70,10 @@ final class DragonMorph {
     private static float[] signedDistance(boolean[] inside, int width, int height) {
         float[] toOutside = distanceTo(inside, false, width, height);
         float[] toInside = distanceTo(inside, true, width, height);
-        float[] signed = new float[inside.length];
         for (int i = 0; i < inside.length; i++) {
-            signed[i] = inside[i] ? toOutside[i] - 0.5f : -(toInside[i] - 0.5f);
+            toOutside[i] = inside[i] ? toOutside[i] - 0.5f : -(toInside[i] - 0.5f);
         }
-        return signed;
+        return toOutside;
     }
 
     private static float[] distanceTo(boolean[] mask, boolean target, int width, int height) {
@@ -86,6 +81,7 @@ final class DragonMorph {
         for (int i = 0; i < mask.length; i++) distance[i] = mask[i] == target ? 0f : INF;
 
         for (int y = 0; y < height; y++) {
+            if (Thread.currentThread().isInterrupted()) throw new CancellationException();
             int row = y * width;
             for (int x = 0; x < width; x++) {
                 int i = row + x;
@@ -96,6 +92,7 @@ final class DragonMorph {
             }
         }
         for (int y = height - 1; y >= 0; y--) {
+            if (Thread.currentThread().isInterrupted()) throw new CancellationException();
             int row = y * width;
             for (int x = width - 1; x >= 0; x--) {
                 int i = row + x;
@@ -111,40 +108,6 @@ final class DragonMorph {
     private static void relax(float[] distance, int at, int from, float cost) {
         float candidate = distance[from] + cost;
         if (candidate < distance[at]) distance[at] = candidate;
-    }
-
-    private static int[] nearestOpaque(int[] pixels, int width, int height) {
-        int[] nearest = new int[pixels.length];
-        Arrays.fill(nearest, -1);
-        int[] queue = new int[pixels.length];
-        int tail = 0;
-        for (int i = 0; i < pixels.length; i++) {
-            if ((pixels[i] >>> 24) > 16) {
-                nearest[i] = i;
-                queue[tail++] = i;
-            }
-        }
-
-        int head = 0;
-        while (head < tail) {
-            int at = queue[head++];
-            int x = at % width;
-            int y = at / width;
-            for (int dy = -1; dy <= 1; dy++) {
-                int ny = y + dy;
-                if (ny < 0 || ny >= height) continue;
-                for (int dx = -1; dx <= 1; dx++) {
-                    if (dx == 0 && dy == 0) continue;
-                    int nx = x + dx;
-                    if (nx < 0 || nx >= width) continue;
-                    int next = ny * width + nx;
-                    if (nearest[next] >= 0) continue;
-                    nearest[next] = nearest[at];
-                    queue[tail++] = next;
-                }
-            }
-        }
-        return nearest;
     }
 
     private static float smoothStep(float value) {

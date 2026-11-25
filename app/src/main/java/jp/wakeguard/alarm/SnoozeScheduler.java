@@ -5,7 +5,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Build;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -13,6 +12,8 @@ import java.util.Map;
 /** Tracks each pending snooze independently so one or all can be cancelled without disabling alarms. */
 public final class SnoozeScheduler {
     private static final String FILE = "ignido_snooze_v200";
+    private static final long DELIVERY_GRACE_MS = 10 * 60_000L;
+    private static final long EARLY_DELIVERY_GRACE_MS = 60_000L;
     private SnoozeScheduler() {}
 
     private static SharedPreferences p(Context c){ return c.getSharedPreferences(FILE, Context.MODE_PRIVATE); }
@@ -29,51 +30,60 @@ public final class SnoozeScheduler {
         return PendingIntent.getBroadcast(c,requestCode(id),i,flags | PendingIntent.FLAG_IMMUTABLE);
     }
 
-    public static void schedule(Context c,long id,int min){
-        cancel(c,id);
-        long at = System.currentTimeMillis() + Math.max(1,Math.min(60,min)) * 60000L;
-        long epochDay = Prefs.sessionEpochDay(c);
-        p(c).edit().putLong(key(id),at).putLong(dayKey(id),epochDay).commit();
-        AlarmManager am = (AlarmManager)c.getSystemService(Context.ALARM_SERVICE);
-        if(am==null)return;
-        PendingIntent op = pi(c,id,at,PendingIntent.FLAG_UPDATE_CURRENT);
-        try{
-            if(Build.VERSION.SDK_INT>=23)am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,at,op);
-            else am.setExact(AlarmManager.RTC_WAKEUP,at,op);
-        }catch(SecurityException e){
-            if(Build.VERSION.SDK_INT>=23)am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,at,op);
-            else am.set(AlarmManager.RTC_WAKEUP,at,op);
+    public static synchronized void schedule(Context c,long id,int min){
+        long at = System.currentTimeMillis() + Math.max(1,Math.min(60,min)) * 60_000L;
+        if (!register(c, id, at, at)) return;
+        p(c).edit().putLong(key(id),at).putLong(dayKey(id),Prefs.sessionEpochDay(c)).commit();
+        refreshWidgets(c);
+    }
+
+    private static boolean register(Context c, long id, long expectedAt, long triggerAt) {
+        AlarmManager manager = c.getSystemService(AlarmManager.class);
+        if (manager == null) return false;
+        PendingIntent operation = pi(c,id,expectedAt,PendingIntent.FLAG_UPDATE_CURRENT);
+        try {
+            manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, operation);
+        } catch (SecurityException denied) {
+            manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, operation);
         }
-        try{ WidgetSuite.refreshAll(c); }catch(Throwable ignored){}
+        return true;
     }
 
     public static long scheduledAt(Context c,long id){
         long at=p(c).getLong(key(id),-1L);
-        if(at<=System.currentTimeMillis()) return -1L;
-        return at;
+        return at > System.currentTimeMillis() ? at : -1L;
     }
 
     public static long occurrenceEpochDay(Context c,long id){ return p(c).getLong(dayKey(id),-1L); }
 
-    public static Map<Long,Long> active(Context c){
-        LinkedHashMap<Long,Long> out=new LinkedHashMap<>();
-        Map<String,?> all=p(c).getAll();
-        long now=System.currentTimeMillis();
-        SharedPreferences.Editor cleanup=null;
-        for(Map.Entry<String,?> e:all.entrySet()){
-            String k=e.getKey();
-            if(!k.startsWith("at_") || !(e.getValue() instanceof Number))continue;
-            try{
-                long id=Long.parseLong(k.substring(3));
-                long at=((Number)e.getValue()).longValue();
-                if(at>now && at<=now+3660000L) out.put(id,at);
-                else{
-                    if(cleanup==null)cleanup=p(c).edit();
-                    cleanup.remove(k).remove(dayKey(id));
-                }
-            }catch(Throwable ignored){}
+    public static synchronized Map<Long,Long> active(Context c){
+        long now = System.currentTimeMillis();
+        Map<Long,Long> pending = savedSnoozes(c, now);
+        pending.values().removeIf(at -> at <= now);
+        return pending;
+    }
+
+    // A due snooze may still be waiting on an AlarmManager broadcast, so upcoming
+    // UI must not discard it as soon as the countdown reaches zero.
+    private static Map<Long,Long> savedSnoozes(Context c, long now){
+        LinkedHashMap<Long,Long> out = new LinkedHashMap<>();
+        SharedPreferences prefs = p(c);
+        SharedPreferences.Editor cleanup = null;
+        for (Map.Entry<String,?> entry : prefs.getAll().entrySet()) {
+            String k = entry.getKey();
+            if (!k.startsWith("at_") || !(entry.getValue() instanceof Number)) continue;
+            long id;
+            try { id = Long.parseLong(k.substring(3)); }
+            catch (NumberFormatException invalidId) { continue; }
+            long at = ((Number)entry.getValue()).longValue();
+            if (at > 0 && at >= now - DELIVERY_GRACE_MS) {
+                out.put(id,at);
+            } else {
+                if (cleanup == null) cleanup = prefs.edit();
+                cleanup.remove(k).remove(dayKey(id));
+            }
         }
-        if(cleanup!=null)cleanup.apply();
+        if (cleanup != null) cleanup.apply();
         return out;
     }
 
@@ -86,50 +96,54 @@ public final class SnoozeScheduler {
     }
 
     /** Cancel only this snooze. The base alarm stays enabled and recurring. */
-    public static void cancel(Context c,long id){
+    public static synchronized void cancel(Context c,long id){
         long at=p(c).getLong(key(id),-1L);
-        AlarmManager am=(AlarmManager)c.getSystemService(Context.ALARM_SERVICE);
+        AlarmManager am=c.getSystemService(AlarmManager.class);
         if(am!=null)try{
             PendingIntent op=pi(c,id,Math.max(0,at),PendingIntent.FLAG_NO_CREATE);
             if(op!=null){am.cancel(op);op.cancel();}
         }catch(Throwable ignored){}
         p(c).edit().remove(key(id)).remove(dayKey(id)).commit();
-        try{ WidgetSuite.refreshAll(c); }catch(Throwable ignored){}
+        refreshWidgets(c);
     }
 
-    public static void cancelAll(Context c){
-        for(Long id:active(c).keySet()) cancel(c,id);
+    public static synchronized void cancelAll(Context c){
+        for(Long id:savedSnoozes(c,System.currentTimeMillis()).keySet()) cancel(c,id);
     }
 
     /** Cancel the snooze and count its original occurrence as a successful wake-up. */
-    public static void markAwake(Context c,long id){
+    public static synchronized void markAwake(Context c,long id){
         long day=occurrenceEpochDay(c,id);
         cancel(c,id);
         if(day>0) StreakTracker.recordWakeSuccess(c,id,day);
     }
 
-    static boolean consumeIfExpected(Context c,long id,long at){
-        long saved=p(c).getLong(key(id),-1L),now=System.currentTimeMillis();
-        if(saved<=0||saved!=at||now<at-60000L||now>at+600000L){
-            if(saved==at)p(c).edit().remove(key(id)).remove(dayKey(id)).commit();
-            return false;
-        }
-        p(c).edit().remove(key(id)).remove(dayKey(id)).commit();
-        return true;
+    static synchronized boolean isExpectedDelivery(Context c, long id, long at) {
+        long now = System.currentTimeMillis();
+        return at > 0 && p(c).getLong(key(id),-1L) == at
+                && now >= at - EARLY_DELIVERY_GRACE_MS && now <= at + DELIVERY_GRACE_MS;
     }
 
-    public static void restoreAll(Context c){
-        long now=System.currentTimeMillis();
-        for(Map.Entry<Long,Long> e:active(c).entrySet()){
-            long id=e.getKey(),at=e.getValue();
-            if(at<=now)continue;
-            try{
-                AlarmManager am=(AlarmManager)c.getSystemService(Context.ALARM_SERVICE);
-                if(am==null)continue;
-                PendingIntent op=pi(c,id,at,PendingIntent.FLAG_UPDATE_CURRENT);
-                if(Build.VERSION.SDK_INT>=23)am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,at,op);
-                else am.setExact(AlarmManager.RTC_WAKEUP,at,op);
-            }catch(Throwable ignored){}
+    static synchronized void clearDelivered(Context c, long id, long at) {
+        SharedPreferences prefs = p(c);
+        if (prefs.getLong(key(id),-1L) != at) return;
+        prefs.edit().remove(key(id)).remove(dayKey(id)).commit();
+        refreshWidgets(c);
+    }
+
+    public static synchronized void restoreAll(Context c){
+        long now = System.currentTimeMillis();
+        for (Map.Entry<Long,Long> entry : savedSnoozes(c,now).entrySet()) {
+            long id = entry.getKey(), at = entry.getValue();
+            try {
+                register(c,id,at,Math.max(at,now + 1000L));
+            } catch (RuntimeException failure) {
+                Prefs.lastAlarmError(c,"SnoozeRestore: " + failure.getClass().getSimpleName());
+            }
         }
+    }
+
+    private static void refreshWidgets(Context c) {
+        try { WidgetSuite.refreshAll(c); } catch(Throwable ignored) {}
     }
 }

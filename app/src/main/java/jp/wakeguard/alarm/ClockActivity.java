@@ -92,11 +92,23 @@ public class ClockActivity extends Activity {
         Ui.prepareActivity(this);
         TimerReceiver.ensureChannel(this);
         String requested = getIntent() == null ? null : getIntent().getStringExtra("mode");
-        if (requested != null) mode = requested;
-        if(isIncomingTextIntent(getIntent())) mode="world";
+        if (b != null) {
+            mode = b.getString("clock_mode", "world");
+            pendingTimerSoundId = b.getLong("pending_timer_sound_id", -1L);
+        } else if (isIncomingTextIntent(getIntent())) {
+            mode = "world";
+        } else if (requested != null) {
+            mode = requested;
+        }
         buildShell();
         showMode(mode);
-        handleIncomingSearchIntent(getIntent());
+        if (b == null) handleIncomingSearchIntent(getIntent());
+    }
+
+    @Override protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("clock_mode", mode);
+        outState.putLong("pending_timer_sound_id", pendingTimerSoundId);
     }
 
     @Override protected void onNewIntent(Intent intent){
@@ -265,7 +277,7 @@ public class ClockActivity extends Activity {
         recordsTab=Ui.bottomTab(this,"記録","records".equals(selected));
         settingsTab=Ui.bottomTab(this,"設定","settings".equals(selected));
         LinearLayout[] tabs={alarmTab,clockTab,recordsTab,settingsTab};
-        for(LinearLayout tab:tabs)nav.addView(tab,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));
+        for(LinearLayout tab:tabs)nav.addView(tab,new LinearLayout.LayoutParams(0,-2,1));
         alarmTab.setOnClickListener(v->navigateRoot("alarm"));
         clockTab.setOnClickListener(v->showMode(mode));
         recordsTab.setOnClickListener(v->navigateRoot("records"));
@@ -1025,10 +1037,13 @@ public class ClockActivity extends Activity {
             String lower=display==null?"":display.toLowerCase(java.util.Locale.ROOT);String ext=".mp4";String[] xs={".mp4",".m4v",".3gp",".3gpp",".webm",".mkv",".ts"};for(String x:xs)if(lower.endsWith(x)){ext=x;break;}
             java.io.File dir=new java.io.File(getFilesDir(),"timer_videos");if(!dir.exists()&&!dir.mkdirs())throw new java.io.IOException("mkdir");out=new java.io.File(dir,"timer_"+e.id+"_"+System.currentTimeMillis()+ext);
             try(java.io.InputStream in=getContentResolver().openInputStream(uri);java.io.OutputStream os=new java.io.FileOutputStream(out)){if(in==null)throw new java.io.IOException("open");byte[]buf=new byte[131072];int n;while((n=in.read(buf))>0)os.write(buf,0,n);}
-            String old=e.soundUri;e.soundUri=out.getAbsolutePath();e.soundName=display;TimerStore.update(this,e);cleanupTimerVideo(old);return true;
+            // Copies of this timer and existing completion notifications may still use the previous file.
+            e.soundUri=out.getAbsolutePath();
+            e.soundName=display;
+            TimerStore.update(this,e);
+            return true;
         }catch(Throwable t){if(out!=null)try{out.delete();}catch(Throwable ignored){}Toast.makeText(this,I18n.tr(this,"この動画は読み込めません"),Toast.LENGTH_LONG).show();return false;}
     }
-    private void cleanupTimerVideo(String raw){try{if(raw==null||raw.isEmpty())return;java.io.File f=new java.io.File(raw),dir=new java.io.File(getFilesDir(),"timer_videos");if(f.getParentFile()!=null&&f.getParentFile().equals(dir)&&f.exists())f.delete();}catch(Throwable ignored){}}
 
     private String formatStopwatch(long ms) {
         long h=ms/3600000L; long m=(ms/60000L)%60; long s=(ms/1000L)%60; long cs=(ms/10L)%100;
@@ -1336,7 +1351,15 @@ public class ClockActivity extends Activity {
 
     private void editTimerName(long id){
         TimerStore.Entry e=TimerStore.find(this,id);if(e==null)return;EditText input=new EditText(this);input.setSingleLine(true);input.setText(e.label);input.setHint(I18n.tr(this,"タイマー名"));input.setTextColor(Ui.TEXT);input.setHintTextColor(Ui.MUTED_2);input.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),0);Ui.styleInput(input,this,Ui.SURFACE_2,14);
-        Ui.dialogBuilder(this).setTitle(I18n.tr(this,"名前を変更")).setView(input).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"保存"),(d,w)->{e.label=input.getText().toString().trim();TimerStore.update(this,e);renderTimers();}).show();
+        Ui.dialogBuilder(this).setTitle(I18n.tr(this,"名前を変更")).setView(input)
+                .setNegativeButton(I18n.tr(this,"キャンセル"),null)
+                .setPositiveButton(I18n.tr(this,"保存"),(d,w)->{
+                    TimerStore.Entry latest=TimerStore.find(this,id);
+                    if(latest==null)return;
+                    latest.label=input.getText().toString().trim();
+                    TimerStore.update(this,latest);
+                    renderTimers();
+                }).show();
     }
 
     private void showSavePresetDialog(TimerStore.Entry source){
@@ -1439,14 +1462,47 @@ public class ClockActivity extends Activity {
 
     private void promptFolderName(String title,String initial,Consumer<String> saved){
         EditText input=new EditText(this);input.setSingleLine(true);input.setText(initial==null?"":initial);input.setHint(I18n.tr(this,"フォルダ名"));input.setTextColor(Ui.TEXT);input.setHintTextColor(Ui.MUTED_2);input.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),0);Ui.styleInput(input,this,Ui.SURFACE_2,14);
-        Ui.dialogBuilder(this).setTitle(I18n.tr(this,title)).setView(input).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"保存"),(d,w)->{String name=input.getText().toString().trim();if(name.isEmpty()){Toast.makeText(this,I18n.tr(this,"フォルダ名を入力してください"),Toast.LENGTH_SHORT).show();return;}saved.accept(name);}).show();
+        AlertDialog dialog=Ui.dialogBuilder(this).setTitle(I18n.tr(this,title)).setView(input)
+                .setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"保存"),null).create();
+        dialog.setOnShowListener(d->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
+            String raw=input.getText().toString().trim();
+            if(raw.isEmpty()){
+                input.setError(I18n.tr(this,"フォルダ名を入力してください"));
+                return;
+            }
+            String name=TimerStore.normalizeFolder(raw);
+            for(String folder:TimerStore.folders(this)){
+                if(folder.equalsIgnoreCase(name)&&!folder.equalsIgnoreCase(initial)){
+                    input.setError(I18n.tr(this,"同じ名前のフォルダがあります"));
+                    return;
+                }
+            }
+            dialog.dismiss();
+            saved.accept(name);
+        }));
+        Ui.showDialog(dialog,this);
     }
 
     private void showFolderMenu(String folder){
         Ui.dialogBuilder(this).setTitle(I18n.tr(this,folder)).setItems(new String[]{I18n.tr(this,"名前を変更"),I18n.tr(this,"削除")},(d,which)->{
-            if(which==0)promptFolderName("フォルダ名を変更",folder,name->{boolean duplicate=false;for(String value:TimerStore.folders(this))if(value.equalsIgnoreCase(name)&&!value.equalsIgnoreCase(folder))duplicate=true;if(duplicate){Toast.makeText(this,I18n.tr(this,"同じ名前のフォルダがあります"),Toast.LENGTH_SHORT).show();return;}TimerStore.renameFolder(this,folder,name);renderTimers();});
-            else Ui.dialogBuilder(this).setMessage(I18n.tr(this,"中のタイマーは「未分類」に移動します。フォルダを削除しますか？")).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"削除"),(x,y)->{TimerStore.deleteFolder(this,folder);renderTimers();}).show();
+            if(which==0)promptFolderName("フォルダ名を変更",folder,name->{
+                TimerStore.renameFolder(this,folder,name);
+                applyTimerFolderChange(folder,name);
+            });
+            else Ui.dialogBuilder(this).setMessage(I18n.tr(this,"中のタイマーは「未分類」に移動します。フォルダを削除しますか？")).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"削除"),(x,y)->{
+                TimerStore.deleteFolder(this,folder);
+                applyTimerFolderChange(folder,TimerStore.UNFILED);
+            }).show();
         }).show();
+    }
+
+    private void applyTimerFolderChange(String previous,String current){
+        if(previous.equalsIgnoreCase(selectedSavedFolder)) selectedSavedFolder=current;
+        if(previous.equalsIgnoreCase(selectedQuickFolder)){
+            selectedQuickFolder=current;
+            if(quickFolder!=null) quickFolder.setText(I18n.tr(this,"保存時のフォルダ：")+current);
+        }
+        renderTimers();
     }
 
     private String timerSoundText(TimerStore.Entry e){
@@ -1469,7 +1525,14 @@ public class ClockActivity extends Activity {
             .setItems(new String[]{I18n.tr(this,"音声を選択"),I18n.tr(this,"動画を選択"),I18n.tr(this,"標準に戻す")},(d,which)->{
                 if(which==0)pickTimerMedia(id,false);
                 else if(which==1)pickTimerMedia(id,true);
-                else {e.soundUri="";e.soundName="";TimerStore.update(this,e);renderTimers();}
+                else {
+                    TimerStore.Entry latest=TimerStore.find(this,id);
+                    if(latest==null)return;
+                    latest.soundUri="";
+                    latest.soundName="";
+                    TimerStore.update(this,latest);
+                    renderTimers();
+                }
             }).show();
     }
 
@@ -1485,8 +1548,10 @@ public class ClockActivity extends Activity {
     @Override protected void onActivityResult(int requestCode,int resultCode,android.content.Intent data){
         super.onActivityResult(requestCode,resultCode,data);
         boolean video=requestCode==REQ_TIMER_VIDEO;
-        if((requestCode!=REQ_TIMER_SOUND&&!video)||resultCode!=RESULT_OK||data==null||data.getData()==null)return;
-        long id=pendingTimerSoundId; pendingTimerSoundId=-1L; if(id<1000)return;
+        if(requestCode!=REQ_TIMER_SOUND&&!video)return;
+        long id=pendingTimerSoundId;
+        pendingTimerSoundId=-1L;
+        if(id<1000||resultCode!=RESULT_OK||data==null||data.getData()==null)return;
         android.net.Uri uri=data.getData();
         try{getContentResolver().takePersistableUriPermission(uri,android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(Throwable ignored){}
         String display=I18n.tr(this,video?"選択した動画":"選択した音");

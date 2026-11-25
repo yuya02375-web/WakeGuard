@@ -325,10 +325,10 @@ public class StatsActivity extends Activity {
         LinearLayout clock=Ui.bottomTab(this,"時計",false);
         LinearLayout records=Ui.bottomTab(this,"記録",true);
         LinearLayout settings=Ui.bottomTab(this,"設定",false);
-        nav.addView(alarm,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));
-        nav.addView(clock,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));
-        nav.addView(records,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));
-        nav.addView(settings,new LinearLayout.LayoutParams(0,Ui.dp(this,64),1));
+        nav.addView(alarm,new LinearLayout.LayoutParams(0,-2,1));
+        nav.addView(clock,new LinearLayout.LayoutParams(0,-2,1));
+        nav.addView(records,new LinearLayout.LayoutParams(0,-2,1));
+        nav.addView(settings,new LinearLayout.LayoutParams(0,-2,1));
         alarm.setOnClickListener(v->navigateRoot("alarm"));
         clock.setOnClickListener(v->navigateRoot("clock"));
         settings.setOnClickListener(v->navigateRoot("settings"));

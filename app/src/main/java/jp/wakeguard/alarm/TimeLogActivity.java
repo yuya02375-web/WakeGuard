@@ -47,10 +47,35 @@ public class TimeLogActivity extends Activity {
         Entry(String id,String folderId,long start,long end,long createdAt){this.id=id;this.folderId=folderId;this.start=start;this.end=end;this.createdAt=createdAt;}
     }
 
-    @Override protected void onCreate(Bundle b){
-        super.onCreate(b); Ui.prepareActivity(this); load();
-        Intent intent=getIntent();if(intent!=null){pendingImportDurationMs=Math.max(0L,intent.getLongExtra("importDurationMs",0L));pendingImportEndWallMs=intent.getLongExtra("importEndWallMs",0L);pendingImportLabel=intent.getStringExtra("importLabel");if(pendingImportLabel==null||pendingImportLabel.trim().isEmpty())pendingImportLabel="ストップウォッチ";returnToClockWhenBack=!intent.hasExtra("record_mode");}
-        buildShell(); showFolders();if(pendingImportDurationMs>0L)new Handler(Looper.getMainLooper()).post(this::showImportFolderPicker);
+    @Override protected void onCreate(Bundle state){
+        super.onCreate(state);
+        Ui.prepareActivity(this);
+        load();
+        Intent intent=getIntent();
+        if(intent!=null) returnToClockWhenBack=!intent.hasExtra("record_mode");
+        if(state!=null){
+            pendingImportDurationMs=state.getLong("importDurationMs");
+            pendingImportEndWallMs=state.getLong("importEndWallMs");
+            pendingImportLabel=state.getString("importLabel");
+        }else if(intent!=null){
+            pendingImportDurationMs=Math.max(0L,intent.getLongExtra("importDurationMs",0L));
+            pendingImportEndWallMs=intent.getLongExtra("importEndWallMs",0L);
+            pendingImportLabel=intent.getStringExtra("importLabel");
+        }
+        if(pendingImportLabel==null||pendingImportLabel.trim().isEmpty()) pendingImportLabel="ストップウォッチ";
+        buildShell();
+        String folderId=state==null?null:state.getString("selectedFolderId");
+        if(findFolder(folderId)!=null) showFolder(folderId);
+        else showFolders();
+        if(pendingImportDurationMs>0L) body.post(this::showImportFolderPicker);
+    }
+
+    @Override protected void onSaveInstanceState(Bundle state){
+        super.onSaveInstanceState(state);
+        state.putLong("importDurationMs",pendingImportDurationMs);
+        state.putLong("importEndWallMs",pendingImportEndWallMs);
+        state.putString("importLabel",pendingImportLabel);
+        state.putString("selectedFolderId",selectedFolderId);
     }
 
     private android.content.SharedPreferences p(){return getSharedPreferences(PREF,MODE_PRIVATE);}
@@ -345,37 +370,141 @@ public class TimeLogActivity extends Activity {
     }
 
     private void showImportFolderPicker(){
-        if(pendingImportDurationMs<=0L)return;
+        if(pendingImportDurationMs<=0L||isFinishing()||isDestroyed())return;
         if(folders.isEmpty()){
-            Ui.dialogBuilder(this).setTitle(I18n.tr(this,"時間記録に追加")).setMessage(I18n.tr(this,"追加先のフォルダーを作成してください。")).setNegativeButton(I18n.tr(this,"キャンセル"),(d,w)->clearPendingImport()).setPositiveButton(I18n.tr(this,"フォルダー作成"),(d,w)->showFolderDialog(null)).show();return;
+            Ui.dialogBuilder(this)
+                    .setTitle(I18n.tr(this,"時間記録に追加"))
+                    .setMessage(I18n.tr(this,"追加先のフォルダーを作成してください。"))
+                    .setNegativeButton(I18n.tr(this,"キャンセル"),(d,w)->clearPendingImport())
+                    .setPositiveButton(I18n.tr(this,"フォルダー作成"),(d,w)->showFolderDialog(null))
+                    .setOnCancelListener(d->clearPendingImport())
+                    .show();
+            return;
         }
         ArrayList<Folder> sorted=foldersByRecentActivity();String[] names=new String[sorted.size()+1];for(int i=0;i<sorted.size();i++)names[i]=sorted.get(i).name;names[sorted.size()]=I18n.tr(this,"＋ 新しいフォルダー");
-        Ui.dialogBuilder(this).setTitle(I18n.tr(this,pendingImportLabel+"を追加")).setItems(names,(d,which)->{if(which==sorted.size())showFolderDialog(null);else addPendingImport(sorted.get(which));}).setNegativeButton(I18n.tr(this,"キャンセル"),(d,w)->clearPendingImport()).show();
+        Ui.dialogBuilder(this).setTitle(I18n.tr(this,pendingImportLabel+"を追加"))
+                .setItems(names,(d,which)->{if(which==sorted.size())showFolderDialog(null);else addPendingImport(sorted.get(which));})
+                .setNegativeButton(I18n.tr(this,"キャンセル"),(d,w)->clearPendingImport())
+                .setOnCancelListener(d->clearPendingImport())
+                .show();
     }
     private void addPendingImport(Folder folder){
         if(folder==null||pendingImportDurationMs<=0L)return;long end=pendingImportEndWallMs>0L?pendingImportEndWallMs:System.currentTimeMillis();long start=end-pendingImportDurationMs;if(start>=end)return;long recordedAt=System.currentTimeMillis();entries.add(new Entry(UUID.randomUUID().toString(),folder.id,start,end,recordedAt));save();String label=pendingImportLabel;clearPendingImport();Toast.makeText(this,I18n.tr(this,label+"を「"+folder.name+"」に追加しました"),Toast.LENGTH_SHORT).show();showFolder(folder.id);
     }
-    private void clearPendingImport(){pendingImportDurationMs=0L;pendingImportEndWallMs=0L;pendingImportLabel="ストップウォッチ";if(streakSegment!=null)streakSegment.setEnabled(true);}
+    private void clearPendingImport(){
+        pendingImportDurationMs=0L;
+        pendingImportEndWallMs=0L;
+        pendingImportLabel="ストップウォッチ";
+        Intent intent=getIntent();
+        if(intent!=null){
+            intent.removeExtra("importDurationMs");
+            intent.removeExtra("importEndWallMs");
+            intent.removeExtra("importLabel");
+        }
+        if(streakSegment!=null) streakSegment.setEnabled(true);
+    }
 
     private void showFolderDialog(Folder existing){
         EditText name=new EditText(this);name.setHint(I18n.tr(this,"例：勉強、バイト、運動"));name.setTextSize(17);name.setSingleLine(true);name.setText(existing==null?"":existing.name);name.setSelectAllOnFocus(true);name.setPadding(Ui.dp(this,14),Ui.dp(this,9),Ui.dp(this,14),Ui.dp(this,9));Ui.styleInput(name,this,Ui.SURFACE_2,14);
-        AlertDialog d=Ui.dialogBuilder(this).setTitle(I18n.tr(this,existing==null?"フォルダーを作成":"フォルダー名を変更")).setView(name).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"保存"),null).create();
-        d.setOnShowListener(x->d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{String n=name.getText().toString().trim();if(n.isEmpty()){name.setError(I18n.tr(this,"名前を入力してください"));return;}if(existing==null){Folder created=new Folder(UUID.randomUUID().toString(),n,System.currentTimeMillis());folders.add(created);save();d.dismiss();if(pendingImportDurationMs>0L)addPendingImport(created);else showFolders();}else{existing.name=n;save();d.dismiss();showFolder(existing.id);}}));Ui.showDialog(d,this);
+        boolean importing=existing==null&&pendingImportDurationMs>0L;
+        AlertDialog dialog=Ui.dialogBuilder(this)
+                .setTitle(I18n.tr(this,existing==null?"フォルダーを作成":"フォルダー名を変更"))
+                .setView(name)
+                .setNegativeButton(I18n.tr(this,"キャンセル"),(d,w)->{if(importing) clearPendingImport();})
+                .setPositiveButton(I18n.tr(this,"保存"),null)
+                .setOnCancelListener(d->{if(importing) clearPendingImport();})
+                .create();
+        dialog.setOnShowListener(d->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
+            String value=name.getText().toString().trim();
+            if(value.isEmpty()){
+                name.setError(I18n.tr(this,"名前を入力してください"));
+                return;
+            }
+            if(existing==null){
+                Folder created=new Folder(UUID.randomUUID().toString(),value,System.currentTimeMillis());
+                folders.add(created);
+                if(importing) addPendingImport(created);
+                else{
+                    save();
+                    showFolders();
+                }
+            }else{
+                existing.name=value;
+                save();
+                showFolder(existing.id);
+            }
+            dialog.dismiss();
+        }));
+        Ui.showDialog(dialog,this);
     }
 
     private void showEntryDialog(Folder folder,Entry existing){
-        Calendar seed=Calendar.getInstance();if(existing!=null)seed.setTimeInMillis(existing.start);
+        if(folder==null) return;
+        ZonedDateTime originalStart=existing==null?ZonedDateTime.now(zone).withSecond(0).withNano(0)
+                :Instant.ofEpochMilli(existing.start).atZone(zone);
+        ZonedDateTime originalEnd=existing==null?originalStart.plusHours(1)
+                :Instant.ofEpochMilli(existing.end).atZone(zone);
+        long originalDayOffset=originalEnd.toLocalDate().toEpochDay()-originalStart.toLocalDate().toEpochDay();
+        LocalDate[] day={originalStart.toLocalDate()};
+        LocalTime[] startTime={originalStart.toLocalTime()};
+        LocalTime[] endTime={originalEnd.toLocalTime()};
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(Ui.dp(this,22),Ui.dp(this,8),Ui.dp(this,22),0);
         Button date=Ui.ghostButton(this,"");Button start=Ui.ghostButton(this,"");Button end=Ui.ghostButton(this,"");box.addView(date);box.addView(start);box.addView(end);
-        final LocalDate[] d={Instant.ofEpochMilli(seed.getTimeInMillis()).atZone(zone).toLocalDate()};
-        final LocalTime[] st={existing==null?LocalTime.of(seed.get(Calendar.HOUR_OF_DAY),seed.get(Calendar.MINUTE)):Instant.ofEpochMilli(existing.start).atZone(zone).toLocalTime().withSecond(0).withNano(0)};
-        final LocalTime[] en={existing==null?st[0].plusHours(1):Instant.ofEpochMilli(existing.end).atZone(zone).toLocalTime().withSecond(0).withNano(0)};
-        Runnable labels=()->{date.setText(I18n.tr(this,"日付")+"  "+d[0].format(DateTimeFormatter.ofPattern(I18n.datePattern(this,"short"),I18n.locale(this))));start.setText(I18n.tr(this,"開始")+"  "+st[0].format(DateTimeFormatter.ofPattern("HH:mm")));end.setText(I18n.tr(this,"終了")+"  "+en[0].format(DateTimeFormatter.ofPattern("HH:mm"))+( !en[0].isAfter(st[0]) ? "  ("+I18n.tr(this,"翌日")+")":""));};labels.run();
-        date.setOnClickListener(v->new DatePickerDialog(this,(x,y,m,day)->{d[0]=LocalDate.of(y,m+1,day);labels.run();},d[0].getYear(),d[0].getMonthValue()-1,d[0].getDayOfMonth()).show());
-        start.setOnClickListener(v->new TimePickerDialog(this,(x,h,m)->{st[0]=LocalTime.of(h,m);labels.run();},st[0].getHour(),st[0].getMinute(),true).show());
-        end.setOnClickListener(v->new TimePickerDialog(this,(x,h,m)->{en[0]=LocalTime.of(h,m);labels.run();},en[0].getHour(),en[0].getMinute(),true).show());
-        AlertDialog dlg=Ui.dialogBuilder(this).setTitle(I18n.tr(this,existing==null?"時間を追加":"時間を編集")).setView(box).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"保存"),null).create();
-        dlg.setOnShowListener(x->{dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{ZonedDateTime a=ZonedDateTime.of(d[0],st[0],zone);LocalDate endDate=en[0].isAfter(st[0])?d[0]:d[0].plusDays(1);ZonedDateTime b=ZonedDateTime.of(endDate,en[0],zone);long sm=a.toInstant().toEpochMilli(),em=b.toInstant().toEpochMilli();if(em<=sm){Toast.makeText(this,I18n.tr(this,"終了時刻を確認してください"),Toast.LENGTH_SHORT).show();return;}if(existing==null)entries.add(new Entry(UUID.randomUUID().toString(),folder.id,sm,em,System.currentTimeMillis()));else{existing.start=sm;existing.end=em;}save();dlg.dismiss();showFolder(folder.id);});if(existing!=null){dlg.setButton(AlertDialog.BUTTON_NEUTRAL,I18n.tr(this,"削除"),(v,w)->{});dlg.getButton(AlertDialog.BUTTON_NEUTRAL).setTextColor(Ui.DANGER);dlg.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v->{entries.remove(existing);save();dlg.dismiss();showFolder(folder.id);});}});Ui.showDialog(dlg,this);
+        DateTimeFormatter dateFormat=DateTimeFormatter.ofPattern(I18n.datePattern(this,"short"),I18n.locale(this));
+        DateTimeFormatter timeFormat=DateTimeFormatter.ofPattern("HH:mm");
+        java.util.function.LongSupplier endDayOffset=()->{
+            // Keep the original day span for recorded intervals beyond the manual overnight range.
+            boolean measuredLongInterval=originalDayOffset>1L
+                    ||(originalDayOffset==1L&&originalEnd.toLocalTime().isAfter(originalStart.toLocalTime()));
+            boolean timesUnchanged=startTime[0].equals(originalStart.toLocalTime())
+                    &&endTime[0].equals(originalEnd.toLocalTime());
+            if(measuredLongInterval||timesUnchanged) return originalDayOffset;
+            return endTime[0].isAfter(startTime[0])?0L:1L;
+        };
+        Runnable labels=()->{
+            date.setText(I18n.tr(this,"日付")+"  "+day[0].format(dateFormat));
+            start.setText(I18n.tr(this,"開始")+"  "+startTime[0].format(timeFormat));
+            long offset=endDayOffset.getAsLong();
+            String suffix=offset==0L?"":"  ("+(offset==1L?I18n.tr(this,"翌日"):day[0].plusDays(offset).format(dateFormat))+")";
+            end.setText(I18n.tr(this,"終了")+"  "+endTime[0].format(timeFormat)+suffix);
+        };
+        labels.run();
+        date.setOnClickListener(v->new DatePickerDialog(this,(picker,year,month,dayOfMonth)->{
+            day[0]=LocalDate.of(year,month+1,dayOfMonth);
+            labels.run();
+        },day[0].getYear(),day[0].getMonthValue()-1,day[0].getDayOfMonth()).show());
+        start.setOnClickListener(v->showEntryTimePicker(startTime,labels));
+        end.setOnClickListener(v->showEntryTimePicker(endTime,labels));
+        AlertDialog.Builder builder=Ui.dialogBuilder(this).setTitle(I18n.tr(this,existing==null?"時間を追加":"時間を編集"))
+                .setView(box).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"保存"),null);
+        if(existing!=null) builder.setNeutralButton(I18n.tr(this,"削除"),(d,w)->confirmDeleteEntry(folder,existing));
+        AlertDialog dialog=builder.create();
+        dialog.setOnShowListener(d->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
+            ZonedDateTime startAt=ZonedDateTime.ofLocal(day[0].atTime(startTime[0]),zone,originalStart.getOffset());
+            ZonedDateTime endAt=ZonedDateTime.ofLocal(day[0].plusDays(endDayOffset.getAsLong()).atTime(endTime[0]),zone,originalEnd.getOffset());
+            long startMs=startAt.toInstant().toEpochMilli(),endMs=endAt.toInstant().toEpochMilli();
+            if(endMs<=startMs){
+                Toast.makeText(this,I18n.tr(this,"終了時刻を確認してください"),Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if(existing==null) entries.add(new Entry(UUID.randomUUID().toString(),folder.id,startMs,endMs,System.currentTimeMillis()));
+            else{
+                existing.start=startMs;
+                existing.end=endMs;
+            }
+            save();
+            dialog.dismiss();
+            showFolder(folder.id);
+        }));
+        Ui.showDialog(dialog,this);
+        if(existing!=null) dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setTextColor(Ui.DANGER);
+    }
+
+    private void showEntryTimePicker(LocalTime[] time,Runnable onChange){
+        new TimePickerDialog(this,(picker,hour,minute)->{
+            if(hour!=time[0].getHour()||minute!=time[0].getMinute()) time[0]=LocalTime.of(hour,minute);
+            onChange.run();
+        },time[0].getHour(),time[0].getMinute(),true).show();
     }
 
     private void confirmDeleteFolder(Folder f){Ui.dialogBuilder(this).setTitle(I18n.tr(this,"フォルダーを削除")).setMessage(f.name+"\n"+I18n.tr(this,"フォルダーと中の時間記録をすべて削除しますか？")).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"削除"),(d,w)->{if(isTrackingFolder(f.id))p().edit().remove(KEY_ACTIVE_FOLDER).remove(KEY_ACTIVE_START).apply();folders.remove(f);entries.removeIf(e->f.id.equals(e.folderId));save();selectedFolderId=null;showFolders();}).show();}
@@ -432,8 +561,13 @@ public class TimeLogActivity extends Activity {
     private long durationForDay(String folderId,LocalDate day){return durationForRange(folderId,day,day.plusDays(1));}
     private long durationForDayAll(LocalDate day){long a=day.atStartOfDay(zone).toInstant().toEpochMilli(),b=day.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli(),sum=0;for(Entry e:entries){long lo=Math.max(a,e.start),hi=Math.min(b,e.end);if(hi>lo)sum+=hi-lo;}return sum;}
     private long durationForRange(String folderId,LocalDate start,LocalDate end){long a=start.atStartOfDay(zone).toInstant().toEpochMilli(),b=end.atStartOfDay(zone).toInstant().toEpochMilli(),sum=0;for(Entry e:entries){if(!folderId.equals(e.folderId))continue;long lo=Math.max(a,e.start),hi=Math.min(b,e.end);if(hi>lo)sum+=hi-lo;}return sum;}
-    private long averagePerRecordedDay(String folderId){TreeSet<LocalDate> days=new TreeSet<>();for(Entry e:entries){if(!folderId.equals(e.folderId))continue;LocalDate a=Instant.ofEpochMilli(e.start).atZone(zone).toLocalDate(),b=Instant.ofEpochMilli(Math.max(e.start,e.end-1)).atZone(zone).toLocalDate();for(LocalDate d=a;!d.isAfter(b);d=d.plusDays(1))if(durationForDay(folderId,d)>0)days.add(d);}return days.isEmpty()?0:totalDuration(folderId)/days.size();}
-    private String fmt(long ms){long mins=Math.max(0,Math.round(ms/60000.0));long h=mins/60,m=mins%60;String hour=I18n.tr(this,"時間単位"),minute=I18n.tr(this,"分単位");if(h==0)return m+minute;if(m==0)return h+hour;return h+hour+m+minute;}
+    private long averagePerRecordedDay(String folderId){ArrayList<LocalDate> days=daysWithEntries(folderId);return days.isEmpty()?0:totalDuration(folderId)/days.size();}
+    private String fmt(long ms){
+        if(ms>0L&&ms<60000L){
+            return (ms<1000L?"<1":String.valueOf(ms/1000L))+I18n.tr(this,"秒");
+        }
+        long mins=Math.max(0,Math.round(ms/60000.0));long h=mins/60,m=mins%60;String hour=I18n.tr(this,"時間単位"),minute=I18n.tr(this,"分単位");if(h==0)return m+minute;if(m==0)return h+hour;return h+hour+m+minute;
+    }
 
     private void load(){folders.clear();entries.clear();try{JSONArray a=new JSONArray(p().getString(KEY_FOLDERS,"[]"));for(int i=0;i<a.length();i++){JSONObject o=a.getJSONObject(i);folders.add(new Folder(o.getString("id"),o.optString("name","フォルダー"),o.optLong("createdAt",0)));}}catch(Throwable ignored){}try{JSONArray a=new JSONArray(p().getString(KEY_ENTRIES,"[]"));for(int i=0;i<a.length();i++){JSONObject o=a.getJSONObject(i);long s=o.optLong("start",0),e=o.optLong("end",0),created=o.optLong("createdAt",e);if(e>s)entries.add(new Entry(o.getString("id"),o.getString("folderId"),s,e,created>0L?created:e));}}catch(Throwable ignored){}}
     private void save(){try{JSONArray fa=new JSONArray();for(Folder f:folders){JSONObject o=new JSONObject();o.put("id",f.id);o.put("name",f.name);o.put("createdAt",f.createdAt);fa.put(o);}JSONArray ea=new JSONArray();for(Entry e:entries){JSONObject o=new JSONObject();o.put("id",e.id);o.put("folderId",e.folderId);o.put("start",e.start);o.put("end",e.end);o.put("createdAt",e.createdAt>0L?e.createdAt:e.end);ea.put(o);}p().edit().putString(KEY_FOLDERS,fa.toString()).putString(KEY_ENTRIES,ea.toString()).apply();}catch(Throwable ignored){}}

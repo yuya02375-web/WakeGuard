@@ -481,7 +481,7 @@ public final class Ui {
         b.setText(I18n.tr(a,s)); b.setAllCaps(false); b.setTextSize(15);
         b.setIncludeFontPadding(false);
         b.setTypeface(designTypeface(Typeface.BOLD));
-        b.setTextColor(accent ? ON_ACCENT : TEXT);
+        b.setTextColor(accent ? readableTextColor(ON_ACCENT, ACCENT_2) : readableTextColor(TEXT, SURFACE_2));
         Drawable shape;
         if (accent) {
             GradientDrawable primary = round(ACCENT_2, 17, a);
@@ -600,7 +600,7 @@ public final class Ui {
         LinearLayout tab = new LinearLayout(a);
         tab.setOrientation(LinearLayout.VERTICAL);
         tab.setGravity(Gravity.CENTER);
-        tab.setPadding(dp(a, 2), 0, dp(a, 2), 0);
+        tab.setPadding(dp(a, 2), dp(a, 3), dp(a, 2), dp(a, 3));
         tab.setMinimumHeight(touchDp(a, 48));
         tab.setMinimumWidth(0);
         tab.setTag(name);
@@ -610,6 +610,7 @@ public final class Ui {
 
         FrameLayout iconFrame = new FrameLayout(a);
         iconFrame.setTag("nav_icon_frame");
+        iconFrame.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
         ImageView icon = new ImageView(a);
         icon.setTag("nav_icon");
         icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
@@ -619,6 +620,7 @@ public final class Ui {
 
         TextView label = text(a, "", 12, MUTED);
         label.setTag("nav_label");
+        label.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         label.setGravity(Gravity.CENTER);
         label.setSingleLine(true);
         label.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -659,7 +661,7 @@ public final class Ui {
         label.setText("ストップウォッチ".equals(name) ? I18n.tr(a, "計測") : I18n.tr(a, name));
         label.setTextSize(labels ? 12.5f : 12f);
         label.setTextColor(active
-                ? readableColor(ACCENT_2, NAV_HIGHLIGHT, 4.5)
+                ? readableColor(ACCENT_2, SURFACE, 4.5)
                 : readableColor(MUTED, SURFACE, 4.5));
         label.setTypeface(designTypeface(active ? Typeface.BOLD : Typeface.NORMAL));
         label.setVisibility(compact ? View.GONE : View.VISIBLE);
@@ -671,7 +673,6 @@ public final class Ui {
         icon.setImageTintList(ColorStateList.valueOf(active
                 ? readableColor(ACCENT_2, NAV_HIGHLIGHT, 4.5)
                 : readableColor(MUTED, SURFACE, 4.5)));
-        icon.setContentDescription(I18n.tr(a, name));
         tab.setSelected(active);
         tab.setContentDescription(I18n.tr(a, name) + (active ? " · " + I18n.tr(a, "選択中") : ""));
     }
