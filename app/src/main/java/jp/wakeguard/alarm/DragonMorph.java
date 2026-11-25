@@ -4,34 +4,26 @@ import android.graphics.Bitmap;
 import java.util.concurrent.CancellationException;
 
 /**
- * Creates one continuously evolving dragon image from two neighboring forms.
- * A signed-distance blend moves the silhouette itself, so the next dragon
- * never appears as a translucent second figure behind the current one.
+ * Aligns the two sitting dragon illustrations before interpolating their outline.
+ * Both have the same pose, but their head, wing and feet occupy different areas
+ * of the source canvas. Do not use this for unrelated silhouettes or animation poses.
  */
 final class DragonMorph {
     private static final float INF = 1.0e6f;
     private static final float DIAGONAL = 1.41421356f;
+    private static final int SIZE = 384;
 
     private DragonMorph() {}
 
-    static Bitmap morph(Bitmap from, Bitmap to, float fraction) {
+    static Bitmap morph(Bitmap from, Bitmap to, Alignment alignment) {
         if (Thread.currentThread().isInterrupted()) throw new CancellationException();
-        if (from == null || to == null) throw new IllegalArgumentException("Dragon images are required");
-        if (from.getWidth() != to.getWidth() || from.getHeight() != to.getHeight()) {
-            throw new IllegalArgumentException("Dragon forms must share a canvas");
-        }
-        float t = Math.max(0f, Math.min(1f, fraction));
-        if (t <= 0f) return from.copy(Bitmap.Config.ARGB_8888, false);
-        if (t >= 1f) return to.copy(Bitmap.Config.ARGB_8888, false);
-
-        int width = from.getWidth();
-        int height = from.getHeight();
+        int width = SIZE;
+        int height = SIZE;
         int count = width * height;
-        int[] a = new int[count];
-        int[] b = new int[count];
         int[] out = new int[count];
-        from.getPixels(a, 0, width, 0, 0, width, height);
-        to.getPixels(b, 0, width, 0, 0, width, height);
+        float t = alignment.progress;
+        int[] a = register(from, alignment.from, alignment.target);
+        int[] b = register(to, alignment.to, alignment.target);
 
         boolean[] maskA = alphaMask(a);
         boolean[] maskB = alphaMask(b);
@@ -52,13 +44,88 @@ final class DragonMorph {
             } else {
                 color = b[i];
             }
-            int alpha = Math.round(edge * 255f);
+            int alpha = Math.round(edge * (color >>> 24));
             out[i] = (alpha << 24) | (color & 0x00ffffff);
         }
 
         Bitmap result = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         result.setPixels(out, 0, width, 0, 0, width, height);
         return result;
+    }
+
+    static final class Alignment {
+        private final Bounds from, to, target;
+        private final float progress;
+
+        Alignment(Bitmap fromRest, Bitmap toRest, float progress) {
+            int width = fromRest.getWidth(), height = fromRest.getHeight();
+            if (width != toRest.getWidth() || height != toRest.getHeight()) {
+                throw new IllegalArgumentException("Dragon forms must share a canvas");
+            }
+            this.progress = Math.max(0f, Math.min(1f, progress));
+            from = opaqueBounds(fromRest);
+            to = opaqueBounds(toRest);
+            float sx = SIZE / (float) width;
+            float sy = SIZE / (float) height;
+            // Every pose shares the rest frame's registration. Using each pose's
+            // outermost wing pixel as an anchor would make the torso wobble.
+            target = new Bounds(
+                    Math.round(sx * (from.left + (to.left - from.left) * this.progress)),
+                    Math.round(sy * (from.top + (to.top - from.top) * this.progress)),
+                    Math.round(sx * (from.right + (to.right - from.right) * this.progress)),
+                    Math.round(sy * (from.bottom + (to.bottom - from.bottom) * this.progress)));
+        }
+    }
+
+    private static Bounds opaqueBounds(Bitmap bitmap) {
+        int width = bitmap.getWidth(), height = bitmap.getHeight();
+        int[] pixels = new int[width * height];
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
+        int left = width, top = height, right = 0, bottom = 0;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                if ((pixels[y * width + x] >>> 24) <= 16) continue;
+                left = Math.min(left, x);
+                top = Math.min(top, y);
+                right = Math.max(right, x + 1);
+                bottom = Math.max(bottom, y + 1);
+            }
+        }
+        if (right <= left || bottom <= top) {
+            throw new IllegalArgumentException("Dragon forms must contain visible artwork");
+        }
+        return new Bounds(left, top, right, bottom);
+    }
+
+    private static int[] register(Bitmap bitmap, Bounds source, Bounds target) {
+        int width = bitmap.getWidth(), height = bitmap.getHeight();
+        int[] pixels = new int[width * height];
+        int[] result = new int[SIZE * SIZE];
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
+        float xScale = source.width() / (float) target.width();
+        float yScale = source.height() / (float) target.height();
+        for (int y = 0; y < SIZE; y++) {
+            if (Thread.currentThread().isInterrupted()) throw new CancellationException();
+            int sourceY = source.top + (int) Math.floor((y - target.top + .5f) * yScale);
+            if (sourceY < 0 || sourceY >= height) continue;
+            int sourceRow = sourceY * width;
+            for (int x = 0; x < SIZE; x++) {
+                int sourceX = source.left + (int) Math.floor((x - target.left + .5f) * xScale);
+                if (sourceX >= 0 && sourceX < width) {
+                    result[y * SIZE + x] = pixels[sourceRow + sourceX];
+                }
+            }
+        }
+        return result;
+    }
+
+    private static int mix(int from, int to, float t) {
+        return Math.round(from + (to - from) * t);
+    }
+
+    private record Bounds(int left, int top, int right, int bottom) {
+        int width() { return right - left; }
+        int height() { return bottom - top; }
     }
 
     private static boolean[] alphaMask(int[] pixels) {
@@ -116,9 +183,10 @@ final class DragonMorph {
     }
 
     private static int blendRgb(int a, int b, float t) {
-        int r = Math.round(((a >>> 16) & 255) + (((b >>> 16) & 255) - ((a >>> 16) & 255)) * t);
-        int g = Math.round(((a >>> 8) & 255) + (((b >>> 8) & 255) - ((a >>> 8) & 255)) * t);
-        int blue = Math.round((a & 255) + ((b & 255) - (a & 255)) * t);
-        return (r << 16) | (g << 8) | blue;
+        int alpha = mix(a >>> 24, b >>> 24, t);
+        int r = mix((a >>> 16) & 255, (b >>> 16) & 255, t);
+        int g = mix((a >>> 8) & 255, (b >>> 8) & 255, t);
+        int blue = mix(a & 255, b & 255, t);
+        return (alpha << 24) | (r << 16) | (g << 8) | blue;
     }
 }

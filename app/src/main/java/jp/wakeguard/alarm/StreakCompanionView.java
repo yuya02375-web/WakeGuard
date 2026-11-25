@@ -3,6 +3,7 @@ package jp.wakeguard.alarm;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.ImageDecoder;
 import android.graphics.drawable.Animatable;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.BitmapDrawable;
@@ -16,31 +17,30 @@ import android.widget.ImageView;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.io.IOException;
 
 /**
- * Keeps each growth step as one solid dragon silhouette. Neighboring forms are
- * morphed as a single image, while the same six-frame wing loop continues at
- * the later stages.
+ * Renders one dragon. Only artwork with the same pose is interpolated;
+ * other forms grow within their original silhouette and animation.
  */
 public final class StreakCompanionView extends FrameLayout {
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
     private static final ScheduledThreadPoolExecutor ARTWORK_WORKER = artworkWorker();
-    private static final int[][] FLAP_FRAMES = {
+    // Lossless 64px extracts of the five poses in the original animated WebPs.
+    private static final int[][] SITTING_FRAMES = {
             {
-                    R.drawable.ignido_stage_stellar_flap_01,
-                    R.drawable.ignido_stage_stellar_flap_02,
-                    R.drawable.ignido_stage_stellar_flap_03,
-                    R.drawable.ignido_stage_stellar_flap_04,
-                    R.drawable.ignido_stage_stellar_flap_05,
-                    R.drawable.ignido_stage_stellar_flap_06
+                    R.drawable.ignido_stage_hatchling_pose_01,
+                    R.drawable.ignido_stage_hatchling_pose_02,
+                    R.drawable.ignido_stage_hatchling_pose_03,
+                    R.drawable.ignido_stage_hatchling_pose_04,
+                    R.drawable.ignido_stage_hatchling_pose_05
             },
             {
-                    R.drawable.ignido_stage_infinite_flap_01,
-                    R.drawable.ignido_stage_infinite_flap_02,
-                    R.drawable.ignido_stage_infinite_flap_03,
-                    R.drawable.ignido_stage_infinite_flap_04,
-                    R.drawable.ignido_stage_infinite_flap_05,
-                    R.drawable.ignido_stage_infinite_flap_06
+                    R.drawable.ignido_stage_adult_pose_01,
+                    R.drawable.ignido_stage_adult_pose_02,
+                    R.drawable.ignido_stage_adult_pose_03,
+                    R.drawable.ignido_stage_adult_pose_04,
+                    R.drawable.ignido_stage_adult_pose_05
             }
     };
 
@@ -94,12 +94,17 @@ public final class StreakCompanionView extends FrameLayout {
         }
     }
 
-    private int flapFrame(int stage,int frame){
-        return FLAP_FRAMES[stage==5?0:1][frame];
-    }
-
     private Drawable stageArtwork(int stage){
-        return getResources().getDrawable(drawableForTier(stage),null);
+        int resource = drawableForTier(stage);
+        if (stage < 5) {
+            try {
+                // BitmapFactory only supplies the first frame of these WebPs.
+                return ImageDecoder.decodeDrawable(ImageDecoder.createSource(getResources(), resource));
+            } catch (IOException ignored) {
+                // Keep the packaged artwork usable if animated decoding fails.
+            }
+        }
+        return getResources().getDrawable(resource,null);
     }
 
     private Bitmap decodeBitmap(int resource){
@@ -108,55 +113,37 @@ public final class StreakCompanionView extends FrameLayout {
         return BitmapFactory.decodeResource(getResources(),resource,options);
     }
 
-    private Drawable loadStaticMorph(int stage,int successor,float progress){
-        Bitmap from=decodeBitmap(drawableForTier(stage));
-        Bitmap to=decodeBitmap(drawableForTier(successor));
-        try{
-            if(from==null||to==null)return stageArtwork(stage);
-            Bitmap result=DragonMorph.morph(from,to,progress);
-            return new BitmapDrawable(getResources(),result);
-        }finally{
-            if(from!=null)from.recycle();
-            if(to!=null)to.recycle();
-        }
-    }
-
-    private Drawable loadFlappingMorph(int stage,int successor,float progress){
-        Bitmap[] frames=new Bitmap[FLAP_FRAMES[0].length];
-        Bitmap staticFrom=stage<5?decodeBitmap(drawableForTier(stage)):null;
-        boolean complete=false;
-        try{
-            for(int frame=0;frame<frames.length;frame++){
-                if(Thread.currentThread().isInterrupted())throw new CancellationException();
-                Bitmap from=stage<5?staticFrom:decodeBitmap(flapFrame(stage,frame));
-                Bitmap to=decodeBitmap(flapFrame(successor,frame));
-                try{
-                    if(from==null||to==null)return stageArtwork(stage);
-                    frames[frame]=DragonMorph.morph(from,to,progress);
-                }finally{
-                    if(stage>=5&&from!=null)from.recycle();
-                    if(to!=null)to.recycle();
-                }
+    private Drawable loadSittingLoop(float progress) {
+        AnimationDrawable animation = new AnimationDrawable();
+        animation.setOneShot(false);
+        DragonMorph.Alignment alignment = null;
+        for (int frame = 0; frame < SITTING_FRAMES[0].length; frame++) {
+            if (Thread.currentThread().isInterrupted()) throw new CancellationException();
+            Bitmap from = decodeBitmap(SITTING_FRAMES[0][frame]);
+            Bitmap to = decodeBitmap(SITTING_FRAMES[1][frame]);
+            try {
+                if (from == null || to == null) return stageArtwork(3);
+                if (alignment == null) alignment = new DragonMorph.Alignment(from, to, progress);
+                BitmapDrawable image = new BitmapDrawable(getResources(), DragonMorph.morph(from, to, alignment));
+                image.setFilterBitmap(false);
+                animation.addFrame(image,180);
+            } finally {
+                if (from != null) from.recycle();
+                if (to != null) to.recycle();
             }
-            AnimationDrawable animation=new AnimationDrawable();
-            animation.setOneShot(false);
-            for(Bitmap frame:frames)animation.addFrame(new BitmapDrawable(getResources(),frame),180);
-            complete=true;
-            return animation;
-        }finally{
-            if(staticFrom!=null)staticFrom.recycle();
-            if(!complete)for(Bitmap frame:frames)if(frame!=null)frame.recycle();
         }
+        return animation;
     }
 
     private Drawable loadGrowthDrawable(int stage,float progress){
-        if(progress<=0f)return stageArtwork(stage);
-        try{
-            if(stage<4)return loadStaticMorph(stage,stage+1,progress);
-            return loadFlappingMorph(stage,stage+1,progress);
-        }catch(IllegalArgumentException incompatibleArtwork){
-            return stageArtwork(stage);
+        if (stage == 3 && progress > 0f) {
+            try {
+                return loadSittingLoop(progress);
+            } catch (IllegalArgumentException incompatibleArtwork) {
+                return stageArtwork(stage);
+            }
         }
+        return stageArtwork(stage);
     }
 
     private void cancelPendingArtwork(){
@@ -177,7 +164,7 @@ public final class StreakCompanionView extends FrameLayout {
         if(!animationEnabled||!isAttachedToWindow())return;
 
         int stage=StreakGrowth.artStage(permanentLevel);
-        long level=stage==6?Long.MAX_VALUE:permanentLevel;
+        long level=stage==3?permanentLevel:Long.MIN_VALUE+stage;
         if(renderedLevel==level){
             if(pendingArtwork!=null)cancelPendingArtwork();
             return;
@@ -186,16 +173,6 @@ public final class StreakCompanionView extends FrameLayout {
 
         cancelPendingArtwork();
         float progress=StreakGrowth.artTransitionProgress(permanentLevel);
-        if(progress<=0f&&stage<5){
-            showArtwork(stageArtwork(stage));
-            renderedLevel=level;
-            return;
-        }
-        if(sprite.getDrawable()==null){
-            int still=stage<5?drawableForTier(stage):flapFrame(stage,0);
-            sprite.setImageResource(still);
-        }
-
         long generation=artworkGeneration;
         pendingLevel=level;
         pendingArtwork=ARTWORK_WORKER.submit(()->{
@@ -222,17 +199,17 @@ public final class StreakCompanionView extends FrameLayout {
         boolean animateGrowth=growthInitialized&&nextLevel>previousLevel&&nextLevel-previousLevel==1L;
         permanentLevel=nextLevel;
         if(!growthInitialized||nextLevel!=previousLevel){
-            float targetScale=StreakGrowth.visualScale(permanentLevel);
+            float targetWidth=widthScale(permanentLevel);
+            float targetHeight=StreakGrowth.visualScale(permanentLevel);
             artLayer.animate().cancel();
             if(animateGrowth){
-                float startScale=StreakGrowth.visualScale(previousLevel);
-                artLayer.setScaleX(startScale);
-                artLayer.setScaleY(startScale);
-                artLayer.animate().scaleX(targetScale).scaleY(targetScale)
+                artLayer.setScaleX(widthScale(previousLevel));
+                artLayer.setScaleY(StreakGrowth.visualScale(previousLevel));
+                artLayer.animate().scaleX(targetWidth).scaleY(targetHeight)
                         .setDuration(520L).setInterpolator(new DecelerateInterpolator()).start();
             }else{
-                artLayer.setScaleX(targetScale);
-                artLayer.setScaleY(targetScale);
+                artLayer.setScaleX(targetWidth);
+                artLayer.setScaleY(targetHeight);
             }
         }
 
@@ -240,6 +217,11 @@ public final class StreakCompanionView extends FrameLayout {
         sprite.setContentDescription(StreakGrowth.appearanceDescriptor(
                 getContext(),permanentLevel,Math.max(0,streak))+", Lv."+permanentLevel);
         requestArtwork();
+    }
+
+    private static float widthScale(long level) {
+        float growth = StreakGrowth.artStage(level) == 3 ? 0f : StreakGrowth.artTransitionProgress(level);
+        return StreakGrowth.visualScale(level) * (1f + .055f * growth);
     }
 
     public void setAnimationEnabled(boolean enabled){
@@ -268,9 +250,8 @@ public final class StreakCompanionView extends FrameLayout {
         cancelPendingArtwork();
         setRunning(currentAnimation,false);
         artLayer.animate().cancel();
-        float scale=StreakGrowth.visualScale(permanentLevel);
-        artLayer.setScaleX(scale);
-        artLayer.setScaleY(scale);
+        artLayer.setScaleX(widthScale(permanentLevel));
+        artLayer.setScaleY(StreakGrowth.visualScale(permanentLevel));
         super.onDetachedFromWindow();
     }
 }
