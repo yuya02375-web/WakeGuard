@@ -58,8 +58,8 @@ jobs:
         run: |
           rm -rf WakeGuard/app
           cp -R app WakeGuard/app
-          gradle -p WakeGuard :app:assembleRelease --stacktrace
-          gradle -p rep-lift :replift:assembleRelease --stacktrace
+          (cd WakeGuard && gradle -Pandroid.useAndroidX=true :app:assembleRelease --stacktrace)
+          (cd rep-lift && gradle :replift:assembleRelease --stacktrace)
 
       - name: Restore stable signing key
         env:
