@@ -47,8 +47,9 @@ final class PatternAtlas {
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG | Paint.DITHER_FLAG);
         // Keep the motif restrained on live screens, while letting selection cards show
         // the artwork at full strength. Picker previews pass an opaque source color.
+        int liveLimit = "moonlit-stars".equals(designId) ? 140 : 112;
         paint.setAlpha(sourceAlpha >= 192 ? 220
-                : sourceAlpha <= 0 ? 0 : Math.max(24, Math.min(112, sourceAlpha)));
+                : sourceAlpha <= 0 ? 0 : Math.max(24, Math.min(liveLimit, sourceAlpha)));
         int save = canvas.save();
         canvas.clipRect(bounds);
         canvas.drawBitmap(bitmap, src, bounds, paint);

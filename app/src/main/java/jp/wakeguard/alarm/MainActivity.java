@@ -100,7 +100,7 @@ public class MainActivity extends Activity {
         LinearLayout nextCard=new LinearLayout(this);
         nextCard.setOrientation(LinearLayout.VERTICAL);
         nextCard.setPadding(Ui.dp(this,16),Ui.dp(this,14),Ui.dp(this,16),Ui.dp(this,12));
-        nextCard.setBackground(Ui.gradientRoundPlain(this,24,Ui.HERO_START,Ui.HERO_END));
+        nextCard.setBackground(Ui.gradientRound(this,24,Ui.HERO_START,Ui.HERO_END));
         LinearLayout overview = new LinearLayout(this);
         overview.setGravity(Gravity.CENTER_VERTICAL);
         nextCard.addView(overview, new LinearLayout.LayoutParams(-1, -2));
@@ -140,7 +140,7 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams dragonLp = new LinearLayout.LayoutParams(Ui.dp(this,artworkSize), Ui.dp(this,artworkSize));
         dragonLp.setMarginStart(Ui.dp(this,8));
         overview.addView(dragonCompanion, dragonLp);
-        overview.setBackground(Ui.starChartAccent(this, false, dragonLp.width + dragonLp.getMarginStart()));
+        overview.setBackground(Ui.companionArtwork(this, false, dragonLp.width + dragonLp.getMarginStart()));
         addDragonGrowthSummary(nextCard);
         LinearLayout.LayoutParams nextLp=new LinearLayout.LayoutParams(-1,-2);
         nextLp.setMargins(Ui.dp(this,16),Ui.dp(this,6),Ui.dp(this,16),Ui.dp(this,5));

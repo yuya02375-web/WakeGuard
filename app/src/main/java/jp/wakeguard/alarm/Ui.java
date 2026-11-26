@@ -337,64 +337,72 @@ public final class Ui {
         int[] c = (colors != null && colors.length >= 2) ? colors : new int[]{SURFACE_2, SURFACE_3};
         float radiusPx = dp(a, Math.max(0, (int)(radius * CORNER_SCALE)));
         boolean hero = c.length >= 2 && c[0] == HERO_START && c[1] == HERO_END;
-        GradientDrawable d = hero
-                ? new HeroGradientDrawable(a.getApplicationContext(), c,
-                        a.getResources().getDisplayMetrics().density, radiusPx)
-                : new GradientDrawable(GradientDrawable.Orientation.TL_BR, c);
+        GradientDrawable d = new ArtworkGradientDrawable(a.getApplicationContext(), c,
+                a.getResources().getDisplayMetrics().density, radiusPx,
+                DESIGN_PATTERN, DESIGN_ID, hero ? HERO_TEXT : ACCENT, hero ? 78 : 57);
         d.setCornerRadius(radiusPx);
         return d;
     }
 
-    /** Same theme gradient without the selected motif; used for quiet empty states. */
-    public static GradientDrawable gradientRoundPlain(Activity a, float radius, int... colors) {
-        int[] c = (colors != null && colors.length >= 2) ? colors : new int[]{SURFACE_2, SURFACE_3};
-        GradientDrawable d = new GradientDrawable(GradientDrawable.Orientation.TL_BR, c);
-        d.setCornerRadius(dp(a, Math.max(0, (int)(radius * CORNER_SCALE))));
-        return d;
+    public static Drawable artworkPreview(Activity activity, VisualDesigns.Design design, AppThemes.Theme theme) {
+        float radius = dp(activity, 12);
+        GradientDrawable preview = new ArtworkGradientDrawable(activity.getApplicationContext(),
+                new int[]{theme.bg, theme.surface}, activity.getResources().getDisplayMetrics().density,
+                radius, design.pattern, design.id, theme.accent, 255);
+        preview.setCornerRadius(radius);
+        return preview;
     }
 
-    /** Adds the selected design's shared motif to the home hero gradient. */
-    private static final class HeroGradientDrawable extends GradientDrawable {
+    private static boolean hasArtwork(String pattern, String designId) {
+        return !"none".equals(pattern) || "library-classic".equals(designId);
+    }
+
+    /** One source for the illustration in the picker, page, and feature cards. */
+    private static void drawArtwork(Context context, Canvas canvas, String pattern, String designId,
+                                    RectF bounds, int ink, int opacity, float density) {
+        String scene = VisualDesigns.landscapeSceneId(pattern);
+        if (scene != null && LandscapeArt.drawImage(context, canvas, scene, bounds, ink, false, opacity)) return;
+        Paint brush = new Paint(Paint.ANTI_ALIAS_FLAG);
+        brush.setColor(withAlpha(ink, opacity));
+        brush.setStyle(Paint.Style.STROKE);
+        brush.setStrokeWidth(.75f * density);
+        VisualDesigns.drawPattern(context, canvas, pattern, designId, bounds, brush, density);
+    }
+
+    private static final class ArtworkGradientDrawable extends GradientDrawable {
         private final Context context;
-        private final float density;
-        private final float radius;
-        HeroGradientDrawable(Context context, int[] colors, float density, float radius) {
+        private final float density, radius;
+        private final String pattern, designId;
+        private final int ink, opacity;
+
+        ArtworkGradientDrawable(Context context, int[] colors, float density, float radius,
+                                String pattern, String designId, int ink, int opacity) {
             super(GradientDrawable.Orientation.TL_BR, colors);
             this.context = context;
             this.density = density;
             this.radius = radius;
+            this.pattern = pattern;
+            this.designId = designId;
+            this.ink = ink;
+            this.opacity = opacity;
         }
+
         @Override public void draw(Canvas canvas) {
             super.draw(canvas);
-            if ("none".equals(DESIGN_PATTERN) && !"library-classic".equals(DESIGN_ID)) return;
             RectF bounds = new RectF(getBounds());
-            if (bounds.width() <= 0 || bounds.height() <= 0) return;
+            if (bounds.isEmpty() || !hasArtwork(pattern, designId)) return;
             int save = canvas.save();
             Path clip = new Path();
             clip.addRoundRect(bounds, radius, radius, Path.Direction.CW);
             canvas.clipPath(clip);
-            String scene = VisualDesigns.landscapeSceneId(DESIGN_PATTERN);
-            if (scene != null) {
-                LandscapeArt.Palette palette = LandscapeArt.paletteFromTheme(
-                        HERO_START, HERO_END, SURFACE, ACCENT, ACCENT_2, TEXT, HERO_TEXT);
-                if (!LandscapeArt.drawImage(context, canvas, scene, bounds, HERO_TEXT, true)) {
-                    LandscapeArt.draw(canvas, scene, bounds, palette, density);
-                }
-                canvas.restoreToCount(save);
-                return;
-            }
-            Paint ink = new Paint(Paint.ANTI_ALIAS_FLAG);
-            ink.setColor(withAlpha(HERO_TEXT, 36));
-            ink.setStyle(Paint.Style.STROKE);
-            ink.setStrokeWidth(.75f * density);
-            VisualDesigns.drawPattern(context, canvas, DESIGN_PATTERN, DESIGN_ID, bounds, ink, density);
+            drawArtwork(context, canvas, pattern, designId, bounds, ink, opacity, density);
             canvas.restoreToCount(save);
         }
     }
 
     private static Drawable patterned(Activity a, Drawable base, boolean card, float radiusDp) {
         if (base == null) return null;
-        boolean pagePattern = !card && (!"none".equals(DESIGN_PATTERN) || "library-classic".equals(DESIGN_ID));
+        boolean pagePattern = !card && hasArtwork(DESIGN_PATTERN, DESIGN_ID);
         boolean cardDecoration = card && (!"flat".equals(DESIGN_CARD) || "outlined".equals(UI_CARD_MODE));
         if (!pagePattern && !cardDecoration) return base;
         return new LayerDrawable(new Drawable[]{base,
@@ -440,23 +448,34 @@ public final class Ui {
                 return;
             }
             if (bounds.width() <= 0 || bounds.height() <= 0) return;
-            Paint ink = new Paint(Paint.ANTI_ALIAS_FLAG);
             boolean starChart = "moonlit-stars".equals(DESIGN_ID);
-            int patternAlpha = starChart ? (DARK_THEME ? 110 : 46) : 36;
-            ink.setColor(withAlpha(ACCENT, patternAlpha));
-            ink.setStyle(Paint.Style.STROKE);
-            ink.setStrokeWidth(.75f * density);
-            VisualDesigns.drawPattern(context, canvas, DESIGN_PATTERN, DESIGN_ID, bounds, ink, density);
-            if (starChart) {
-                // Keep the colored headings readable above the brightest stars.
+            boolean landscape = VisualDesigns.landscapeSceneId(DESIGN_PATTERN) != null;
+            if (landscape) {
+                // Keep the authored horizon in a wide scene. A portrait crop loses it.
+                RectF panorama = new RectF(bounds);
+                panorama.bottom = Math.min(bounds.bottom, bounds.top + bounds.width() * .82f);
+                int layer = canvas.saveLayer(panorama, null);
+                drawArtwork(context, canvas, DESIGN_PATTERN, DESIGN_ID, panorama, ACCENT,
+                        DARK_THEME ? 135 : 82, density);
+                Paint fade = new Paint(Paint.ANTI_ALIAS_FLAG);
+                fade.setBlendMode(BlendMode.DST_IN);
+                fade.setShader(new LinearGradient(0f, panorama.top, 0f, panorama.bottom,
+                        new int[]{Color.WHITE, Color.WHITE, Color.TRANSPARENT},
+                        new float[]{0f, .47f, 1f}, Shader.TileMode.CLAMP));
+                canvas.drawRect(panorama, fade);
+                canvas.restoreToCount(layer);
+            } else {
+                int opacity = DARK_THEME ? (starChart ? 132 : 60) : (starChart ? 51 : 36);
+                drawArtwork(context, canvas, DESIGN_PATTERN, DESIGN_ID, bounds, ACCENT, opacity, density);
+            }
+            if (starChart || landscape) {
                 float end = Math.min(bounds.bottom, bounds.top + 156f * density);
-                int veil = withAlpha(BG, DARK_THEME ? 148 : 174);
-                ink.setStyle(Paint.Style.FILL);
-                ink.setColor(Color.WHITE);
-                ink.setShader(new LinearGradient(0f, bounds.top, 0f, end,
+                int veil = withAlpha(BG, DARK_THEME ? 175 : 194);
+                Paint shade = new Paint(Paint.ANTI_ALIAS_FLAG);
+                shade.setShader(new LinearGradient(0f, bounds.top, 0f, end,
                         new int[]{veil, veil, withAlpha(BG, 0)},
                         new float[]{0f, .52f, 1f}, Shader.TileMode.CLAMP));
-                canvas.drawRect(bounds.left, bounds.top, bounds.right, end, ink);
+                canvas.drawRect(bounds.left, bounds.top, bounds.right, end, shade);
             }
         }
         @Override public void setAlpha(int alpha) {}
@@ -464,20 +483,20 @@ public final class Ui {
         @Override public int getOpacity() { return PixelFormat.TRANSLUCENT; }
     }
 
-    public static Drawable starChartAccent(Activity activity, boolean atStart, int portraitWidth) {
-        if (!"moonlit-stars".equals(DESIGN_ID)) return null;
-        return new StarChartAccent(activity.getApplicationContext(), atStart, portraitWidth);
+    public static Drawable companionArtwork(Activity activity, boolean atStart, int portraitWidth) {
+        if (!"moonlit-stars".equals(DESIGN_ID) && VisualDesigns.landscapeSceneId(DESIGN_PATTERN) == null) return null;
+        return new CompanionArtworkDrawable(activity.getApplicationContext(), atStart, portraitWidth);
     }
 
-    /** Places the original chart behind the artwork and fades it out toward the labels. */
-    private static final class StarChartAccent extends Drawable {
+    /** Places the theme illustration behind the companion, away from the numbers. */
+    private static final class CompanionArtworkDrawable extends Drawable {
         private final Context context;
         private final boolean atStart;
         private final int portraitWidth;
         private final RectF chart = new RectF();
         private final Paint fade = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-        StarChartAccent(Context context, boolean atStart, int portraitWidth) {
+        CompanionArtworkDrawable(Context context, boolean atStart, int portraitWidth) {
             this.context = context;
             this.atStart = atStart;
             this.portraitWidth = portraitWidth;
@@ -515,7 +534,8 @@ public final class Ui {
         @Override public void draw(Canvas canvas) {
             if (chart.isEmpty()) return;
             int layer = canvas.saveLayer(chart, null);
-            PatternAtlas.draw(context, canvas, "mosaic", "moonlit-stars", chart, 220);
+            drawArtwork(context, canvas, DESIGN_PATTERN, DESIGN_ID, chart, ACCENT, 220,
+                    context.getResources().getDisplayMetrics().density);
             canvas.drawRect(chart, fade);
             canvas.restoreToCount(layer);
         }

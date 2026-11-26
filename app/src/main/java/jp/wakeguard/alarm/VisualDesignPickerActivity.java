@@ -3,7 +3,6 @@ package jp.wakeguard.alarm;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PathEffect;
@@ -32,7 +31,7 @@ public class VisualDesignPickerActivity extends Activity {
     private String selectedId;
     private String appliedDesignId;
     private String selectedCategory = "all";
-    private String paletteKey;
+    private String displayedPreviewContext;
     private LinearLayout cards;
     private HorizontalScrollView categoryScroll;
     private ScrollView designScroll;
@@ -65,17 +64,17 @@ public class VisualDesignPickerActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
-        String current = AppThemes.key(this);
+        String current = previewContextKey();
         String appliedNow = VisualDesigns.id(this);
         boolean designChanged = appliedDesignId != null && !appliedDesignId.equals(appliedNow);
-        boolean paletteChanged = paletteKey != null && !paletteKey.equals(current);
-        if (designChanged || paletteChanged) {
+        boolean previewContextChanged = displayedPreviewContext != null && !displayedPreviewContext.equals(current);
+        if (designChanged || previewContextChanged) {
             int scrollY = designScroll == null ? 0 : designScroll.getScrollY();
             int categoryX = categoryScroll == null ? 0 : categoryScroll.getScrollX();
             if (designChanged) selectedId = appliedNow;
             appliedDesignId = appliedNow;
-            paletteKey = current;
-            // Rebuild previews with the new palette, keeping the unapplied design choice.
+            displayedPreviewContext = current;
+            Ui.prepareActivity(this);
             build();
             restoreScroll(scrollY, categoryX);
         }
@@ -118,7 +117,11 @@ public class VisualDesignPickerActivity extends Activity {
         setContentView(root);
         Ui.applySystemBarInsets(this, root);
         renderDesigns();
-        paletteKey = AppThemes.key(this);
+        displayedPreviewContext = previewContextKey();
+    }
+
+    private String previewContextKey() {
+        return AppThemes.key(this) + ":" + UiProfiles.id(this);
     }
 
     private void restoreScroll(int designY, int categoryX) {
@@ -161,10 +164,11 @@ public class VisualDesignPickerActivity extends Activity {
         count.setTextSize(11.5f); count.setTextColor(Ui.MUTED);
         count.setPadding(dp(3), 0, 0, dp(8));
         cards.addView(count);
-        for (VisualDesigns.Design design : shown) addDesignCard(design);
+        AppThemes.Theme theme = AppThemes.current(this);
+        for (VisualDesigns.Design design : shown) addDesignCard(design, theme);
     }
 
-    private void addDesignCard(VisualDesigns.Design design) {
+    private void addDesignCard(VisualDesigns.Design design, AppThemes.Theme theme) {
         boolean selected = design.id.equals(selectedId);
         float corner = Math.max(.65f, Math.min(1.25f, design.cornerScale));
         LinearLayout card = new LinearLayout(this);
@@ -224,8 +228,14 @@ public class VisualDesignPickerActivity extends Activity {
         sampleBackground.setColor(Ui.BG_2);
         sampleBackground.setCornerRadius(dp(13 * corner));
         sample.setBackground(sampleBackground);
-        PatternSample pattern = new PatternSample(design);
-        sample.addView(pattern, new LinearLayout.LayoutParams(-1, dp(140)));
+        TextView sampleLabel = Ui.text(this, local("模様見本", "Pattern sample", "무늬 견본"), 11, Ui.MUTED);
+        sample.addView(sampleLabel, new LinearLayout.LayoutParams(-1, -2));
+        View pattern = new View(this);
+        pattern.setBackground(Ui.artworkPreview(this, design, theme));
+        pattern.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        LinearLayout.LayoutParams patternParams = new LinearLayout.LayoutParams(-1, dp(140));
+        patternParams.topMargin = dp(5);
+        sample.addView(pattern, patternParams);
 
         LinearLayout typeRow = new LinearLayout(this);
         typeRow.setGravity(Gravity.CENTER_VERTICAL);
@@ -240,9 +250,11 @@ public class VisualDesignPickerActivity extends Activity {
         LinearLayout.LayoutParams treatmentParams = new LinearLayout.LayoutParams(dp(30), dp(22));
         treatmentParams.leftMargin = dp(6);
         typeRow.addView(treatment, treatmentParams);
-        sample.addView(typeRow, new LinearLayout.LayoutParams(-1, dp(24)));
+        LinearLayout.LayoutParams typeRowParams = new LinearLayout.LayoutParams(-1, -2);
+        typeRowParams.topMargin = dp(5);
+        sample.addView(typeRow, typeRowParams);
 
-        LinearLayout.LayoutParams sampleParams = new LinearLayout.LayoutParams(-1, dp(196));
+        LinearLayout.LayoutParams sampleParams = new LinearLayout.LayoutParams(-1, -2);
         sampleParams.topMargin = dp(10);
         card.addView(sample, sampleParams);
 
@@ -314,86 +326,6 @@ public class VisualDesignPickerActivity extends Activity {
     private String local(String ja, String en, String ko) {
         String language = I18n.language(this);
         return "en".equals(language) ? en : "ko".equals(language) ? ko : ja;
-    }
-
-    private final class PatternSample extends View {
-        private final VisualDesigns.Design design;
-        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        PatternSample(VisualDesigns.Design design) { super(VisualDesignPickerActivity.this); this.design = design; }
-        @Override protected void onDraw(Canvas canvas) {
-            super.onDraw(canvas);
-            RectF bounds = new RectF(0, 0, getWidth(), getHeight());
-            float radius = dp(7);
-            paint.setStyle(Paint.Style.FILL); paint.setColor(Ui.SURFACE_2);
-            canvas.drawRoundRect(bounds, radius, radius, paint);
-            Path clip = new Path(); clip.addRoundRect(bounds, radius, radius, Path.Direction.CW);
-            int save = canvas.save(); canvas.clipPath(clip);
-            paint.setStyle(Paint.Style.STROKE); paint.setStrokeWidth(dp(0.8f));
-            paint.setColor(VisualDesigns.withAlpha(Ui.ACCENT_2, 255));
-            String scene = VisualDesigns.landscapeSceneId(design.pattern);
-            if (scene == null) {
-                VisualDesigns.drawPattern(VisualDesignPickerActivity.this, canvas, design.pattern, design.id, bounds, paint,
-                        getResources().getDisplayMetrics().density);
-            } else {
-                AppThemes.Theme theme = AppThemes.current(VisualDesignPickerActivity.this);
-                LandscapeArt.Palette palette = LandscapeArt.paletteFromTheme(
-                        theme.heroStart, theme.heroEnd, theme.surface,
-                        theme.accent, theme.accent2, theme.text, theme.heroText);
-                if (!LandscapeArt.drawImage(VisualDesignPickerActivity.this, canvas, scene,
-                        bounds, theme.heroText, false)) {
-                    LandscapeArt.draw(canvas, scene, bounds, palette,
-                            getResources().getDisplayMetrics().density);
-                }
-            }
-            drawAlarmPreview(canvas, bounds);
-            canvas.restoreToCount(save);
-        }
-
-        private void drawAlarmPreview(Canvas canvas, RectF bounds) {
-            float density = getResources().getDisplayMetrics().density;
-            float inset = dp(9);
-            float panelHeight = dp(55);
-            RectF panel = new RectF(bounds.left + inset, bounds.bottom - inset - panelHeight,
-                    bounds.right - inset, bounds.bottom - inset);
-            Paint overlay = new Paint(Paint.ANTI_ALIAS_FLAG);
-            overlay.setColor(0xE6121A22);
-            canvas.drawRoundRect(panel, dp(12), dp(12), overlay);
-            overlay.setStyle(Paint.Style.STROKE);
-            overlay.setStrokeWidth(Math.max(1f, density * .7f));
-            overlay.setColor(0x55FFFFFF);
-            canvas.drawRoundRect(panel, dp(12), dp(12), overlay);
-
-            Paint text = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
-            text.setColor(Color.WHITE);
-            text.setTypeface(VisualDesigns.typeface(VisualDesignPickerActivity.this, design, true));
-            text.setTextSize(dp(20));
-            canvas.drawText("07:30", panel.left + dp(11), panel.bottom - dp(10), text);
-            text.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-            text.setTextSize(dp(9));
-            text.setColor(0xFFDCE7EC);
-            canvas.drawText(local("毎日  ·  アラーム", "Every day  ·  Alarm", "매일  ·  알람"),
-                    panel.left + dp(77), panel.bottom - dp(15), text);
-
-            float trackRight = panel.right - dp(11);
-            float trackCenterY = panel.centerY();
-            RectF track = new RectF(trackRight - dp(29), trackCenterY - dp(8),
-                    trackRight, trackCenterY + dp(8));
-            overlay.setStyle(Paint.Style.FILL);
-            overlay.setColor(Ui.ACCENT_2);
-            canvas.drawRoundRect(track, dp(8), dp(8), overlay);
-            overlay.setColor(Color.WHITE);
-            canvas.drawCircle(track.right - dp(8), trackCenterY, dp(5.5f), overlay);
-
-            RectF tag = new RectF(bounds.left + inset, bounds.top + inset,
-                    bounds.left + inset + dp(96), bounds.top + inset + dp(23));
-            overlay.setColor(0xD9F5F7F6);
-            canvas.drawRoundRect(tag, dp(12), dp(12), overlay);
-            text.setColor(0xFF17232A);
-            text.setTextSize(dp(9));
-            text.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-            canvas.drawText(local("画面プレビュー", "SCREEN PREVIEW", "화면 미리보기"),
-                    tag.left + dp(9), tag.centerY() + dp(3), text);
-        }
     }
 
     private final class TreatmentSample extends View {

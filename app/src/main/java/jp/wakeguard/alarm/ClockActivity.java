@@ -84,6 +84,8 @@ public class ClockActivity extends Activity {
         TextView time;
         ClockFaceActivity.AnalogFace analog;
         TextView detail;
+        View overviewCard;
+        String overviewName, overviewHint;
         WorldRow(FrameLayout s,TextView t,ClockFaceActivity.AnalogFace a,TextView d) { stage=s; time=t; analog=a; detail=d; }
     }
 
@@ -241,7 +243,7 @@ public class ClockActivity extends Activity {
         LinearLayout.LayoutParams segmentParams=new LinearLayout.LayoutParams(-1,-2);segmentParams.setMargins(Ui.dp(this,20),Ui.dp(this,5),Ui.dp(this,20),Ui.dp(this,12));
         outer.addView(segmentRail,segmentParams);
 
-        stickyWorld=new LinearLayout(this);stickyWorld.setOrientation(LinearLayout.VERTICAL);stickyWorld.setBackgroundColor(Ui.BG);stickyWorld.setPadding(Ui.dp(this,20),Ui.dp(this,0),Ui.dp(this,20),Ui.dp(this,8));outer.addView(stickyWorld);
+        stickyWorld=new LinearLayout(this);stickyWorld.setOrientation(LinearLayout.VERTICAL);stickyWorld.setPadding(Ui.dp(this,20),Ui.dp(this,0),Ui.dp(this,20),Ui.dp(this,8));outer.addView(stickyWorld);
 
         localClock = new TextView(this); localClock.setVisibility(View.GONE);
         localDetail = new TextView(this); localDetail.setVisibility(View.GONE);
@@ -299,7 +301,9 @@ public class ClockActivity extends Activity {
         if(screenTitle!=null) screenTitle.setText(I18n.tr(this,"時計"));
         for(Map.Entry<String,TextView> entry:modeTabs.entrySet()){
             boolean selected=entry.getKey().equals(mode);TextView tab=entry.getValue();
-            tab.setTextColor(selected?Ui.ACCENT_2:Ui.MUTED);tab.setTypeface(null,selected?Typeface.BOLD:Typeface.NORMAL);
+            tab.setSelected(selected);
+            tab.setTextColor(Ui.readableTextColor(selected ? Ui.ACCENT_2 : Ui.MUTED, selected ? Ui.SURFACE : Ui.BG_2));
+            tab.setTypeface(Ui.designTypeface(selected ? Typeface.BOLD : Typeface.NORMAL));
             tab.setBackground(selected?Ui.roundStroke(Ui.SURFACE,Ui.withAlpha(Ui.ACCENT_2,0x55),14,this):Ui.round(android.graphics.Color.TRANSPARENT,14,this));
             if(Build.VERSION.SDK_INT>=21)tab.setElevation(selected?Ui.dp(this,1):0);
             String label=entry.getKey().equals("world")?"世界":entry.getKey().equals("timer")?"タイマー":"計測";
@@ -387,33 +391,80 @@ public class ClockActivity extends Activity {
         TextView citiesHeader=Ui.sectionHeader(this,"登録した都市");
         citiesHeader.setPadding(Ui.dp(this,8),Ui.dp(this,8),0,Ui.dp(this,12));
         body.addView(citiesHeader);
-        int count=Math.max(1,zones.size());
-        int columns=count<=4?2:3;
-        int rows=(count+columns-1)/columns;
-        int gap=Ui.dp(this,6);
-        int screenW=getResources().getDisplayMetrics().widthPixels;
-        int screenH=getResources().getDisplayMetrics().heightPixels;
-        int usableW=Math.max(Ui.dp(this,220),screenW-Ui.dp(this,20)-gap*(columns-1));
-        int cardW=Math.max(Ui.dp(this,54),usableW/columns);
-        int cardH=Ui.dp(this,columns<=2?184:164);
-        GridLayout grid=new GridLayout(this);grid.setColumnCount(columns);grid.setRowCount(rows);grid.setUseDefaultMargins(false);
-        int index=0;for(String zone:zones){addWorldOverviewCard(grid,zone,index++,columns,cardW,cardH,gap);}
-        body.addView(grid,new LinearLayout.LayoutParams(-1,-2));
+        ArrayList<String> validZones = new ArrayList<>();
+        for (String zone : zones) {
+            try {
+                ZoneId.of(zone);
+                validZones.add(zone);
+            } catch (DateTimeException ignored) {
+                // Skip obsolete or malformed IDs from saved data.
+            }
+        }
+        android.content.res.Configuration config = getResources().getConfiguration();
+        float readableWidth = (config.screenWidthDp - 40f) / Math.max(1f, config.fontScale);
+        int columns = readableWidth >= 390f && validZones.size() > 4 ? 3 : (readableWidth >= 225f ? 2 : 1);
+        int gap = Ui.dp(this, 8);
+        for (int offset = 0; offset < validZones.size(); offset += columns) {
+            LinearLayout row = new LinearLayout(this);
+            row.setBaselineAligned(false);
+            for (int col = 0; col < columns; col++) {
+                int index = offset + col;
+                View cell = index < validZones.size()
+                        ? worldOverviewCard(validZones.get(index), columns) : new Space(this);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, -1, 1f);
+                if (col > 0) params.setMarginStart(gap);
+                row.addView(cell, params);
+            }
+            body.addView(row, Ui.gapTop(this, offset == 0 ? 0 : 8));
+        }
     }
 
-    private void addWorldOverviewCard(GridLayout grid,String zoneId,int index,int columns,int cardW,int cardH,int gap){
-        try{ZoneId.of(zoneId);}catch(Throwable t){return;}
-        LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setGravity(Gravity.CENTER);card.setPadding(Ui.dp(this,10),Ui.dp(this,14),Ui.dp(this,10),Ui.dp(this,12));card.setBackground(Ui.gradient(this,Ui.SURFACE,Ui.SURFACE_2));
-        String nameText=WorldCityCatalog.savedWorldLabel(this,zoneId,friendlyZoneName(zoneId));
-        TextView name=text(nameText,columns<=2?18:columns==3?15:columns==4?13:11,Ui.TEXT);name.setTypeface(null,Typeface.BOLD);name.setGravity(Gravity.CENTER);name.setSingleLine(true);name.setMaxLines(1);name.setEllipsize(null);name.setAutoSizeTextTypeUniformWithConfiguration(columns<=2?12:10,columns<=2?18:columns==3?15:columns==4?13:11,1,android.util.TypedValue.COMPLEX_UNIT_SP);card.addView(name,new LinearLayout.LayoutParams(-1,-2));
-        FrameLayout stage=new FrameLayout(this);TextView time=text("--:--",columns<=2?36:columns==3?30:columns==4?24:20,Ui.TEXT);time.setTypeface(Typeface.MONOSPACE,Typeface.NORMAL);time.setGravity(Gravity.CENTER);time.setSingleLine(true);time.setMaxLines(1);time.setEllipsize(null);time.setAutoSizeTextTypeUniformWithConfiguration(columns<=2?24:columns==3?20:16,columns<=2?36:columns==3?30:columns==4?24:20,1,android.util.TypedValue.COMPLEX_UNIT_SP);ClockFaceActivity.AnalogFace analog=new ClockFaceActivity.AnalogFace(this);time.setVisibility(worldAnalog()?View.GONE:View.VISIBLE);analog.setVisibility(worldAnalog()?View.VISIBLE:View.GONE);stage.addView(time,new FrameLayout.LayoutParams(-1,-1));stage.addView(analog,new FrameLayout.LayoutParams(-1,-1));card.addView(stage,new LinearLayout.LayoutParams(-1,0,1));
-        TextView detail=text("",columns<=2?13:columns==3?11:columns==4?10:9,Ui.MUTED);detail.setGravity(Gravity.CENTER);detail.setSingleLine(true);detail.setMaxLines(1);detail.setEllipsize(null);detail.setAutoSizeTextTypeUniformWithConfiguration(8,columns<=2?13:columns==3?11:columns==4?10:9,1,android.util.TypedValue.COMPLEX_UNIT_SP);card.addView(detail,new LinearLayout.LayoutParams(-1,-2));
-        card.setContentDescription(I18n.tr(this,"タップでデジタル / アナログ切替。長押しで拡大表示"));card.setOnClickListener(v->toggleWorldClockMode());card.setOnLongClickListener(v->{openClockFace("world",zoneId,-1L);return true;});
-        worldRows.put(zoneId,new WorldRow(stage,time,analog,detail));
-        GridLayout.LayoutParams lp=new GridLayout.LayoutParams();lp.width=cardW;lp.height=cardH;lp.columnSpec=GridLayout.spec(index%columns);lp.rowSpec=GridLayout.spec(index/columns);lp.setMargins(index%columns==0?0:gap/2,index/columns==0?0:gap/2,index%columns==columns-1?0:gap/2,index/columns==rowsForGrid(grid)-1?0:gap/2);grid.addView(card,lp);
-    }
+    private View worldOverviewCard(String zoneId, int columns) {
+        LinearLayout card = Ui.card(this);
+        card.setGravity(Gravity.CENTER);
+        card.setPadding(Ui.dp(this, 10), Ui.dp(this, 13), Ui.dp(this, 10), Ui.dp(this, 12));
 
-    private int rowsForGrid(GridLayout grid){return Math.max(1,grid.getRowCount());}
+        String nameText = WorldCityCatalog.savedWorldLabel(this, zoneId, friendlyZoneName(zoneId));
+        TextView name = Ui.title(this, nameText, columns == 3 ? 15 : 17);
+        name.setGravity(Gravity.CENTER);
+        name.setMaxLines(2);
+        name.setEllipsize(TextUtils.TruncateAt.END);
+        name.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        card.addView(name, new LinearLayout.LayoutParams(-1, -2));
+
+        int maxTimeSize = columns == 1 ? 42 : columns == 2 ? 34 : 30;
+        FrameLayout stage = new FrameLayout(this);
+        stage.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+        TextView time = text("--:--", maxTimeSize, Ui.TEXT);
+        time.setTypeface(Typeface.MONOSPACE, Typeface.NORMAL);
+        time.setGravity(Gravity.CENTER);
+        time.setSingleLine(true);
+        time.setAutoSizeTextTypeUniformWithConfiguration(15, maxTimeSize, 1, android.util.TypedValue.COMPLEX_UNIT_SP);
+        ClockFaceActivity.AnalogFace analog = new ClockFaceActivity.AnalogFace(this);
+        time.setVisibility(worldAnalog() ? View.GONE : View.VISIBLE);
+        analog.setVisibility(worldAnalog() ? View.VISIBLE : View.GONE);
+        stage.addView(time, new FrameLayout.LayoutParams(-1, -1));
+        stage.addView(analog, new FrameLayout.LayoutParams(-1, -1));
+        card.addView(stage, new LinearLayout.LayoutParams(-1, Ui.dp(this, columns == 3 ? 86 : 108)));
+
+        TextView detail = text("", columns == 3 ? 11 : 12, Ui.readableTextColor(Ui.MUTED, Ui.SURFACE));
+        detail.setGravity(Gravity.CENTER);
+        detail.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        card.addView(detail, new LinearLayout.LayoutParams(-1, -2));
+        card.setFocusable(true);
+        card.setOnClickListener(v -> toggleWorldClockMode());
+        card.setOnLongClickListener(v -> {
+            openClockFace("world", zoneId, -1L);
+            return true;
+        });
+
+        WorldRow worldRow = new WorldRow(stage, time, analog, detail);
+        worldRow.overviewCard = card;
+        worldRow.overviewName = nameText;
+        worldRow.overviewHint = I18n.tr(this, "タップでデジタル / アナログ切替。長押しで拡大表示");
+        worldRows.put(zoneId, worldRow);
+        return card;
+    }
 
     private String compactDayLabel(ZonedDateTime remote,ZonedDateTime local){
         long d=java.time.temporal.ChronoUnit.DAYS.between(local.toLocalDate(),remote.toLocalDate());
@@ -424,6 +475,7 @@ public class ClockActivity extends Activity {
     private void buildStickyWorldHeader(){
         if(stickyWorld==null)return;
         stickyWorld.removeAllViews();
+        stickyWorld.setBackground(Ui.gradientRound(this, 18, Ui.SURFACE, Ui.SURFACE_2));
         TextView here=Ui.text(this,"現在のタイムゾーン",12,Ui.MUTED);stickyWorld.addView(here);
 
         localClockStage=new FrameLayout(this);
@@ -431,6 +483,8 @@ public class ClockActivity extends Activity {
         localAnalog=new ClockFaceActivity.AnalogFace(this);
         localClockStage.addView(localClock,new FrameLayout.LayoutParams(-1,-1));localClockStage.addView(localAnalog,new FrameLayout.LayoutParams(-1,-1));
         localClockStage.setClickable(true);localClockStage.setOnClickListener(v->toggleWorldClockMode());localClockStage.setOnLongClickListener(v->{openClockFace("world",ZoneId.systemDefault().getId(),-1L);return true;});
+        localClock.setSingleLine(true);
+        localClock.setAutoSizeTextTypeUniformWithConfiguration(20, 52, 1, android.util.TypedValue.COMPLEX_UNIT_SP);
         stickyWorld.addView(localClockStage,new LinearLayout.LayoutParams(-1,Ui.dp(this,68)));
 
         localDetail=Ui.text(this,"",12,Ui.MUTED);localDetail.setPadding(0,Ui.dp(this,2),0,Ui.dp(this,8));stickyWorld.addView(localDetail);
@@ -513,7 +567,14 @@ public class ClockActivity extends Activity {
                 WorldRow r=e.getValue();
                 r.time.setText(now.format(worldOverview()?compactTf:tf));
                 if(r.analog!=null){r.analog.configure(p().getBoolean("analog_numbers",true),p().getBoolean("analog_ticks",true),p().getBoolean("analog_seconds",true),0);r.analog.setHands(now.getHour()%12+now.getMinute()/60d,now.getMinute()+now.getSecond()/60d,now.getSecond()+now.getNano()/1_000_000_000d);}
-                if(worldOverview())r.detail.setText(compactDayLabel(now,local)+"  ·  UTC"+formatOffset(offset));
+                if (r.overviewCard != null) {
+                    String details = compactDayLabel(now, local) + "  ·  UTC" + formatOffset(offset);
+                    r.detail.setText(details);
+                    String description = r.overviewName + ", " + r.time.getText() + ", " + details + ". " + r.overviewHint;
+                    if (!description.equals(r.overviewCard.getContentDescription())) {
+                        r.overviewCard.setContentDescription(description);
+                    }
+                }
                 else r.detail.setText(now.format(df)
                         + "  •  " + z.getId()
                         + "\nUTC" + formatOffset(offset)
@@ -1071,13 +1132,23 @@ public class ClockActivity extends Activity {
 
     private void buildTimer() {
         LinearLayout composer=Ui.card(this);composer.setOrientation(LinearLayout.VERTICAL);composer.setPadding(Ui.dp(this,18),Ui.dp(this,18),Ui.dp(this,18),Ui.dp(this,18));composer.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,24,this));
-        LinearLayout titleRow=Ui.row(this);titleRow.setGravity(Gravity.CENTER_VERTICAL);
-        TextView quickTitle=Ui.title(this,I18n.tr(this,"タイマーを作る"),25);titleRow.addView(quickTitle,new LinearLayout.LayoutParams(0,-2,1));
-        savedTimersButton=Ui.ghostButton(this,savedTimersButtonLabel());savedTimersButton.setTextSize(12);savedTimersButton.setSingleLine(true);savedTimersButton.setPadding(Ui.dp(this,10),0,Ui.dp(this,10),0);savedTimersButton.setOnClickListener(v->showSavedTimersDialog());titleRow.addView(savedTimersButton);
-        composer.addView(titleRow);
-        TextView quickHint=Ui.text(this,I18n.tr(this,"時間を決めて、使い方を選びます"),13,Ui.MUTED);quickHint.setPadding(0,Ui.dp(this,4),0,0);composer.addView(quickHint);
+        LinearLayout intro = new LinearLayout(this);
+        intro.setOrientation(LinearLayout.VERTICAL);
+        intro.setBackground(Ui.gradientRound(this, 18, Ui.SURFACE, Ui.SURFACE_2));
+        intro.setPadding(Ui.dp(this, 10), Ui.dp(this, 10), Ui.dp(this, 10), Ui.dp(this, 12));
+        TextView quickTitle = Ui.title(this, "タイマーを作る", 23);
+        quickTitle.setAccessibilityHeading(true);
+        intro.addView(quickTitle);
+        TextView quickHint = Ui.text(this, "時間を決めて、使い方を選びます", 13, Ui.MUTED);
+        intro.addView(quickHint, Ui.gapTop(this, 4));
+        savedTimersButton = Ui.ghostButton(this, savedTimersButtonLabel());
+        savedTimersButton.setTextSize(12);
+        savedTimersButton.setPadding(Ui.dp(this, 10), Ui.dp(this, 5), Ui.dp(this, 10), Ui.dp(this, 5));
+        savedTimersButton.setOnClickListener(v -> showSavedTimersDialog());
+        intro.addView(savedTimersButton, Ui.gapTop(this, 8));
+        composer.addView(intro, new LinearLayout.LayoutParams(-1, -2));
 
-        quickLabel=new EditText(this);quickLabel.setHint(I18n.tr(this,"名前（例: お湯）"));quickLabel.setSingleLine(true);quickLabel.setTextSize(16);quickLabel.setTextColor(Ui.TEXT);quickLabel.setHintTextColor(Ui.MUTED_2);quickLabel.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),0);Ui.styleInput(quickLabel,this,Ui.SURFACE_2,14);composer.addView(quickLabel,new LinearLayout.LayoutParams(-1,Ui.dp(this,52)));
+        quickLabel=new EditText(this);quickLabel.setHint(I18n.tr(this,"名前（例: お湯）"));quickLabel.setSingleLine(true);quickLabel.setTextSize(16);quickLabel.setTextColor(Ui.TEXT);quickLabel.setHintTextColor(Ui.MUTED_2);quickLabel.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),0);Ui.styleInput(quickLabel,this,Ui.SURFACE_2,14);quickLabel.setMinHeight(Ui.dp(this,52));composer.addView(quickLabel,Ui.gapTop(this,8));
         quickFolder=timerTextAction("保存時のフォルダ："+selectedQuickFolder,13,Ui.TEXT);quickFolder.setGravity(Gravity.CENTER_VERTICAL|Gravity.START);quickFolder.setOnClickListener(v->showFolderPicker(selectedQuickFolder,name->{selectedQuickFolder=name;quickFolder.setText(I18n.tr(this,"保存時のフォルダ：")+name);}));composer.addView(quickFolder,Ui.gapTop(this,8));
 
         LinearLayout durationRow=new LinearLayout(this); durationRow.setGravity(Gravity.CENTER_VERTICAL); durationRow.setPadding(0,Ui.dp(this,12),0,0);
@@ -1113,8 +1184,8 @@ public class ClockActivity extends Activity {
         LinearLayout timerActions=new LinearLayout(this);timerActions.setOrientation(LinearLayout.HORIZONTAL);
         Button save=Ui.button(this,"保存",false);save.setOnClickListener(v->saveQuickTimer());
         Button once=Ui.button(this,"今回だけ準備",false);once.setOnClickListener(v->prepareQuickTimer());
-        LinearLayout.LayoutParams actionLp=new LinearLayout.LayoutParams(0,Ui.dp(this,52),1);timerActions.addView(save,actionLp);
-        LinearLayout.LayoutParams onceLp=new LinearLayout.LayoutParams(0,Ui.dp(this,52),1);onceLp.setMargins(Ui.dp(this,8),0,0,0);timerActions.addView(once,onceLp);
+        LinearLayout.LayoutParams actionLp=new LinearLayout.LayoutParams(0,-1,1);timerActions.addView(save,actionLp);
+        LinearLayout.LayoutParams onceLp=new LinearLayout.LayoutParams(0,-1,1);onceLp.setMarginStart(Ui.dp(this,8));timerActions.addView(once,onceLp);
         actionCard.addView(timerActions,Ui.gapTop(this,7));
         Button start=Ui.button(this,I18n.tr(this,"今すぐ開始"),true);start.setOnClickListener(v->startQuickEditor());actionCard.addView(start,Ui.gapTop(this,8));
         composer.addView(actionCard,Ui.gapTop(this,16));

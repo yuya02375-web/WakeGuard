@@ -1,16 +1,11 @@
 package jp.wakeguard.alarm;
 
 import android.app.Activity;
-import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.RectF;
-import android.graphics.Typeface;
+import android.content.Intent;
 import android.os.Bundle;
+import android.text.Layout;
 import android.view.Gravity;
 import android.view.View;
-import android.graphics.drawable.GradientDrawable;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -99,22 +94,27 @@ public final class DesignSetPickerActivity extends Activity {
 
         LinearLayout heading = Ui.row(this);
         heading.setGravity(Gravity.CENTER_VERTICAL);
-        LinearLayout nameStack = new LinearLayout(this);
-        nameStack.setOrientation(LinearLayout.VERTICAL);
-        nameStack.setPadding(Ui.dp(this, 10), 0, 0, 0);
-        nameStack.addView(Ui.title(this, preset.label(this), 17));
-        nameStack.addView(Ui.text(this, preset.components(this), 11.5f, Ui.MUTED), Ui.gapTop(this, 4));
-        heading.addView(nameStack, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView name = Ui.title(this, preset.label(this), 17);
+        name.setAccessibilityHeading(true);
+        heading.addView(name, new LinearLayout.LayoutParams(0, -2, 1));
         if (active) heading.addView(Ui.accentPill(this, localized("適用中", "Active", "사용 중")));
         card.addView(heading);
+
+        TextView components = Ui.text(this, preset.components(this), 11.5f, Ui.MUTED);
+        components.setBreakStrategy(Layout.BREAK_STRATEGY_BALANCED);
+        card.addView(components, Ui.gapTop(this, 4));
 
         TextView description = Ui.text(this, preset.description(this), 13, Ui.MUTED);
         card.addView(description, Ui.gapTop(this, 7));
         VisualDesigns.Design visual = VisualDesigns.get(preset.visualDesignId);
         if (visual != null) {
-            View preview = new PresetPreview(this, visual, setTheme);
-            LinearLayout.LayoutParams previewParams = new LinearLayout.LayoutParams(-1, Ui.dp(this, 82));
-            previewParams.topMargin = Ui.dp(this, 10);
+            TextView sampleLabel = Ui.text(this, localized("模様見本", "Pattern sample", "무늬 견본"), 11, Ui.MUTED);
+            card.addView(sampleLabel, Ui.gapTop(this, 10));
+            View preview = new View(this);
+            preview.setBackground(Ui.artworkPreview(this, visual, setTheme));
+            preview.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            LinearLayout.LayoutParams previewParams = new LinearLayout.LayoutParams(-1, Ui.dp(this, 106));
+            previewParams.topMargin = Ui.dp(this, 4);
             card.addView(preview, previewParams);
         }
         addSwatches(card, preset);
@@ -145,6 +145,15 @@ public final class DesignSetPickerActivity extends Activity {
             build();
         });
         card.addView(actions);
+
+        if (active) {
+            Button openLive = Ui.ghostButton(this, localized("実際の画面を見る", "Open live screen", "실제 화면 보기"));
+            openLive.setContentDescription(localized("実際の画面を見る。適用中のデザインでアラーム画面を開きます",
+                    "Open live screen. View the alarm screen with the applied design.",
+                    "실제 화면 보기. 적용 중인 디자인으로 알람 화면을 엽니다."));
+            openLive.setOnClickListener(v -> Ui.launchNoAnimation(this, new Intent(this, MainActivity.class)));
+            card.addView(openLive, Ui.gapTop(this, 8));
+        }
 
         if (preset.id.equals(expandedId)) {
             LinearLayout detail = new LinearLayout(this);
@@ -179,48 +188,6 @@ public final class DesignSetPickerActivity extends Activity {
         card.addView(swatches);
     }
 
-    private final class LandscapePreview extends View {
-        private final String pattern;
-        private final AppThemes.Theme theme;
-        private final Paint border = new Paint(Paint.ANTI_ALIAS_FLAG);
-
-        LandscapePreview(Context context, String pattern, AppThemes.Theme theme) {
-            super(context);
-            this.pattern = pattern;
-            this.theme = theme;
-            GradientDrawable fill = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                    new int[]{theme.bg, theme.surface});
-            fill.setCornerRadius(Ui.dp(DesignSetPickerActivity.this, 13));
-            setBackground(fill);
-            setContentDescription(pattern.replace('-', ' ') + " landscape preview");
-        }
-
-        @Override protected void onDraw(Canvas canvas) {
-            super.onDraw(canvas);
-            RectF bounds = new RectF(0, 0, getWidth(), getHeight());
-            if (bounds.isEmpty()) return;
-            float radius = Ui.dp(DesignSetPickerActivity.this, 13);
-            int save = canvas.save();
-            Path clip = new Path();
-            clip.addRoundRect(bounds, radius, radius, Path.Direction.CW);
-            canvas.clipPath(clip);
-            String scene = VisualDesigns.landscapeSceneId(pattern);
-            LandscapeArt.Palette palette = LandscapeArt.paletteFromTheme(
-                    theme.heroStart, theme.heroEnd, theme.surface,
-                    theme.accent, theme.accent2, theme.text, theme.heroText);
-            if (!LandscapeArt.drawImage(DesignSetPickerActivity.this, canvas, scene,
-                    bounds, theme.heroText, false)) {
-                LandscapeArt.draw(canvas, scene, bounds, palette,
-                        getResources().getDisplayMetrics().density);
-            }
-            border.setStyle(Paint.Style.STROKE);
-            border.setStrokeWidth(Ui.dp(DesignSetPickerActivity.this, 1));
-            border.setColor(VisualDesigns.withAlpha(theme.accent, 0x66));
-            canvas.drawRoundRect(bounds, radius, radius, border);
-            canvas.restoreToCount(save);
-        }
-    }
-
     private void addPartButton(LinearLayout parent, DesignSets.Preset preset, DesignSets.Part part, String text) {
         Button button = Ui.ghostButton(this, text);
         button.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
@@ -233,89 +200,6 @@ public final class DesignSetPickerActivity extends Activity {
             }
         });
         parent.addView(button, Ui.gapTop(this, 5));
-    }
-
-    private final class PresetPreview extends View {
-        private final VisualDesigns.Design visual;
-        private final AppThemes.Theme theme;
-        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-
-        PresetPreview(Context context, VisualDesigns.Design visual, AppThemes.Theme theme) {
-            super(context);
-            this.visual = visual;
-            this.theme = theme;
-            GradientDrawable fill = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                    new int[]{theme.bg, theme.surface});
-            fill.setCornerRadius(Ui.dp(DesignSetPickerActivity.this, 14));
-            setBackground(fill);
-            setContentDescription(visual.label(DesignSetPickerActivity.this) + " " +
-                    localized("プレビュー", "preview", "미리보기"));
-        }
-
-        @Override protected void onDraw(Canvas canvas) {
-            super.onDraw(canvas);
-            float density = getResources().getDisplayMetrics().density;
-            RectF bounds = new RectF(0, 0, getWidth(), getHeight());
-            if (bounds.isEmpty()) return;
-            float pad = 12 * density;
-            float radius = 14 * density;
-            int save = canvas.save();
-            Path clip = new Path();
-            clip.addRoundRect(bounds, radius, radius, Path.Direction.CW);
-            canvas.clipPath(clip);
-
-            paint.setStyle(Paint.Style.FILL);
-            paint.setColor(theme.accent);
-            paint.setAlpha(28);
-            canvas.drawCircle(bounds.right - pad * 2, pad, 38 * density, paint);
-            paint.setAlpha(255);
-
-            paint.setColor(theme.muted);
-            paint.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-            paint.setTextSize(8 * density);
-            canvas.drawText(localized("毎日のアラーム", "DAILY ALARM", "매일 알람"), pad, 21 * density, paint);
-
-            paint.setColor(theme.text);
-            paint.setTypeface(VisualDesigns.typeface(DesignSetPickerActivity.this, visual, true));
-            paint.setTextSize(25 * density);
-            canvas.drawText("06:30", pad, 50 * density, paint);
-
-            RectF pill = new RectF(pad, 58 * density, pad + 55 * density, 73 * density);
-            paint.setColor(theme.accent);
-            canvas.drawRoundRect(pill, 8 * density, 8 * density, paint);
-            paint.setColor(theme.heroText);
-            paint.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-            paint.setTextSize(7 * density);
-            canvas.drawText(localized("起床", "WAKE", "기상"), pill.left + 9 * density, pill.top + 10.5f * density, paint);
-
-            float artWidth = Math.min(100 * density, getWidth() * .34f);
-            RectF art = new RectF(bounds.right - pad - artWidth, pad, bounds.right - pad, bounds.bottom - pad);
-            paint.setStyle(Paint.Style.FILL);
-            paint.setColor(theme.surface);
-            canvas.drawRoundRect(art, 10 * density, 10 * density, paint);
-            Path artClip = new Path();
-            artClip.addRoundRect(art, 10 * density, 10 * density, Path.Direction.CW);
-            int artSave = canvas.save();
-            canvas.clipPath(artClip);
-            String scene = VisualDesigns.landscapeSceneId(visual.pattern);
-            if (scene != null) {
-                LandscapeArt.Palette palette = LandscapeArt.paletteFromTheme(
-                        theme.heroStart, theme.heroEnd, theme.surface,
-                        theme.accent, theme.accent2, theme.text, theme.heroText);
-                if (!LandscapeArt.drawImage(DesignSetPickerActivity.this, canvas, scene,
-                        art, theme.heroText, false)) {
-                    LandscapeArt.draw(canvas, scene, art, palette, density);
-                }
-            } else {
-                paint.setStyle(Paint.Style.STROKE);
-                paint.setStrokeWidth(Math.max(1, density));
-                paint.setColor(VisualDesigns.withAlpha(theme.accent2, 255));
-                VisualDesigns.drawPattern(DesignSetPickerActivity.this, canvas, visual.pattern,
-                        visual.id, art, paint, density);
-            }
-            canvas.restoreToCount(artSave);
-            canvas.restoreToCount(save);
-        }
     }
 
     private String localized(String ja, String en, String ko) {

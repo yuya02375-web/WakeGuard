@@ -99,13 +99,27 @@ public class TimeLogActivity extends Activity {
         LinearLayout shell=new LinearLayout(this);shell.setOrientation(LinearLayout.HORIZONTAL);shell.setPadding(Ui.dp(this,4),Ui.dp(this,4),Ui.dp(this,4),Ui.dp(this,4));shell.setBackground(Ui.roundStroke(Ui.BG_2,Ui.BORDER,18,this));
         streakSegment=segmentButton("起床",false);timeSegment=segmentButton("時間",true);
         streakSegment.setEnabled(pendingImportDurationMs<=0L);
-        shell.addView(streakSegment,new LinearLayout.LayoutParams(0,Ui.dp(this,46),1));shell.addView(timeSegment,new LinearLayout.LayoutParams(0,Ui.dp(this,46),1));
+        shell.addView(streakSegment,new LinearLayout.LayoutParams(0,-1,1));shell.addView(timeSegment,new LinearLayout.LayoutParams(0,-1,1));
         streakSegment.setOnClickListener(v->{if(pendingImportDurationMs<=0L)openStreakRecords();});
         LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.setMargins(Ui.dp(this,18),0,Ui.dp(this,18),0);parent.addView(shell,lp);
     }
 
     private Button segmentButton(String label,boolean selected){
-        Button b=new Button(this);b.setText(I18n.tr(this,label));b.setAllCaps(false);b.setTextSize(14);b.setIncludeFontPadding(false);b.setTypeface(Ui.designTypeface(selected?android.graphics.Typeface.BOLD:android.graphics.Typeface.NORMAL));b.setTextColor(selected?Ui.ACCENT_2:Ui.MUTED);b.setGravity(Gravity.CENTER);b.setMinHeight(Ui.dp(this,46));b.setPadding(Ui.dp(this,8),0,Ui.dp(this,8),0);b.setBackground(selected?Ui.roundStroke(Ui.SURFACE,Ui.withAlpha(Ui.ACCENT_2,0x55),15,this):Ui.round(0x00ffffff,15,this));if(android.os.Build.VERSION.SDK_INT>=21)b.setElevation(selected?Ui.dp(this,1):0);return b;
+        Button button = new Button(this);
+        button.setText(I18n.tr(this, label));
+        button.setSelected(selected);
+        button.setAllCaps(false);
+        button.setTextSize(14);
+        button.setIncludeFontPadding(false);
+        button.setTypeface(Ui.designTypeface(selected ? Typeface.BOLD : Typeface.NORMAL));
+        button.setTextColor(Ui.readableTextColor(selected ? Ui.ACCENT_2 : Ui.MUTED, selected ? Ui.SURFACE : Ui.BG_2));
+        button.setGravity(Gravity.CENTER);
+        button.setMinHeight(Ui.dp(this, 46));
+        button.setPadding(Ui.dp(this, 8), Ui.dp(this, 6), Ui.dp(this, 8), Ui.dp(this, 6));
+        button.setBackground(selected ? Ui.roundStroke(Ui.SURFACE, Ui.withAlpha(Ui.ACCENT_2, 0x55), 15, this)
+                : Ui.round(android.graphics.Color.TRANSPARENT, 15, this));
+        button.setElevation(selected ? Ui.dp(this, 1) : 0);
+        return button;
     }
 
     private LinearLayout bottomNav(){
@@ -171,16 +185,31 @@ public class TimeLogActivity extends Activity {
         }
     }
 
+    private boolean needsRoomForText() {
+        android.content.res.Configuration config = getResources().getConfiguration();
+        return config.screenWidthDp / Math.max(1f, config.fontScale) < 345f;
+    }
+
     private void addOverviewCard(){
         LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(Ui.dp(this,20),Ui.dp(this,17),Ui.dp(this,20),Ui.dp(this,16));card.setBackground(Ui.gradientRound(this,24,Ui.HERO_START,Ui.HERO_END));
         LinearLayout header=Ui.row(this);header.setPadding(0,0,0,0);TextView label=Ui.overline(this,"記録した時間");label.setTextColor(Ui.HERO_TEXT);header.addView(label,new LinearLayout.LayoutParams(0,-2,1));TextView count=text(entries.size()+I18n.tr(this,"件"),13,Ui.HERO_TEXT);header.addView(count);card.addView(header);
-        TextView scope=text(I18n.tr(this,"すべてのフォルダー"),12,Ui.HERO_TEXT);scope.setAlpha(.82f);scope.setPadding(0,Ui.dp(this,8),0,0);card.addView(scope);
+        TextView scope=text(I18n.tr(this,"すべてのフォルダー"),12,Ui.HERO_TEXT);scope.setPadding(0,Ui.dp(this,8),0,0);card.addView(scope);
         TextView total=Ui.title(this,fmt(totalDurationAll()),34);total.setTextColor(Ui.HERO_TEXT);total.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));total.setPadding(0,Ui.dp(this,5),0,0);card.addView(total);
         TextView note=text(I18n.tr(this,"全期間の合計"),13,Ui.HERO_TEXT);note.setPadding(0,Ui.dp(this,2),0,0);card.addView(note);
         View divider=new View(this);LinearLayout.LayoutParams dividerLp=new LinearLayout.LayoutParams(-1,Ui.dp(this,1));dividerLp.setMargins(0,Ui.dp(this,14),0,Ui.dp(this,12));divider.setBackgroundColor(Ui.withAlpha(Ui.HERO_TEXT,0x48));card.addView(divider,dividerLp);
-        LinearLayout todayRow=Ui.row(this);todayRow.setGravity(Gravity.CENTER_VERTICAL);todayRow.setPadding(Ui.dp(this,14),Ui.dp(this,11),Ui.dp(this,14),Ui.dp(this,11));todayRow.setBackground(Ui.round(Ui.withAlpha(Ui.HERO_TEXT,0x18),15,this));
-        TextView todayLabel=Ui.text(this,I18n.tr(this,"今日の合計"),14,Ui.HERO_TEXT);todayRow.addView(todayLabel,new LinearLayout.LayoutParams(0,-2,1));
-        TextView todayValue=Ui.title(this,fmt(durationForDayAll(LocalDate.now())),20);todayValue.setTextColor(Ui.HERO_TEXT);todayValue.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));todayValue.setSingleLine(true);todayRow.addView(todayValue);card.addView(todayRow);
+        boolean stacked = needsRoomForText();
+        LinearLayout todayRow = Ui.row(this);
+        todayRow.setOrientation(stacked ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
+        todayRow.setGravity(Gravity.CENTER_VERTICAL);
+        todayRow.setPadding(Ui.dp(this, 14), Ui.dp(this, 11), Ui.dp(this, 14), Ui.dp(this, 11));
+        todayRow.setBackground(Ui.round(Ui.SURFACE, 15, this));
+        TextView todayLabel = Ui.text(this, "今日の合計", 14, Ui.readableTextColor(Ui.MUTED, Ui.SURFACE));
+        todayRow.addView(todayLabel, stacked ? new LinearLayout.LayoutParams(-1, -2)
+                : new LinearLayout.LayoutParams(0, -2, 1f));
+        TextView todayValue = Ui.title(this, fmt(durationForDayAll(LocalDate.now())), 20);
+        todayValue.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        todayRow.addView(todayValue, new LinearLayout.LayoutParams(-2, -2));
+        card.addView(todayRow);
         LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.setMargins(0,0,0,Ui.dp(this,5));body.addView(card,lp);
     }
 
@@ -213,7 +242,9 @@ public class TimeLogActivity extends Activity {
         lastRecord.setSingleLine(true);lastRecord.setEllipsize(android.text.TextUtils.TruncateAt.END);lastRecord.setPadding(0,Ui.dp(this,5),0,0);card.addView(lastRecord);
         LocalDate now=LocalDate.now();
         long today=durationForDay(f.id,now);long week=durationForRange(f.id,weekStart(now),weekStart(now).plusDays(7));long total=totalDuration(f.id);
-        LinearLayout details=new LinearLayout(this);details.setOrientation(LinearLayout.HORIZONTAL);details.setPadding(0,Ui.dp(this,11),0,0);
+        LinearLayout details=new LinearLayout(this);
+        details.setOrientation(needsRoomForText() ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
+        details.setPadding(0,Ui.dp(this,11),0,0);
         addFolderMetric(details,"今日",fmt(today));addFolderMetric(details,"今週",fmt(week));addFolderMetric(details,"合計",fmt(total));card.addView(details);
         LinearLayout averageRow=Ui.row(this);averageRow.setGravity(Gravity.CENTER_VERTICAL);averageRow.setPadding(0,Ui.dp(this,9),0,0);
         TextView averageLabel=text(I18n.tr(this,"1日平均"),12,Ui.MUTED);averageRow.addView(averageLabel,new LinearLayout.LayoutParams(0,-2,1));
@@ -231,9 +262,19 @@ public class TimeLogActivity extends Activity {
     private void addFolderMetric(LinearLayout parent,String label,String value){
         LinearLayout item=new LinearLayout(this);item.setOrientation(LinearLayout.VERTICAL);item.setPadding(Ui.dp(this,9),Ui.dp(this,7),Ui.dp(this,7),Ui.dp(this,7));
         item.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,13,this));
-        TextView key=text(label,11,Ui.MUTED);key.setSingleLine(true);item.addView(key);
-        TextView number=Ui.title(this,value,14);number.setSingleLine(true);number.setEllipsize(android.text.TextUtils.TruncateAt.END);number.setPadding(0,Ui.dp(this,2),0,0);item.addView(number);
-        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,-2,1);if(parent.getChildCount()>0)lp.setMargins(Ui.dp(this,6),0,0,0);parent.addView(item,lp);
+        TextView key = text(label, 11, Ui.MUTED);
+        item.addView(key);
+        TextView number = Ui.title(this, value, 14);
+        number.setPadding(0, Ui.dp(this, 2), 0, 0);
+        item.addView(number);
+        boolean stacked = parent.getOrientation() == LinearLayout.VERTICAL;
+        LinearLayout.LayoutParams params = stacked ? new LinearLayout.LayoutParams(-1, -2)
+                : new LinearLayout.LayoutParams(0, -2, 1f);
+        if (parent.getChildCount() > 0) {
+            if (stacked) params.topMargin = Ui.dp(this, 6);
+            else params.setMarginStart(Ui.dp(this, 6));
+        }
+        parent.addView(item, params);
     }
 
     private void showFolder(String folderId){
@@ -272,14 +313,17 @@ public class TimeLogActivity extends Activity {
     }
 
     private void addTrackingCard(Folder f){
-        LinearLayout card=Ui.card(this);card.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,22,this));
+        LinearLayout card=Ui.card(this);
         String active=p().getString(KEY_ACTIVE_FOLDER,null);long started=p().getLong(KEY_ACTIVE_START,0L);
         boolean mine=f.id.equals(active)&&started>0L;
         boolean other=active!=null&&!mine&&started>0L;
         card.setBackground(mine?Ui.gradientRound(this,22,Ui.HERO_START,Ui.HERO_END)
-                :Ui.roundStroke(other?Ui.SURFACE_2:Ui.SURFACE,other?Ui.BORDER_HOT:Ui.BORDER,22,this));
+                :other?Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER_HOT,22,this):Ui.gradientRound(this,22,Ui.SURFACE,Ui.SURFACE_2));
         TextView label=Ui.overline(this,mine?"計測中":"時間を記録");label.setTextColor(mine?Ui.HERO_TEXT:Ui.ACCENT_2);card.addView(label);
-        trackingClock=Ui.title(this,"00:00:00",38);trackingClock.setTextColor(mine?Ui.HERO_TEXT:Ui.TEXT);trackingClock.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));trackingClock.setGravity(Gravity.CENTER);trackingClock.setPadding(0,Ui.dp(this,11),0,Ui.dp(this,13));card.addView(trackingClock);
+        trackingClock=Ui.title(this,"00:00:00",38);trackingClock.setTextColor(mine?Ui.HERO_TEXT:Ui.TEXT);trackingClock.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));trackingClock.setGravity(Gravity.CENTER);trackingClock.setPadding(0,Ui.dp(this,11),0,Ui.dp(this,13));
+        trackingClock.setSingleLine(true);
+        trackingClock.setAutoSizeTextTypeUniformWithConfiguration(21,38,1,android.util.TypedValue.COMPLEX_UNIT_SP);
+        card.addView(trackingClock,new LinearLayout.LayoutParams(-1,Ui.dp(this,76)));
         if(other){
             Folder af=findFolder(active);
             TextView note=text("「"+(af==null?I18n.tr(this,"別のフォルダー"):af.name)+"」で計測中です。停止してから開始してください。",13,Ui.MUTED);note.setGravity(Gravity.CENTER);note.setPadding(0,0,0,Ui.dp(this,8));card.addView(note);
@@ -334,15 +378,15 @@ public class TimeLogActivity extends Activity {
     @Override protected void onDestroy(){stopTrackingTicker();super.onDestroy();}
 
     private void addStatsGrid(Folder f){
-        GridLayout grid=new GridLayout(this);grid.setColumnCount(2);grid.setUseDefaultMargins(false);
+        GridLayout grid=new GridLayout(this);grid.setColumnCount(needsRoomForText() ? 1 : 2);grid.setUseDefaultMargins(false);
         LocalDate today=LocalDate.now();
         addStat(grid,"合計",totalDuration(f.id),0);addStat(grid,"今日",durationForDay(f.id,today),1);addStat(grid,"今週",durationForRange(f.id,weekStart(today),weekStart(today).plusDays(7)),2);addStat(grid,"1日平均",averagePerRecordedDay(f.id),3);
         body.addView(grid,new LinearLayout.LayoutParams(-1,-2));
     }
     private void addStat(GridLayout grid,String label,long value,int index){
         LinearLayout c=new LinearLayout(this);c.setOrientation(LinearLayout.VERTICAL);c.setPadding(Ui.dp(this,15),Ui.dp(this,13),Ui.dp(this,14),Ui.dp(this,13));c.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,17,this));
-        TextView l=Ui.overline(this,label);c.addView(l);TextView v=Ui.title(this,fmt(value),20);v.setSingleLine(true);v.setPadding(0,Ui.dp(this,5),0,0);c.addView(v);
-        GridLayout.LayoutParams lp=new GridLayout.LayoutParams();lp.width=0;lp.columnSpec=GridLayout.spec(index%2,1f);lp.rowSpec=GridLayout.spec(index/2);lp.setMargins(Ui.dp(this,3),Ui.dp(this,3),Ui.dp(this,3),Ui.dp(this,3));grid.addView(c,lp);
+        TextView l=Ui.overline(this,label);c.addView(l);TextView v=Ui.title(this,fmt(value),20);v.setPadding(0,Ui.dp(this,5),0,0);c.addView(v);
+        GridLayout.LayoutParams lp=new GridLayout.LayoutParams();lp.width=0;lp.columnSpec=GridLayout.spec(index%grid.getColumnCount(),1f);lp.rowSpec=GridLayout.spec(index/grid.getColumnCount());lp.setMargins(Ui.dp(this,3),Ui.dp(this,3),Ui.dp(this,3),Ui.dp(this,3));grid.addView(c,lp);
     }
 
     private void addEntryRow(Folder f,Entry e,LocalDate displayDay){

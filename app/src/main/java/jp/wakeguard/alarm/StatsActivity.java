@@ -156,7 +156,7 @@ public class StatsActivity extends Activity {
         LinearLayout.LayoutParams companionLp=new LinearLayout.LayoutParams(Ui.dp(this,88),Ui.dp(this,88));
         companionLp.setMarginEnd(Ui.dp(this,12));
         highlight.addView(companion,companionLp);
-        highlight.setBackground(Ui.starChartAccent(this, true, companionLp.width + companionLp.getMarginEnd()));
+        highlight.setBackground(Ui.companionArtwork(this, true, companionLp.width + companionLp.getMarginEnd()));
         highlight.addView(streakCopy,new LinearLayout.LayoutParams(0,-2,1));
         card.addView(highlight);
         growthLevel=Ui.title(this,"",16);

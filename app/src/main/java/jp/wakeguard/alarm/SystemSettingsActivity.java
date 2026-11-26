@@ -60,12 +60,21 @@ public class SystemSettingsActivity extends Activity {
         if (body == null) return;
         body.removeAllViews();
 
-        body.addView(Ui.overline(this, "IGNIDO  /  WAKE"));
+        LinearLayout intro = new LinearLayout(this);
+        intro.setOrientation(LinearLayout.VERTICAL);
+        intro.setPadding(Ui.dp(this, 16), Ui.dp(this, 15), Ui.dp(this, 16), Ui.dp(this, 16));
+        intro.setBackground(Ui.gradientRound(this, 23, Ui.HERO_START, Ui.HERO_END));
+        TextView brand = Ui.overline(this, "IGNIDO  /  WAKE");
+        brand.setTextColor(Ui.HERO_TEXT);
+        intro.addView(brand);
         TextView title = Ui.title(this, "設定", 31);
-        title.setPadding(0, Ui.dp(this, 4), 0, 0);
-        body.addView(title);
-        body.addView(Ui.text(this, localize("アラームと時計を自分に合わせて整えます。",
-                "Tune alarms and clocks to fit your routine.", "알람과 시계를 생활 방식에 맞게 설정하세요."), 14, Ui.MUTED), Ui.gapTop(this, 4));
+        title.setTextColor(Ui.HERO_TEXT);
+        title.setAccessibilityHeading(true);
+        intro.addView(title, Ui.gapTop(this, 4));
+        TextView subtitle = Ui.text(this, localize("アラームと時計を自分に合わせて整えます。",
+                "Tune alarms and clocks to fit your routine.", "알람과 시계를 생활 방식에 맞게 설정하세요."), 14, Ui.HERO_TEXT);
+        intro.addView(subtitle, Ui.gapTop(this, 4));
+        body.addView(intro, Ui.cardParams(this));
 
         addAppCard();
         addBackupCard();

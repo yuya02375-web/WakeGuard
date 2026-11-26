@@ -108,6 +108,11 @@ public final class LandscapeArt {
     /** Draws a high-resolution illustrated scene, with the vector scene as a safe fallback. */
     public static boolean drawImage(Context context, Canvas canvas, String id, RectF bounds,
                                     int foregroundTextColor, boolean textOverlay) {
+        return drawImage(context, canvas, id, bounds, foregroundTextColor, textOverlay, 255);
+    }
+
+    static boolean drawImage(Context context, Canvas canvas, String id, RectF bounds,
+                             int foregroundTextColor, boolean textOverlay, int opacity) {
         if (context == null || canvas == null || bounds == null || bounds.isEmpty() || !isSupported(id)) return false;
         int resource = resourceFor(id);
         if (resource == 0) return false;
@@ -135,6 +140,7 @@ public final class LandscapeArt {
         int save = canvas.save();
         canvas.clipRect(bounds);
         Paint imagePaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG | Paint.DITHER_FLAG);
+        imagePaint.setAlpha(opacity);
         canvas.drawBitmap(bitmap, source, bounds, imagePaint);
         if (textOverlay) drawTextOverlay(canvas, bounds, foregroundTextColor);
         canvas.restoreToCount(save);
