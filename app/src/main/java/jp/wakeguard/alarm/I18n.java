@@ -240,6 +240,9 @@ public final class I18n {
         put("Googleで確認した国名をコピーして戻ると、自動でその国の候補を表示します","Copy the country name from Google and return to automatically show that country's options","Google에서 확인한 국가명을 복사한 뒤 돌아오면 해당 국가의 후보가 자동으로 표시됩니다");
         put("国名が分からない場所","place unknown country","국가명을 모르는 장소"); put("国名","country","국가명"); put("ブラウザを開けません","Unable to open browser","브라우저를 열 수 없습니다");
         put("現在のストリーク","Current streak","현재 스트릭");
+        put("直近7日","Last 7 days","최근 7일"); put("記録なし","No record","기록 없음");
+        put("次の起床成功で%1$sへ","One more successful wake-up until %1$s","한 번 더 기상에 성공하면 %1$s");
+        put("あと%2$d回の起床成功で%1$sへ","%2$d more successful wake-ups until %1$s","기상에 %2$d회 더 성공하면 %1$s");
         put("ストリーク保護","Streak protection","스트릭 보호"); put("保護日","Protection days","보호일"); put("保護","Protected","보호");
         put("自動で保護日を使う","Use protection days automatically","보호일 자동 사용");
         put("毎月1日に2日分回復し、最大3日まで持てます。起きられなかった対象日に1日だけ自動使用してストリークを守ります。保護日はストリークを維持しますが、成功回数には加算されません。","Two protection days are restored on the first of each month, up to three. One is automatically used on an eligible missed wake-up to preserve your streak. Protected days preserve your streak but do not add successful wake-ups.","매월 1일에 보호일 2일이 회복되며 최대 3일까지 보유할 수 있습니다. 대상 기상일을 놓치면 1일을 자동 사용해 스트릭을 보호합니다. 보호일은 스트릭을 유지하지만 성공 횟수에는 더해지지 않습니다.");

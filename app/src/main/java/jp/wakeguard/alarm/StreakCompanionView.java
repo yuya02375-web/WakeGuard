@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageDecoder;
+import android.graphics.Matrix;
 import android.graphics.drawable.Animatable;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.BitmapDrawable;
@@ -11,7 +12,6 @@ import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.Gravity;
-import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import java.util.concurrent.CancellationException;
@@ -35,23 +35,20 @@ public final class StreakCompanionView extends FrameLayout {
                     R.drawable.ignido_stage_hatchling_pose_04,
                     R.drawable.ignido_stage_hatchling_pose_05
             },
-            {
-                    R.drawable.ignido_stage_adult_pose_01,
-                    R.drawable.ignido_stage_adult_pose_02,
-                    R.drawable.ignido_stage_adult_pose_03,
-                    R.drawable.ignido_stage_adult_pose_04,
-                    R.drawable.ignido_stage_adult_pose_05
-            }
+            GrowthAppearance.ADULT_POSES
     };
 
-    private final FrameLayout artLayer;
+    // Home and Records normally show the same level. Share pixels, give each view its own animation clock.
+    private record CachedLoop(long level, Drawable.ConstantState state) {}
+    private static volatile CachedLoop lastLoop;
+    private final Matrix portraitMatrix = new Matrix();
+    private long displayedLevel = -1L;
     private final ImageView sprite;
     private Animatable currentAnimation;
     private Future<?> pendingArtwork;
     private long artworkGeneration=0L, pendingLevel=-1L, renderedLevel=-1L;
     private long permanentLevel=1L;
     private boolean animationEnabled=true;
-    private boolean growthInitialized=false;
 
     private static ScheduledThreadPoolExecutor artworkWorker(){
         ScheduledThreadPoolExecutor worker=new ScheduledThreadPoolExecutor(1,task->{
@@ -69,16 +66,10 @@ public final class StreakCompanionView extends FrameLayout {
     public StreakCompanionView(Context context) {
         super(context);
         setBackgroundColor(0x00000000);
-        setClipChildren(false);
-        setClipToPadding(false);
-        artLayer=new FrameLayout(context);
-        artLayer.setClipChildren(false);
-        artLayer.setClipToPadding(false);
         sprite=new ImageView(context);
-        sprite.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        sprite.setScaleType(ImageView.ScaleType.MATRIX);
         sprite.setContentDescription("ストリーク成長キャラクター");
-        artLayer.addView(sprite,new LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.MATCH_PARENT,Gravity.CENTER));
-        addView(artLayer,new LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.MATCH_PARENT,Gravity.CENTER));
+        addView(sprite,new LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.MATCH_PARENT,Gravity.CENTER));
         setGrowth(1L,0);
     }
 
@@ -136,11 +127,16 @@ public final class StreakCompanionView extends FrameLayout {
     }
 
     private Drawable loadGrowthDrawable(int stage,float progress){
-        if (stage == 3 && progress > 0f) {
+        if (progress > 0f) {
             try {
-                return loadSittingLoop(progress);
+                switch (stage) {
+                    case 3: return loadSittingLoop(progress);
+                    case 4: return GrowthAppearance.adultLoop(getResources(),progress);
+                    case 5: return GrowthAppearance.stellarLoop(getResources(),progress);
+                    default: break;
+                }
             } catch (IllegalArgumentException incompatibleArtwork) {
-                return stageArtwork(stage);
+                // The original animated form also works on devices that cannot decode a pose.
             }
         }
         return stageArtwork(stage);
@@ -156,6 +152,7 @@ public final class StreakCompanionView extends FrameLayout {
     private void showArtwork(Drawable artwork){
         setRunning(currentAnimation,false);
         sprite.setImageDrawable(artwork);
+        fitPortrait(permanentLevel);
         currentAnimation=artwork instanceof Animatable?(Animatable)artwork:null;
         setRunning(currentAnimation,animationEnabled&&isAttachedToWindow());
     }
@@ -164,21 +161,38 @@ public final class StreakCompanionView extends FrameLayout {
         if(!animationEnabled||!isAttachedToWindow())return;
 
         int stage=StreakGrowth.artStage(permanentLevel);
-        long level=stage==3?permanentLevel:Long.MIN_VALUE+stage;
+        float progress=StreakGrowth.artTransitionProgress(permanentLevel);
+        boolean morphs = stage >= 3 && stage <= 5 && progress > 0f;
+        long level = morphs ? permanentLevel : Long.MIN_VALUE + stage;
         if(renderedLevel==level){
             if(pendingArtwork!=null)cancelPendingArtwork();
+            if (displayedLevel != permanentLevel) fitPortrait(permanentLevel);
             return;
         }
         if(pendingLevel==level)return;
 
         cancelPendingArtwork();
-        float progress=StreakGrowth.artTransitionProgress(permanentLevel);
+        CachedLoop cached = lastLoop;
+        if (morphs && cached != null && cached.level() == level) {
+            showArtwork(cached.state().newDrawable(getResources()));
+            renderedLevel = level;
+            return;
+        }
         long generation=artworkGeneration;
         pendingLevel=level;
         pendingArtwork=ARTWORK_WORKER.submit(()->{
             Drawable artwork;
             try{
-                artwork=loadGrowthDrawable(stage,progress);
+                CachedLoop ready = lastLoop;
+                if (morphs && ready != null && ready.level() == level) {
+                    artwork = ready.state().newDrawable(getResources());
+                } else {
+                    artwork = loadGrowthDrawable(stage,progress);
+                    Drawable.ConstantState state = artwork.getConstantState();
+                    if (morphs && state != null && !Thread.currentThread().isInterrupted()) {
+                        lastLoop = new CachedLoop(level, state);
+                    }
+                }
             }catch(CancellationException canceled){
                 return;
             }
@@ -195,33 +209,33 @@ public final class StreakCompanionView extends FrameLayout {
 
     public void setGrowth(long level,int streak){
         long nextLevel=Math.max(1L,level);
-        long previousLevel=permanentLevel;
-        boolean animateGrowth=growthInitialized&&nextLevel>previousLevel&&nextLevel-previousLevel==1L;
         permanentLevel=nextLevel;
-        if(!growthInitialized||nextLevel!=previousLevel){
-            float targetWidth=widthScale(permanentLevel);
-            float targetHeight=StreakGrowth.visualScale(permanentLevel);
-            artLayer.animate().cancel();
-            if(animateGrowth){
-                artLayer.setScaleX(widthScale(previousLevel));
-                artLayer.setScaleY(StreakGrowth.visualScale(previousLevel));
-                artLayer.animate().scaleX(targetWidth).scaleY(targetHeight)
-                        .setDuration(520L).setInterpolator(new DecelerateInterpolator()).start();
-            }else{
-                artLayer.setScaleX(targetWidth);
-                artLayer.setScaleY(targetHeight);
-            }
-        }
-
-        growthInitialized=true;
         sprite.setContentDescription(StreakGrowth.appearanceDescriptor(
                 getContext(),permanentLevel,Math.max(0,streak))+", Lv."+permanentLevel);
         requestArtwork();
     }
 
-    private static float widthScale(long level) {
-        float growth = StreakGrowth.artStage(level) == 3 ? 0f : StreakGrowth.artTransitionProgress(level);
-        return StreakGrowth.visualScale(level) * (1f + .055f * growth);
+    private void fitPortrait(long level) {
+        displayedLevel = level;
+        sprite.setColorFilter(GrowthAppearance.forLevel(level));
+        updatePortraitMatrix();
+    }
+
+    private void updatePortraitMatrix() {
+        Drawable artwork = sprite.getDrawable();
+        int width = sprite.getWidth(), height = sprite.getHeight();
+        if (artwork == null || displayedLevel < 1 || width == 0 || height == 0) return;
+        int imageWidth = artwork.getIntrinsicWidth(), imageHeight = artwork.getIntrinsicHeight();
+        if (imageWidth <= 0 || imageHeight <= 0) return;
+        DragonPortrait.Placement placement = DragonPortrait.place(displayedLevel, width, height, imageWidth, imageHeight);
+        portraitMatrix.setScale(placement.scale(), placement.scale());
+        portraitMatrix.postTranslate(placement.dx(), placement.dy());
+        sprite.setImageMatrix(portraitMatrix);
+    }
+
+    @Override protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+        if (changed) updatePortraitMatrix();
     }
 
     public void setAnimationEnabled(boolean enabled){
@@ -249,9 +263,6 @@ public final class StreakCompanionView extends FrameLayout {
     @Override protected void onDetachedFromWindow(){
         cancelPendingArtwork();
         setRunning(currentAnimation,false);
-        artLayer.animate().cancel();
-        artLayer.setScaleX(widthScale(permanentLevel));
-        artLayer.setScaleY(StreakGrowth.visualScale(permanentLevel));
         super.onDetachedFromWindow();
     }
 }

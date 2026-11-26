@@ -44,7 +44,9 @@ public final class StreakGrowth {
     private static final long[] MILESTONES={1L,7L,14L,30L,60L,180L,600L};
     private static final String[] FORM_NAMES={"竜の卵","火種","小さな炎","幼炎竜","天炎竜","恒星炎竜","無限炎竜"};
 
-    /** Adjacent forms blend over many wake-ups; no form appears all at once on a milestone. */
+    static long finalFormLevel(){return MILESTONES[MILESTONES.length-1];}
+
+    /** Form reached at this permanent level, shared by labels and artwork. */
     public static int artStage(long level){
         long lv=Math.max(1L,level);
         for(int i=0;i<MILESTONES.length-1;i++)if(lv<MILESTONES[i+1])return i;
@@ -60,10 +62,18 @@ public final class StreakGrowth {
         return Math.max(0f,Math.min(1f,(lv-start)/(float)(end-start)));
     }
 
-    /** Scales continuously through the final form and reaches its cap at level 1000. */
+    // Taller raised-wing poses use more of the portrait than the resting hatchling.
+    // Reserve space for this movement while keeping the visible seated dragon growing.
+    private static final float[] PORTRAIT_SIZE = {.55f, .59f, .62f, .66f, .84f, .89f, .94f};
+
     public static float visualScale(long level){
-        double progress=Math.log(Math.max(1L,level))/Math.log(1000.0);
-        return (float)(0.78+0.46*Math.max(0.0,Math.min(1.0,progress)));
+        int stage = artStage(level);
+        if (stage < PORTRAIT_SIZE.length - 1) {
+            float t = artTransitionProgress(level);
+            return PORTRAIT_SIZE[stage] + (PORTRAIT_SIZE[stage + 1] - PORTRAIT_SIZE[stage]) * t;
+        }
+        double days = (double)level - finalFormLevel();
+        return (float)(.94 + .02 * days / (days + 365.0));
     }
 
     public static long nextMilestone(long level){
