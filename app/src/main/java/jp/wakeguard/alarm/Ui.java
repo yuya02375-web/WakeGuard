@@ -5,13 +5,19 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
-import android.graphics.Insets;
+import android.graphics.BlendMode;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Insets;
+import android.graphics.LinearGradient;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PixelFormat;
+import android.graphics.RadialGradient;
+import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -435,11 +441,23 @@ public final class Ui {
             }
             if (bounds.width() <= 0 || bounds.height() <= 0) return;
             Paint ink = new Paint(Paint.ANTI_ALIAS_FLAG);
-            int patternAlpha = "moonlit-stars".equals(DESIGN_ID) ? (DARK_THEME ? 110 : 46) : 36;
+            boolean starChart = "moonlit-stars".equals(DESIGN_ID);
+            int patternAlpha = starChart ? (DARK_THEME ? 110 : 46) : 36;
             ink.setColor(withAlpha(ACCENT, patternAlpha));
             ink.setStyle(Paint.Style.STROKE);
             ink.setStrokeWidth(.75f * density);
             VisualDesigns.drawPattern(context, canvas, DESIGN_PATTERN, DESIGN_ID, bounds, ink, density);
+            if (starChart) {
+                // Keep the colored headings readable above the brightest stars.
+                float end = Math.min(bounds.bottom, bounds.top + 156f * density);
+                int veil = withAlpha(BG, DARK_THEME ? 148 : 174);
+                ink.setStyle(Paint.Style.FILL);
+                ink.setColor(Color.WHITE);
+                ink.setShader(new LinearGradient(0f, bounds.top, 0f, end,
+                        new int[]{veil, veil, withAlpha(BG, 0)},
+                        new float[]{0f, .52f, 1f}, Shader.TileMode.CLAMP));
+                canvas.drawRect(bounds.left, bounds.top, bounds.right, end, ink);
+            }
         }
         @Override public void setAlpha(int alpha) {}
         @Override public void setColorFilter(android.graphics.ColorFilter filter) {}
@@ -463,7 +481,7 @@ public final class Ui {
             this.context = context;
             this.atStart = atStart;
             this.portraitWidth = portraitWidth;
-            fade.setBlendMode(android.graphics.BlendMode.DST_IN);
+            fade.setBlendMode(BlendMode.DST_IN);
         }
 
         @Override protected void onBoundsChange(Rect bounds) {
@@ -484,10 +502,10 @@ public final class Ui {
             float width = Math.min(bounds.width(), portraitWidth);
             float x = left ? bounds.left : bounds.right - width;
             chart.set(x, bounds.top, x + width, bounds.bottom);
-            android.graphics.RadialGradient mask = new android.graphics.RadialGradient(
+            RadialGradient mask = new RadialGradient(
                     0f, 0f, 1f, new int[]{Color.WHITE, Color.WHITE, Color.TRANSPARENT},
-                    new float[]{0f, .46f, 1f}, android.graphics.Shader.TileMode.CLAMP);
-            android.graphics.Matrix transform = new android.graphics.Matrix();
+                    new float[]{0f, .46f, 1f}, Shader.TileMode.CLAMP);
+            Matrix transform = new Matrix();
             transform.setScale(chart.width() * .5f, chart.height() * .5f);
             transform.postTranslate(chart.centerX(), chart.centerY());
             mask.setLocalMatrix(transform);
