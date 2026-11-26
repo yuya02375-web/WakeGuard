@@ -54,7 +54,7 @@ public final class MainActivity extends Activity {
     private static final String CONTENT_POLICY = "default-src 'self'; script-src 'self'; "
             + "style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; "
             + "base-uri 'none'; form-action 'none'; frame-src 'none'";
-    private static final Pattern ASSET_PATH = Pattern.compile("[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*\\.[a-zA-Z0-9]+" );
+    private static final Pattern ASSET_PATH = Pattern.compile("[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*\\.[a-zA-Z0-9]+");
     private static final int GPS_PERMISSION = 7301;
     private static final int IMPORT_BACKUP = 7302;
     private static final int EXPORT_BACKUP = 7303;
@@ -295,6 +295,12 @@ public final class MainActivity extends Activity {
             @Override public void onProviderDisabled(String provider) {
                 if (nativeWatches.get(id) == this) locationError(id, 2);
                 first = true;
+            }
+
+            @Override public void onProviderEnabled(String provider) { first = true; }
+
+            @Override public void onStatusChanged(String provider, int status, Bundle extras) {
+                // Android 10's LocationListener requires this callback.
             }
         };
         nativeWatches.put(id, listener);
