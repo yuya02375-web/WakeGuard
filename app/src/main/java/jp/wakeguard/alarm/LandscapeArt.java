@@ -1,13 +1,18 @@
 package jp.wakeguard.alarm;
 
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RadialGradient;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Shader;
+import android.util.LruCache;
 
 /**
  * Small, palette-driven landscape illustrations for design previews and screen accents.
@@ -21,6 +26,12 @@ public final class LandscapeArt {
     public static final String VOLCANIC_NIGHT = "volcanic-night";
     public static final String DUNES = "dunes";
     public static final String CLOUD_SEA = "cloud-sea";
+
+    private static final LruCache<String, Bitmap> BITMAP_CACHE = new LruCache<String, Bitmap>(20 * 1024 * 1024) {
+        @Override protected int sizeOf(String key, Bitmap value) {
+            return value == null ? 0 : value.getByteCount();
+        }
+    };
 
     private LandscapeArt() {}
 
@@ -92,6 +103,100 @@ public final class LandscapeArt {
     public static boolean isSupported(String id) {
         return MOUNTAIN_RIDGE.equals(id) || FOREST.equals(id) || VOLCANIC_NIGHT.equals(id)
                 || DUNES.equals(id) || CLOUD_SEA.equals(id);
+    }
+
+    /** Draws a high-resolution illustrated scene, with the vector scene as a safe fallback. */
+    public static boolean drawImage(Context context, Canvas canvas, String id, RectF bounds,
+                                    int foregroundTextColor, boolean textOverlay) {
+        return drawImage(context, canvas, id, bounds, foregroundTextColor, textOverlay, 255);
+    }
+
+    static boolean drawImage(Context context, Canvas canvas, String id, RectF bounds,
+                             int foregroundTextColor, boolean textOverlay, int opacity) {
+        if (context == null || canvas == null || bounds == null || bounds.isEmpty() || !isSupported(id)) return false;
+        int resource = resourceFor(id);
+        if (resource == 0) return false;
+        Bitmap bitmap = sceneBitmap(context, id, resource, bounds.width());
+        if (bitmap == null || bitmap.isRecycled()) return false;
+
+        float targetAspect = bounds.width() / bounds.height();
+        int sourceWidth = bitmap.getWidth(), sourceHeight = bitmap.getHeight();
+        float sourceAspect = (float) sourceWidth / sourceHeight;
+        Rect source = new Rect(0, 0, sourceWidth, sourceHeight);
+        if (sourceAspect > targetAspect) {
+            int cropWidth = Math.max(1, Math.round(sourceHeight * targetAspect));
+            float focusX = focusX(id);
+            int left = Math.max(0, Math.min(sourceWidth - cropWidth,
+                    Math.round(sourceWidth * focusX - cropWidth * .5f)));
+            source.set(left, 0, left + cropWidth, sourceHeight);
+        } else {
+            int cropHeight = Math.max(1, Math.round(sourceWidth / targetAspect));
+            float focusY = focusY(id);
+            int top = Math.max(0, Math.min(sourceHeight - cropHeight,
+                    Math.round(sourceHeight * focusY - cropHeight * .5f)));
+            source.set(0, top, sourceWidth, top + cropHeight);
+        }
+
+        int save = canvas.save();
+        canvas.clipRect(bounds);
+        Paint imagePaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG | Paint.DITHER_FLAG);
+        imagePaint.setAlpha(opacity);
+        canvas.drawBitmap(bitmap, source, bounds, imagePaint);
+        if (textOverlay) drawTextOverlay(canvas, bounds, foregroundTextColor);
+        canvas.restoreToCount(save);
+        return true;
+    }
+
+    private static Bitmap sceneBitmap(Context context, String id, int resource, float targetWidth) {
+        BitmapFactory.Options bounds = new BitmapFactory.Options();
+        bounds.inJustDecodeBounds = true;
+        BitmapFactory.decodeResource(context.getResources(), resource, bounds);
+        int sample = 1;
+        while (bounds.outWidth / (sample * 2) >= targetWidth && sample < 8) sample *= 2;
+        String key = id + "@" + sample;
+        Bitmap cached = BITMAP_CACHE.get(key);
+        if (cached != null && !cached.isRecycled()) return cached;
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inSampleSize = sample;
+        options.inScaled = false;
+        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        Bitmap decoded = BitmapFactory.decodeResource(context.getResources(), resource, options);
+        if (decoded != null) BITMAP_CACHE.put(key, decoded);
+        return decoded;
+    }
+
+    private static int resourceFor(String id) {
+        if (MOUNTAIN_RIDGE.equals(id)) return R.drawable.wakeguard_landscape_mountain;
+        if (FOREST.equals(id)) return R.drawable.wakeguard_landscape_forest;
+        if (VOLCANIC_NIGHT.equals(id)) return R.drawable.wakeguard_landscape_volcano;
+        if (DUNES.equals(id)) return R.drawable.wakeguard_landscape_dunes;
+        if (CLOUD_SEA.equals(id)) return R.drawable.wakeguard_landscape_cloud_sea;
+        return 0;
+    }
+
+    private static float focusX(String id) {
+        if (VOLCANIC_NIGHT.equals(id)) return .57f;
+        return .5f;
+    }
+
+    private static float focusY(String id) {
+        if (CLOUD_SEA.equals(id)) return .56f;
+        if (FOREST.equals(id)) return .55f;
+        return .52f;
+    }
+
+    private static void drawTextOverlay(Canvas canvas, RectF bounds, int textColor) {
+        boolean lightText = (Color.red(textColor) * .299f + Color.green(textColor) * .587f
+                + Color.blue(textColor) * .114f) > 150f;
+        int shade = lightText ? Color.BLACK : Color.WHITE;
+        int start = Color.argb(lightText ? 112 : 100, Color.red(shade), Color.green(shade), Color.blue(shade));
+        int middle = Color.argb(lightText ? 54 : 46, Color.red(shade), Color.green(shade), Color.blue(shade));
+        int end = Color.argb(0, Color.red(shade), Color.green(shade), Color.blue(shade));
+        Paint overlay = new Paint(Paint.ANTI_ALIAS_FLAG);
+        overlay.setShader(new LinearGradient(bounds.left, bounds.top, bounds.right, bounds.top,
+                new int[]{start, middle, end}, new float[]{0f, .55f, 1f}, Shader.TileMode.CLAMP));
+        canvas.drawRect(bounds, overlay);
+        overlay.setShader(null);
     }
 
     private static final class Painter {

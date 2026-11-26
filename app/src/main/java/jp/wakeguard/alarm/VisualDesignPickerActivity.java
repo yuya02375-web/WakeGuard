@@ -3,7 +3,6 @@ package jp.wakeguard.alarm;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PathEffect;
@@ -30,17 +29,20 @@ public class VisualDesignPickerActivity extends Activity {
     private static final String STATE_SCROLL_Y = "visual_design_picker.scroll_y";
     private static final String STATE_CATEGORY_SCROLL_X = "visual_design_picker.category_scroll_x";
     private String selectedId;
+    private String appliedDesignId;
     private String selectedCategory = "all";
-    private String paletteKey;
+    private String displayedPreviewContext;
     private LinearLayout cards;
     private HorizontalScrollView categoryScroll;
     private ScrollView designScroll;
+    private AppearanceChrome.ApplyBar applyBar;
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
         Ui.prepareActivity(this);
         selectedId = state == null ? VisualDesigns.id(this)
                 : VisualDesigns.get(state.getString(STATE_SELECTED_ID, VisualDesigns.id(this))).id;
+        appliedDesignId = VisualDesigns.id(this);
         if (state != null) {
             String category = state.getString(STATE_SELECTED_CATEGORY, "all");
             for (String candidate : CATEGORIES) if (candidate.equals(category)) selectedCategory = candidate;
@@ -62,12 +64,17 @@ public class VisualDesignPickerActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
-        String current = AppThemes.key(this);
-        if (paletteKey != null && !paletteKey.equals(current)) {
+        String current = previewContextKey();
+        String appliedNow = VisualDesigns.id(this);
+        boolean designChanged = appliedDesignId != null && !appliedDesignId.equals(appliedNow);
+        boolean previewContextChanged = displayedPreviewContext != null && !displayedPreviewContext.equals(current);
+        if (designChanged || previewContextChanged) {
             int scrollY = designScroll == null ? 0 : designScroll.getScrollY();
             int categoryX = categoryScroll == null ? 0 : categoryScroll.getScrollX();
-            paletteKey = current;
-            // Rebuild previews with the new palette, keeping the unapplied design choice.
+            if (designChanged) selectedId = appliedNow;
+            appliedDesignId = appliedNow;
+            displayedPreviewContext = current;
+            Ui.prepareActivity(this);
             build();
             restoreScroll(scrollY, categoryX);
         }
@@ -78,51 +85,19 @@ public class VisualDesignPickerActivity extends Activity {
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackground(Ui.screenGradient(this));
 
-        LinearLayout header = new LinearLayout(this);
-        header.setOrientation(LinearLayout.VERTICAL);
-        header.setPadding(dp(16), dp(8), dp(16), dp(5));
-
-        LinearLayout titleRow = new LinearLayout(this);
-        titleRow.setGravity(Gravity.CENTER_VERTICAL);
-        TextView back = new TextView(this);
-        back.setText("‹"); back.setTextSize(34); back.setTextColor(Ui.TEXT);
-        back.setGravity(Gravity.CENTER); back.setContentDescription(local("戻る", "Back", "뒤로"));
-        back.setBackground(ripple(Ui.SURFACE_2, 24));
-        back.setOnClickListener(v -> finish());
-        titleRow.addView(back, new LinearLayout.LayoutParams(dp(44), dp(48)));
-
-        TextView title = new TextView(this);
-        title.setText(local("デザイン", "Design", "디자인"));
-        title.setTextSize(25); title.setTextColor(Ui.TEXT); title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        title.setPadding(dp(10), 0, dp(5), 0);
-        titleRow.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
-
-        TextView colors = new TextView(this);
-        colors.setText(local("色・モード", "Colors", "색상"));
-        colors.setTextSize(12); colors.setTextColor(Ui.ACCENT_2); colors.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        colors.setGravity(Gravity.CENTER); colors.setPadding(dp(10), dp(8), dp(10), dp(8));
-        colors.setBackground(Ui.roundStroke(Ui.SURFACE_2, Ui.BORDER, 14, this));
-        colors.setContentDescription(local("色パレットとライト・ダーク表示を選ぶ", "Open color palettes and light/dark mode", "색상 팔레트와 라이트·다크 모드 열기"));
-        colors.setOnClickListener(v -> Ui.launchNoAnimation(this, new Intent(this, ThemePickerActivity.class)));
-        titleRow.addView(colors, new LinearLayout.LayoutParams(-2, -2));
-        header.addView(titleRow);
-
-        TextView subtitle = new TextView(this);
-        subtitle.setText(local("模様・文字・カードの形を選択。色は右上から別に選べます。",
-                "Choose patterns, typography, and card shapes. Pick colors separately above.",
-                "무늬·글꼴·카드 모양을 선택하세요. 색상은 위에서 따로 고를 수 있습니다."));
-        subtitle.setTextSize(12.5f); subtitle.setTextColor(Ui.MUTED); subtitle.setLineSpacing(dp(2), 1.0f);
-        subtitle.setPadding(dp(3), dp(5), dp(3), dp(7));
-        header.addView(subtitle);
+        root.addView(AppearanceChrome.header(this, AppearanceChrome.MOTIF,
+                local("模様・文字・カードの形を選びます。色は別に選べます。",
+                        "Choose patterns, typography, and card shape. Color is selected separately.",
+                        "무늬·글꼴·카드 모양을 고릅니다. 색상은 따로 선택할 수 있습니다.")));
 
         categoryScroll = new HorizontalScrollView(this);
         categoryScroll.setHorizontalScrollBarEnabled(false);
         LinearLayout chips = new LinearLayout(this);
         chips.setOrientation(LinearLayout.HORIZONTAL);
+        chips.setPadding(dp(14), 0, dp(14), 0);
         for (String category : CATEGORIES) chips.addView(categoryChip(category));
         categoryScroll.addView(chips);
-        header.addView(categoryScroll, new LinearLayout.LayoutParams(-1, dp(45)));
-        root.addView(header, new LinearLayout.LayoutParams(-1, -2));
+        root.addView(categoryScroll, new LinearLayout.LayoutParams(-1, dp(48)));
 
         ScrollView scroll = new ScrollView(this);
         designScroll = scroll;
@@ -135,23 +110,18 @@ public class VisualDesignPickerActivity extends Activity {
         scroll.addView(content);
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
 
-        LinearLayout footer = new LinearLayout(this);
-        footer.setOrientation(LinearLayout.VERTICAL);
-        footer.setPadding(dp(16), dp(9), dp(16), dp(11));
-        footer.setBackgroundColor(Ui.SURFACE);
-        TextView apply = new TextView(this);
-        apply.setText(local("このデザインを適用", "Apply design", "디자인 적용"));
-        apply.setTextSize(15); apply.setTextColor(Ui.ON_ACCENT); apply.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        apply.setGravity(Gravity.CENTER); apply.setMinHeight(dp(50));
-        apply.setBackground(ripple(Ui.ACCENT_2, 16));
-        apply.setOnClickListener(v -> applySelection());
-        footer.addView(apply, new LinearLayout.LayoutParams(-1, -2));
-        root.addView(footer, new LinearLayout.LayoutParams(-1, -2));
+        applyBar = new AppearanceChrome.ApplyBar(this,
+                local("このデザインを適用", "Apply design", "디자인 적용"), this::applySelection);
+        root.addView(applyBar, new LinearLayout.LayoutParams(-1, dp(72)));
 
         setContentView(root);
         Ui.applySystemBarInsets(this, root);
         renderDesigns();
-        paletteKey = AppThemes.key(this);
+        displayedPreviewContext = previewContextKey();
+    }
+
+    private String previewContextKey() {
+        return AppThemes.key(this) + ":" + UiProfiles.id(this);
     }
 
     private void restoreScroll(int designY, int categoryX) {
@@ -164,10 +134,14 @@ public class VisualDesignPickerActivity extends Activity {
         chip.setText(categoryLabel(category)); chip.setTextSize(12.5f); chip.setGravity(Gravity.CENTER);
         chip.setTextColor(category.equals(selectedCategory) ? Ui.ON_ACCENT : Ui.TEXT);
         chip.setTypeface(Typeface.DEFAULT, category.equals(selectedCategory) ? Typeface.BOLD : Typeface.NORMAL);
-        chip.setPadding(dp(13), dp(6), dp(13), dp(6));
-        chip.setBackground(ripple(category.equals(selectedCategory) ? Ui.ACCENT_2 : Ui.SURFACE_2, 18));
+        chip.setPadding(dp(14), dp(6), dp(14), dp(6));
+        chip.setBackground(category.equals(selectedCategory) ? ripple(Ui.ACCENT_2, 18)
+                : Ui.roundStroke(Ui.SURFACE_2, Ui.BORDER, 18, this));
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-2, dp(36));
-        params.setMargins(dp(2), dp(3), dp(6), dp(3)); chip.setLayoutParams(params);
+        params.setMargins(0, dp(4), dp(7), dp(4)); chip.setLayoutParams(params);
+        chip.setSelected(category.equals(selectedCategory));
+        chip.setContentDescription(categoryLabel(category)
+                + (category.equals(selectedCategory) ? ", " + local("選択中", "Selected", "선택됨") : ""));
         chip.setOnClickListener(v -> {
             if (category.equals(selectedCategory)) return;
             int categoryX = categoryScroll == null ? 0 : categoryScroll.getScrollX();
@@ -183,69 +157,125 @@ public class VisualDesignPickerActivity extends Activity {
         List<VisualDesigns.Design> shown = new ArrayList<>();
         for (VisualDesigns.Design design : VisualDesigns.all())
             if ("all".equals(selectedCategory) || selectedCategory.equals(design.categoryId())) shown.add(design);
-        for (int i = 0; i < shown.size(); i += 2) {
-            LinearLayout row = new LinearLayout(this);
-            row.setOrientation(LinearLayout.HORIZONTAL);
-            LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(-1, -2);
-            rowParams.bottomMargin = dp(8); cards.addView(row, rowParams);
-            addDesignCard(row, shown.get(i), true);
-            if (i + 1 < shown.size()) addDesignCard(row, shown.get(i + 1), false);
-            else row.addView(new View(this), new LinearLayout.LayoutParams(0, 1, 1));
-        }
+        VisualDesigns.Design selectedDesign = VisualDesigns.get(selectedId);
+        if (applyBar != null && selectedDesign != null) applyBar.setSelection(selectedDesign.label(this));
+        TextView count = new TextView(this);
+        count.setText(local(shown.size() + " 種類", shown.size() + " styles", shown.size() + "개 스타일"));
+        count.setTextSize(11.5f); count.setTextColor(Ui.MUTED);
+        count.setPadding(dp(3), 0, 0, dp(8));
+        cards.addView(count);
+        AppThemes.Theme theme = AppThemes.current(this);
+        for (VisualDesigns.Design design : shown) addDesignCard(design, theme);
     }
 
-    private void addDesignCard(LinearLayout row, VisualDesigns.Design design, boolean first) {
+    private void addDesignCard(VisualDesigns.Design design, AppThemes.Theme theme) {
         boolean selected = design.id.equals(selectedId);
+        float corner = Math.max(.65f, Math.min(1.25f, design.cornerScale));
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(dp(9), dp(9), dp(9), dp(9));
-        card.setBackground(Ui.roundStroke(selected ? Ui.NAV_HIGHLIGHT : Ui.SURFACE,
-                selected ? Ui.ACCENT_2 : Ui.BORDER, 15 * design.cornerScale, this));
+        card.setPadding(dp(14), dp(13), dp(14), dp(12));
+        card.setBackground(Ui.roundStroke(selected ? Ui.SURFACE_2 : Ui.SURFACE,
+                selected ? Ui.ACCENT_2 : Ui.BORDER, 18, this));
+        card.setForeground(Ui.rippleForeground(this, 18));
         if ("raised".equals(design.cardTreatment) && android.os.Build.VERSION.SDK_INT >= 21)
             card.setElevation(dp(3));
-        card.setFocusable(true); card.setClickable(true);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, -2, 1);
-        if (first) params.rightMargin = dp(4); else params.leftMargin = dp(4);
-        row.addView(card, params);
+        card.setFocusable(true);
+        card.setClickable(true);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
+        params.bottomMargin = dp(12);
+        cards.addView(card, params);
 
-        LinearLayout sampleRow = new LinearLayout(this);
-        sampleRow.setGravity(Gravity.CENTER_VERTICAL);
-        PatternSample pattern = new PatternSample(design.pattern);
-        sampleRow.addView(pattern, new LinearLayout.LayoutParams(0, dp(46), 1));
-        TreatmentSample treatment = new TreatmentSample(design.cardTreatment, design.cornerScale);
-        LinearLayout.LayoutParams treatmentParams = new LinearLayout.LayoutParams(dp(35), dp(30));
-        treatmentParams.leftMargin = dp(7); sampleRow.addView(treatment, treatmentParams);
-        card.addView(sampleRow);
-
-        TextView type = new TextView(this);
-        type.setText("07:30   Aa"); type.setTextSize(17); type.setTextColor(Ui.TEXT);
-        type.setTypeface(VisualDesigns.typeface(this, design, true));
-        if (android.os.Build.VERSION.SDK_INT >= 21) type.setLetterSpacing(design.letterSpacing);
-        type.setPadding(0, dp(5), 0, 0); card.addView(type);
-
+        LinearLayout titleRow = new LinearLayout(this);
+        titleRow.setGravity(Gravity.CENTER_VERTICAL);
         TextView name = new TextView(this);
-        name.setText(design.label(this)); name.setTextSize(13); name.setTextColor(Ui.TEXT);
+        name.setText(design.label(this));
+        name.setTextSize(17);
+        name.setTextColor(Ui.TEXT);
         name.setTypeface(VisualDesigns.typeface(this, design, true));
-        name.setMaxLines(1); name.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        name.setPadding(0, dp(4), 0, 0); card.addView(name);
+        name.setMaxLines(1);
+        name.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        titleRow.addView(name, new LinearLayout.LayoutParams(0, -2, 1));
+        boolean active = design.id.equals(VisualDesigns.id(this));
+        if (selected || active) {
+            TextView badge = new TextView(this);
+            badge.setText(selected && active ? local("使用中", "In use", "사용 중")
+                    : selected ? local("選択中", "Selected", "선택됨")
+                    : local("使用中", "In use", "사용 중"));
+            badge.setTextSize(10);
+            badge.setTextColor(Ui.ON_ACCENT);
+            badge.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+            badge.setGravity(Gravity.CENTER);
+            badge.setPadding(dp(9), dp(5), dp(9), dp(5));
+            badge.setBackground(Ui.round(Ui.ACCENT_2, 11, this));
+            titleRow.addView(badge, new LinearLayout.LayoutParams(-2, -2));
+        }
+        card.addView(titleRow);
 
         TextView description = new TextView(this);
-        description.setText(design.description(this)); description.setTextSize(10.5f);
-        description.setTextColor(Ui.MUTED); description.setMaxLines(3);
+        description.setText(design.description(this));
+        description.setTextSize(12.5f);
+        description.setTextColor(Ui.MUTED);
+        description.setMaxLines(2);
         description.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        description.setPadding(0, dp(3), 0, 0); card.addView(description);
+        description.setPadding(0, dp(4), 0, 0);
+        card.addView(description);
 
-        TextView treatmentLabel = new TextView(this);
-        treatmentLabel.setText(categoryLabel(design.categoryId()) + " · " + treatmentLabel(design.cardTreatment));
-        treatmentLabel.setTextSize(9.5f); treatmentLabel.setTextColor(Ui.ACCENT_2);
-        treatmentLabel.setSingleLine(true); treatmentLabel.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        treatmentLabel.setPadding(0, dp(5), 0, 0); card.addView(treatmentLabel);
+        LinearLayout sample = new LinearLayout(this);
+        sample.setOrientation(LinearLayout.VERTICAL);
+        sample.setGravity(Gravity.CENTER);
+        sample.setPadding(dp(8), dp(7), dp(8), dp(7));
+        GradientDrawable sampleBackground = new GradientDrawable();
+        sampleBackground.setColor(Ui.BG_2);
+        sampleBackground.setCornerRadius(dp(13 * corner));
+        sample.setBackground(sampleBackground);
+        TextView sampleLabel = Ui.text(this, local("模様見本", "Pattern sample", "무늬 견본"), 11, Ui.MUTED);
+        sample.addView(sampleLabel, new LinearLayout.LayoutParams(-1, -2));
+        View pattern = new View(this);
+        pattern.setBackground(Ui.artworkPreview(this, design, theme));
+        pattern.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        LinearLayout.LayoutParams patternParams = new LinearLayout.LayoutParams(-1, dp(140));
+        patternParams.topMargin = dp(5);
+        sample.addView(pattern, patternParams);
+
+        LinearLayout typeRow = new LinearLayout(this);
+        typeRow.setGravity(Gravity.CENTER_VERTICAL);
+        TextView type = new TextView(this);
+        type.setText("07:30   Aa");
+        type.setTextSize(14);
+        type.setTextColor(Ui.TEXT);
+        type.setTypeface(VisualDesigns.typeface(this, design, true));
+        if (android.os.Build.VERSION.SDK_INT >= 21) type.setLetterSpacing(design.letterSpacing);
+        typeRow.addView(type, new LinearLayout.LayoutParams(0, -2, 1));
+        TreatmentSample treatment = new TreatmentSample(design.cardTreatment, design.cornerScale);
+        LinearLayout.LayoutParams treatmentParams = new LinearLayout.LayoutParams(dp(30), dp(22));
+        treatmentParams.leftMargin = dp(6);
+        typeRow.addView(treatment, treatmentParams);
+        LinearLayout.LayoutParams typeRowParams = new LinearLayout.LayoutParams(-1, -2);
+        typeRowParams.topMargin = dp(5);
+        sample.addView(typeRow, typeRowParams);
+
+        LinearLayout.LayoutParams sampleParams = new LinearLayout.LayoutParams(-1, -2);
+        sampleParams.topMargin = dp(10);
+        card.addView(sample, sampleParams);
+
+        TextView category = new TextView(this);
+        category.setText(categoryLabel(design.categoryId()) + "  ·  " + fontLabel(design.fontFamily)
+                + "  ·  " + treatmentLabel(design.cardTreatment));
+        category.setTextSize(11);
+        category.setTextColor(Ui.MUTED);
+        category.setPadding(0, dp(8), 0, 0);
+        card.addView(category);
 
         card.setContentDescription(design.label(this) + ", " + design.description(this)
+                + ", " + fontLabel(design.fontFamily) + ", " + treatmentLabel(design.cardTreatment)
                 + (selected ? ", " + local("選択中", "Selected", "선택됨") : ""));
-        card.setOnClickListener(v -> { selectedId = design.id; renderDesigns(); });
+        card.setOnClickListener(v -> {
+            int scrollY = designScroll == null ? 0 : designScroll.getScrollY();
+            selectedId = design.id;
+            renderDesigns();
+            if (designScroll != null) designScroll.post(() -> designScroll.scrollTo(0, scrollY));
+        });
     }
-
     private void applySelection() {
         VisualDesigns.select(this, selectedId);
         setResult(Activity.RESULT_OK, new Intent().putExtra("visual_design_id", selectedId));
@@ -274,6 +304,14 @@ public class VisualDesignPickerActivity extends Activity {
         }
     }
 
+    private String fontLabel(String family) {
+        switch (family) {
+            case "serif": return local("セリフ体", "Serif", "세리프");
+            case "mono": return local("等幅", "Monospaced", "고정폭");
+            case "condensed": return local("コンデンス体", "Condensed", "압축형");
+            default: return local("サンセリフ", "Sans serif", "산세리프");
+        }
+    }
     private String treatmentLabel(String treatment) {
         switch (treatment) {
             case "outline": return local("輪郭", "Outline", "윤곽선");
@@ -288,35 +326,6 @@ public class VisualDesignPickerActivity extends Activity {
     private String local(String ja, String en, String ko) {
         String language = I18n.language(this);
         return "en".equals(language) ? en : "ko".equals(language) ? ko : ja;
-    }
-
-    private final class PatternSample extends View {
-        private final String pattern;
-        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        PatternSample(String pattern) { super(VisualDesignPickerActivity.this); this.pattern = pattern; }
-        @Override protected void onDraw(Canvas canvas) {
-            super.onDraw(canvas);
-            RectF bounds = new RectF(0, 0, getWidth(), getHeight());
-            float radius = dp(7);
-            paint.setStyle(Paint.Style.FILL); paint.setColor(Ui.SURFACE_2);
-            canvas.drawRoundRect(bounds, radius, radius, paint);
-            Path clip = new Path(); clip.addRoundRect(bounds, radius, radius, Path.Direction.CW);
-            int save = canvas.save(); canvas.clipPath(clip);
-            paint.setStyle(Paint.Style.STROKE); paint.setStrokeWidth(dp(0.8f));
-            paint.setColor(VisualDesigns.withAlpha(Ui.ACCENT_2, 48));
-            String scene = VisualDesigns.landscapeSceneId(pattern);
-            if (scene == null) {
-                VisualDesigns.drawPattern(canvas, pattern, bounds, paint,
-                        getResources().getDisplayMetrics().density);
-            } else {
-                AppThemes.Theme theme = AppThemes.current(VisualDesignPickerActivity.this);
-                LandscapeArt.draw(canvas, scene, bounds,
-                        LandscapeArt.paletteFromTheme(theme.heroStart, theme.heroEnd, theme.surface,
-                                theme.accent, theme.accent2, theme.text, theme.heroText),
-                        getResources().getDisplayMetrics().density);
-            }
-            canvas.restoreToCount(save);
-        }
     }
 
     private final class TreatmentSample extends View {

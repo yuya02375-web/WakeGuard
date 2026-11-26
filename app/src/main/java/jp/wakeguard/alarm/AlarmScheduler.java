@@ -15,6 +15,7 @@ public final class AlarmScheduler {
     private static final int RECOVERY_REQUEST = 299999;
     public static final long PRIMARY_ALARM_ID = 1L;
     public static final String EXTRA_EXPECTED_AT = "expectedAt";
+    static final String ACTION_SHOW_RUNNING_ALARM = "jp.wakeguard.alarm.SHOW_RUNNING_ALARM";
     private static final long FIRE_GRACE_MS = 10L * 60L * 1000L;
 
     private static int code(long alarmId, LocalDate d, int kind) {
@@ -49,7 +50,7 @@ public final class AlarmScheduler {
 
     private static PendingIntent showAlarmUiPi(Context c, long alarmId, LocalDate date, long expectedAt, int flags) {
         Intent i = new Intent(c, AlarmActivity.class)
-                .setAction("jp.wakeguard.alarm.SHOW_RUNNING_ALARM")
+                .setAction(ACTION_SHOW_RUNNING_ALARM)
                 .setData(data(alarmId,date,"show"))
                 .putExtra(AlarmService.EXTRA_EPOCH_DAY, date.toEpochDay())
                 .putExtra(AlarmActivity.EXTRA_ALARM_ID, alarmId)
@@ -98,7 +99,7 @@ public final class AlarmScheduler {
             Intent fireI=new Intent(c,AlarmActivity.class).setAction(AlarmActivity.ACTION_SCHEDULED_FIRE)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
             PendingIntent fire=activityPi(c,old,fireI,PendingIntent.FLAG_NO_CREATE); if(fire!=null)am.cancel(fire);
-            Intent showI=new Intent(c,AlarmActivity.class).setAction("jp.wakeguard.alarm.SHOW_RUNNING_ALARM")
+            Intent showI=new Intent(c,AlarmActivity.class).setAction(ACTION_SHOW_RUNNING_ALARM)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NO_USER_ACTION);
             PendingIntent show=activityPi(c,old+400000,showI,PendingIntent.FLAG_NO_CREATE); if(show!=null)am.cancel(show);
             Intent backupI=new Intent(c,AlarmReceiver.class).setAction(AlarmReceiver.ACTION_BACKUP_FIRE);
@@ -197,22 +198,75 @@ public final class AlarmScheduler {
         }catch(Throwable ignored){return false;}
     }
 
+    // Keep already scheduled alarms around the current minute while the system
+    // delivers their intents. The delivery check still rejects edited occurrences.
+    private static boolean isInFlight(Context c, long id, LocalDate date, LocalDate today, long now) {
+        if (!date.equals(today) && !date.equals(today.minusDays(1))) return false;
+        long at = configuredOccurrenceAt(c,id,date);
+        return at > 0 && now - FIRE_GRACE_MS <= at && at <= now + 2000L;
+    }
+
+    private static void cancelForRebuild(Context c, AlarmManager manager, long id, LocalDate today, long now) {
+        for (int i=-2; i<=120; i++) {
+            LocalDate date = today.plusDays(i);
+            if (!isInFlight(c,id,date,today,now)) cancelPair(c,manager,id,date);
+        }
+    }
+
     public static void reschedule(Context c) {
         try {
-            AlarmManager am=c.getSystemService(AlarmManager.class); if(am==null||!canScheduleExact(c))return;
-            ZoneId zone=ZoneId.systemDefault(); LocalDate today=LocalDate.now(zone); Instant now=Instant.now();
-            cancelLegacyPrimary(c,am,today);
-            // New identities can be cancelled deterministically. This also clears old times after editing.
-            for(int i=-2;i<=120;i++) cancelPair(c,am,PRIMARY_ALARM_ID,today.plusDays(i));
-            for(long id:AlarmStore.knownIds(c)) for(int i=-2;i<=120;i++) cancelPair(c,am,id,today.plusDays(i));
-
-            if(Prefs.primaryConfigured(c)) scheduleSpec(c,am,PRIMARY_ALARM_ID,Prefs.hour(c),Prefs.minute(c),Prefs.dayMask(c),Prefs.enabled(c),true,Prefs.preNotifyMin(c),0L,zone,today,now);
-            for(AlarmStore.Entry e:AlarmStore.all(c))
-                scheduleSpec(c,am,e.id,e.hour,e.minute,e.dayMask,e.enabled,false,e.preNotifyMin,e.fixedAt,zone,today,now);
-        } catch(Throwable t) {
-            try{Prefs.lastAlarmError(c,"AlarmScheduler: "+t.getClass().getSimpleName()+(t.getMessage()==null?"":": "+t.getMessage()));}catch(Throwable ignored){}
+            AlarmManager manager=c.getSystemService(AlarmManager.class);
+            if(manager!=null&&canScheduleExact(c)) {
+                ZoneId zone=ZoneId.systemDefault();
+                LocalDate today=LocalDate.now(zone);
+                Instant now=Instant.now();
+                cancelLegacyPrimary(c,manager,today);
+                cancelForRebuild(c,manager,PRIMARY_ALARM_ID,today,now.toEpochMilli());
+                for(long id:AlarmStore.knownIds(c)) cancelForRebuild(c,manager,id,today,now.toEpochMilli());
+                if(Prefs.primaryConfigured(c)) scheduleAlarm(c,manager,PRIMARY_ALARM_ID,zone,today,now);
+                for(AlarmStore.Entry e:AlarmStore.all(c)) scheduleEntry(c,manager,e,zone,today,now);
+            }
+        } catch(RuntimeException failure) {
+            Prefs.lastAlarmError(c,"AlarmScheduler: " + failure.getClass().getSimpleName());
         }
-        try{WidgetSuite.refreshAll(c);}catch(Throwable ignored){}
+        refreshWidgets(c);
+    }
+
+    static void completeRegularDelivery(Context c, long id) {
+        try {
+            if (id == PRIMARY_ALARM_ID && Prefs.dayMask(c) == 0) Prefs.enabled(c,false);
+            else AlarmStore.markFiredIfOneShot(c,id);
+            AlarmManager manager = c.getSystemService(AlarmManager.class);
+            if (manager != null && canScheduleExact(c)) {
+                ZoneId zone = ZoneId.systemDefault();
+                Instant now = Instant.now();
+                // Replenish only this alarm. Cancelling a whole schedule here
+                // can remove another alarm with the same trigger time.
+                scheduleAlarm(c,manager,id,zone,now.atZone(zone).toLocalDate(),now);
+            }
+        } catch (RuntimeException failure) {
+            Prefs.lastAlarmError(c,"AlarmReplenish: " + failure.getClass().getSimpleName());
+        }
+        refreshWidgets(c);
+    }
+
+    private static void scheduleAlarm(Context c, AlarmManager manager, long id, ZoneId zone, LocalDate today, Instant now) {
+        if (id == PRIMARY_ALARM_ID) {
+            if (Prefs.primaryConfigured(c)) {
+                scheduleSpec(c,manager,id,Prefs.hour(c),Prefs.minute(c),Prefs.dayMask(c),Prefs.enabled(c),true,Prefs.preNotifyMin(c),0L,zone,today,now);
+            }
+        } else {
+            AlarmStore.Entry entry = AlarmStore.find(c,id);
+            if (entry != null) scheduleEntry(c,manager,entry,zone,today,now);
+        }
+    }
+
+    private static void scheduleEntry(Context c, AlarmManager manager, AlarmStore.Entry entry, ZoneId zone, LocalDate today, Instant now) {
+        scheduleSpec(c,manager,entry.id,entry.hour,entry.minute,entry.dayMask,entry.enabled,false,entry.preNotifyMin,entry.fixedAt,zone,today,now);
+    }
+
+    private static void refreshWidgets(Context c) {
+        try { WidgetSuite.refreshAll(c); } catch (Throwable ignored) {}
     }
 
     public static void scheduleRecoveryIfActive(Context c) {

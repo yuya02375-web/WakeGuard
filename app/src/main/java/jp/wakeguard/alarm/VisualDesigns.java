@@ -18,7 +18,7 @@ import java.util.List;
 public final class VisualDesigns {
     private static final String PREF = "wake_guard";
     private static final String KEY = "app_visual_design_id";
-    private static final String DEFAULT_ID = "paper-craft";
+    private static final String DEFAULT_ID = "landscape-mountain";
 
     private VisualDesigns() {}
 
@@ -36,15 +36,15 @@ public final class VisualDesigns {
         d("origami-atlas", "paper", s("折り紙アトラス", "Origami Atlas", "종이접기 지도"), s("斜めの折り筋と細い文字で、折り紙の図解帳のように。", "Diagonal folds and fine lettering echo an illustrated origami atlas.", "대각선 접힘과 가는 글꼴로 종이접기 도감을 표현합니다."), "diagonal", "sans", "wire", 0.035f, 0.42f),
         d("field-notes", "paper", s("野帳ノート", "Field Notes", "현장 노트"), s("小さな点と余白を生かした、観察記録のノート。", "Dot-grid stationery and generous margins make a calm field notebook.", "점 격자와 넉넉한 여백을 살린 관찰 기록 노트입니다."), "dots", "mono", "outline", 0.012f, 0.52f),
         d("ink-etching", "paper", s("銅版エッチング", "Ink Etching", "동판 에칭"), s("版画の細線と引き締まった活字で、深い陰影を演出。", "Engraved-looking contour lines and compact type create print-shop depth.", "판화 같은 윤곽선과 단정한 활자로 깊은 느낌을 냅니다."), "contour", "serif", "double-border", 0.018f, 0.34f),
-        d("linen-stitch", "paper", s("リネンステッチ", "Linen Stitch", "리넨 스티치"), s("布目のような交差模様とステッチ線で、柔らかな手触りに。", "Crossed threads and stitched rules bring a soft textile character.", "실이 교차하는 무늬와 바느질선을 넣은 부드러운 직물 느낌입니다."), "stitch", "serif", "dashed", 0.028f, 0.72f),
+        d("linen-stitch", "paper", s("リネンステッチ", "Linen Stitch", "리넨 스티치"), s("布目のような交差模様とステッチ線で、柔らかな手触りに。", "Crossed threads and stitched rules bring a soft textile feel.", "실이 교차하는 무늬와 바느질선을 넣은 부드러운 직물 느낌입니다."), "stitch", "serif", "dashed", 0.028f, 0.72f),
         d("herbarium", "nature", s("植物標本室", "Herbarium", "식물 표본실"), s("植物のシルエットとスケッチ線が、静かな標本帳をつくります。", "Botanical silhouettes and sketch marks turn the screen into a quiet herbarium.", "식물 실루엣과 스케치 선이 고요한 식물 표본실을 만듭니다."), "botanical", "serif", "outline", 0.022f, 0.58f),
         d("petal-orbit", "nature", s("花びらの軌道", "Petal Orbit", "꽃잎 궤도"), s("花びらのような点模様と大きな余白で、軽やかに。", "Petal-like marks float across open space for a light, airy mood.", "꽃잎 같은 무늬가 넓은 여백에 흩어져 가벼운 분위기를 냅니다."), "botanical", "sans", "raised", 0.045f, 1.08f),
         d("moonlit-stars", "nature", s("月夜の星図", "Moonlit Star Map", "달빛 별자리"), s("夜空の点描と結び目のある線で、星図を思わせます。", "A field of stars linked by fine paths recalls a night-sky chart.", "별점과 가는 연결선으로 밤하늘의 별자리를 표현합니다."), "mosaic", "mono", "wire", 0.03f, 0.48f),
         d("aurora-contour", "nature", s("オーロラ地形", "Aurora Contours", "오로라 등고선"), s("流れる等高線とゆったりした文字が、静かな景色を描きます。", "Flowing contour paths and relaxed type suggest an illuminated landscape.", "흐르는 등고선과 여유 있는 글꼴로 빛나는 풍경을 그립니다."), "contour", "sans", "flat", 0.04f, 1.18f),
         d("ocean-current", "nature", s("海流図", "Ocean Currents", "해류 지도"), s("波の曲線と水平のリズムで、海の流れを感じるデザイン。", "Wave lines and horizontal rhythm bring the movement of ocean currents.", "파도 곡선과 수평 리듬으로 바다의 흐름을 담았습니다."), "waves", "sans", "outline", 0.018f, 0.76f),
-        d("topographic-map", "nature", s("地形図", "Topographic Map", "지형도"), s("重なる等高線が、山道の地図のような表情をつくります。", "Nested contour paths lend the interface the character of a hiking map.", "겹치는 등고선이 산길 지도 같은 표정을 만듭니다."), "contour", "mono", "double-border", 0.012f, 0.38f),
+        d("topographic-map", "nature", s("地形図", "Topographic Map", "지형도"), s("重なる等高線が、山道の地図のような表情をつくります。", "Nested contour paths give the interface the feel of a hiking map.", "겹치는 등고선이 산길 지도 같은 표정을 만듭니다."), "contour", "mono", "double-border", 0.012f, 0.38f),
         d("tidepool", "nature", s("潮だまり", "Tide Pool", "바위 웅덩이"), s("大小のモザイク粒子で、波打ち際の小さな世界を表現。", "A mosaic of small forms evokes the miniature world of a tide pool.", "크고 작은 모자이크 무늬로 조수 웅덩이의 작은 세계를 표현합니다."), "mosaic", "sans", "raised", 0.055f, 1.24f),
-        d("landscape-mountain", "nature", s("山の稜線", "Mountain Layers", "산의 능선"), s("幾重もの山並みと朝霧を重ね、静かな高地の景色を描きます。", "Layered ridgelines and a veil of morning mist bring a quiet alpine horizon.", "겹겹의 산 능선과 아침 안개로 고요한 산악 풍경을 그립니다."), "landscape-mountain", "serif", "outline", 0.025f, 0.5f),
+        d("landscape-mountain", "nature", s("山の稜線", "Mountain Layers", "산의 능선"), s("幾重もの山並みと朝霧を重ね、静かな高地の景色を描きます。", "Layered ridgelines and a veil of morning mist bring a quiet alpine horizon.", "겹겹의 산 능선과 아침 안개로 고요한 산악 풍경을 그립니다."), "landscape-mountain", "serif", "outline", 0.025f, 0.96f),
         d("landscape-forest", "nature", s("森の天蓋", "Forest Canopy", "숲의 캐노피"), s("樹冠のシルエットと木漏れ日で、深い森の奥行きを表現。", "Overlapping treetops and scattered sunlight create the depth of an old forest.", "겹친 나무 꼭대기와 햇살 무늬로 오래된 숲의 깊이를 담았습니다."), "landscape-forest", "sans", "raised", 0.035f, 0.9f),
         d("landscape-volcano", "nature", s("火山の夜明け", "Volcanic Dawn", "화산의 새벽"), s("火口の輪郭と流れる溶岩が、夜明け前の火山を浮かび上がらせます。", "A crater silhouette and branching lava paths capture a volcano before sunrise.", "분화구의 실루엣과 갈라지는 용암의 흐름으로 동트기 전 화산을 담았습니다."), "landscape-volcano", "condensed", "double-border", 0.04f, 0.28f),
         d("landscape-dunes", "nature", s("砂丘の稜線", "Dune Lines", "사구의 능선"), s("風が刻む砂丘の曲線と長い影で、広い砂漠を描きます。", "Wind-shaped dune curves and long shadows open onto a vast desert.", "바람이 빚은 모래 언덕의 곡선과 긴 그림자로 넓은 사막을 그립니다."), "landscape-dunes", "serif", "flat", 0.02f, 1.12f),
@@ -108,9 +108,12 @@ public final class VisualDesigns {
     }
 
     /** Uniform motif ink on pages, heroes and samples, in both light and dark mode. */
-    public static final int PATTERN_ALPHA = 0x24;
+    public static final int PATTERN_ALPHA = 0x42;
 
-    public static int patternColor(int accent) { return withAlpha(accent, PATTERN_ALPHA); }
+    public static int patternColor(int accent) {
+        int sourceAlpha=(accent>>>24)&0xFF;
+        return withAlpha(accent,Math.min(sourceAlpha,PATTERN_ALPHA));
+    }
 
     /** Density is pixels per dp in the caller's canvas, including any preview scale. */
     public static void drawPattern(Canvas canvas, String pattern, RectF bounds, int accent, float density) {
@@ -119,14 +122,29 @@ public final class VisualDesigns {
         drawPattern(canvas, pattern, bounds, ink, density);
     }
 
+    public static void drawPattern(Canvas canvas, String pattern, String designId,
+                                   RectF bounds, Paint source, float density) {
+        drawPattern(null, canvas, pattern, designId, bounds, source, density, true);
+    }
+
+    public static void drawPattern(Context context, Canvas canvas, String pattern, String designId,
+                                   RectF bounds, Paint source, float density) {
+        drawPattern(context, canvas, pattern, designId, bounds, source, density, true);
+    }
+
     /**
      * The single motif renderer. Source supplies the palette's ACCENT RGB only;
      * ink alpha and geometry are fixed here so a sample cannot exaggerate a motif.
      * Does not read Ui state, so preset snapshots remain independent of live settings.
      */
     public static void drawPattern(Canvas canvas, String pattern, RectF bounds, Paint source, float density) {
+        drawPattern(null, canvas, pattern, null, bounds, source, density, false);
+    }
+
+    private static void drawPattern(Context context, Canvas canvas, String pattern, String designId,
+                                    RectF bounds, Paint source, float density, boolean addSignature) {
         if (canvas == null || bounds == null || bounds.isEmpty() || source == null
-                || pattern == null || "none".equals(pattern)) return;
+                || pattern == null || ("none".equals(pattern) && !addSignature)) return;
         String scene = landscapeSceneId(pattern);
         if (scene != null) {
             int alpha = (source.getColor() >>> 24) & 0xFF;
@@ -136,13 +154,29 @@ public final class VisualDesigns {
                     withAlpha(Ui.TEXT, alpha), withAlpha(Ui.HERO_TEXT, alpha));
             if (LandscapeArt.draw(canvas, scene, bounds, palette, density)) return;
         }
+        boolean atlasDrawn = false;
+        if (context != null) {
+            int sourceAlpha = (source.getColor() >>> 24) & 0xFF;
+            atlasDrawn = PatternAtlas.draw(context, canvas, pattern, designId, bounds, sourceAlpha);
+        }
+        if (atlasDrawn) {
+            if (addSignature && designId != null) {
+                VisualDesignArt.draw(canvas, designId, bounds, source);
+            }
+            return;
+        }
+        if (!"none".equals(pattern)) {
         float unit = Float.isNaN(density) || Float.isInfinite(density) || density <= 0f ? 1f : density;
         float step = cellDp(pattern) * unit;
         Paint p = new Paint(source);
         p.setAntiAlias(true);
         p.setShader(null);
         p.setPathEffect(null);
-        p.setColor(patternColor(source.getColor()));
+        int sourceAlpha=(source.getColor()>>>24)&0xFF;
+        int inkColor = patternColor(source.getColor());
+        int detailColor = withAlpha(source.getColor(), Math.min(sourceAlpha,0x38));
+        int softColor = withAlpha(source.getColor(), Math.min(sourceAlpha,0x18));
+        p.setColor(inkColor);
         p.setStyle(Paint.Style.STROKE);
         p.setStrokeWidth(.75f * unit);
         p.setStrokeCap(Paint.Cap.BUTT);
@@ -150,47 +184,98 @@ public final class VisualDesigns {
         int save = canvas.save();
         canvas.clipRect(bounds);
         if ("rules".equals(pattern)) {
-            for (float y = top + step; y < bottom; y += step) canvas.drawLine(left, y, right, y, p);
+            int row = 0;
+            for (float y = top + step; y < bottom; y += step, row++) {
+                p.setColor(row % 4 == 0 ? detailColor : inkColor);
+                p.setStrokeWidth((row % 4 == 0 ? .95f : .68f) * unit);
+                canvas.drawLine(left, y, right, y, p);
+            }
+            p.setColor(softColor); p.setStrokeWidth(.7f * unit);
+            canvas.drawLine(left + step * 1.7f, top, left + step * 1.7f, bottom, p);
+            p.setColor(detailColor); p.setStyle(Paint.Style.FILL);
+            for (float y = top + step * 2; y < bottom; y += step * 4)
+                canvas.drawCircle(left + step * 1.7f, y, .8f * unit, p);
         } else if ("grid".equals(pattern)) {
-            for (float x = left + step; x < right; x += step) canvas.drawLine(x, top, x, bottom, p);
-            for (float y = top + step; y < bottom; y += step) canvas.drawLine(left, y, right, y, p);
+            int column = 0;
+            for (float x = left + step; x < right; x += step, column++) {
+                p.setColor(column % 4 == 0 ? detailColor : inkColor);
+                p.setStrokeWidth((column % 4 == 0 ? .95f : .62f) * unit);
+                canvas.drawLine(x, top, x, bottom, p);
+            }
+            int row = 0;
+            for (float y = top + step; y < bottom; y += step, row++) {
+                p.setColor(row % 4 == 0 ? detailColor : inkColor);
+                p.setStrokeWidth((row % 4 == 0 ? .95f : .62f) * unit);
+                canvas.drawLine(left, y, right, y, p);
+            }
+            p.setColor(detailColor); p.setStyle(Paint.Style.FILL);
+            for (float y = top + step * 4; y < bottom; y += step * 4)
+                for (float x = left + step * 4; x < right; x += step * 4)
+                    canvas.drawCircle(x, y, 1.25f * unit, p);
         } else if ("dots".equals(pattern)) {
             p.setStyle(Paint.Style.FILL);
-            for (float y = top + step / 2; y < bottom; y += step)
-                for (float x = left + step / 2; x < right; x += step)
-                    canvas.drawCircle(x, y, .9f * unit, p);
+            int row = 0;
+            for (float y = top + step / 2; y < bottom; y += step, row++) {
+                int column = 0;
+                for (float x = left + step / 2; x < right; x += step, column++) {
+                    boolean anchor = column % 4 == 0 && row % 4 == 0;
+                    p.setColor(anchor ? detailColor : inkColor);
+                    canvas.drawCircle(x, y, (anchor ? 1.25f : .78f) * unit, p);
+                }
+            }
         } else if ("diagonal".equals(pattern)) {
-            for (float x = left - bounds.height(); x < right; x += step)
+            int fold = 0;
+            for (float x = left - bounds.height(); x < right; x += step, fold++) {
+                p.setColor(fold % 4 == 0 ? detailColor : inkColor);
                 canvas.drawLine(x, bottom, x + bounds.height(), top, p);
+                if (fold % 4 == 0) {
+                    p.setColor(softColor);
+                    canvas.drawLine(x + 2.2f * unit, bottom, x + bounds.height() + 2.2f * unit, top, p);
+                }
+            }
         } else if ("scanline".equals(pattern)) {
             p.setStrokeWidth(.6f * unit);
-            for (float y = top + step / 2; y < bottom; y += step) canvas.drawLine(left, y, right, y, p);
-        } else if ("contour".equals(pattern)) {
-            for (float inset = 0; inset < Math.min(bounds.width(), bounds.height()) / 2; inset += step) {
-                RectF oval = new RectF(left + inset, top + inset * .6f, right - inset, bottom - inset * .6f);
-                if (!oval.isEmpty()) canvas.drawOval(oval, p);
+            int row = 0;
+            for (float y = top + step / 2; y < bottom; y += step, row++) {
+                p.setColor(row % 3 == 0 ? detailColor : inkColor);
+                canvas.drawLine(left, y, right, y, p);
+                if (row % 3 == 0) {
+                    p.setColor(softColor);
+                    canvas.drawLine(left, y + unit, right, y + unit, p);
+                }
             }
-            Path path = new Path();
-            path.moveTo(left, bounds.centerY());
-            path.cubicTo(bounds.centerX() - 12f * unit, top,
-                    bounds.centerX() + 12f * unit, bottom, right, bounds.centerY());
-            canvas.drawPath(path, p);
+        } else if ("contour".equals(pattern)) {
+            drawContourField(canvas, bounds, step, unit, p, inkColor, detailColor);
         } else if ("radial".equals(pattern)) {
-            float cx = bounds.centerX(), cy = bounds.centerY();
+            float cx = left + bounds.width() * .54f, cy = top + bounds.height() * .48f;
             float radius = (float)Math.hypot(bounds.width(), bounds.height());
+            p.setColor(inkColor);
             for (int i = 0; i < 16; i++) {
                 double angle = Math.PI * 2 * i / 16;
                 canvas.drawLine(cx, cy, cx + (float)Math.cos(angle) * radius,
                         cy + (float)Math.sin(angle) * radius, p);
             }
-            for (int i = 1; i < 4; i++) canvas.drawCircle(cx, cy, step * i, p);
+            for (int i = 1; i < 5; i++) canvas.drawCircle(cx, cy, step * i, p);
+            p.setColor(detailColor); p.setStyle(Paint.Style.FILL);
+            for (int i = 0; i < 5; i++) {
+                double angle = Math.PI * (i * .34 + .15);
+                float orbit = step * (2.2f + (i % 3));
+                canvas.drawCircle(cx + (float)Math.cos(angle) * orbit,
+                        cy + (float)Math.sin(angle) * orbit, 1.2f * unit, p);
+            }
         } else if ("halftone".equals(pattern)) {
             p.setStyle(Paint.Style.FILL);
             int row = 0;
             for (float y = top + step / 2; y < bottom; y += step, row++) {
                 int column = 0;
-                for (float x = left + step / 2; x < right; x += step, column++)
-                    canvas.drawCircle(x, y, ((column + row) % 2 == 0 ? .6f : 1.2f) * unit, p);
+                for (float x = left + step / 2; x < right; x += step, column++) {
+                    float nx = (x - left) / Math.max(1f, bounds.width());
+                    float ny = (y - top) / Math.max(1f, bounds.height());
+                    float weight = Math.max(0f, 1f - (float)Math.hypot((nx - .25f) * 1.1f, (ny - .48f) * 1.35f));
+                    p.setColor(weight > .45f ? detailColor : inkColor);
+                    float radius = (.42f + weight * 1.05f + ((column + row) % 2) * .16f) * unit;
+                    canvas.drawCircle(x, y, radius, p);
+                }
             }
         } else if ("circuit".equals(pattern)) {
             for (float y = top + step; y < bottom; y += step * 2) {
@@ -198,42 +283,72 @@ public final class VisualDesigns {
                     Path path = new Path();
                     path.moveTo(x, y); path.lineTo(x + step, y);
                     path.lineTo(x + step * 2, y - step / 2);
-                    path.lineTo(x + step * 3, y - step / 2);
+                    path.lineTo(x + step * 2.4f, y - step / 2);
+                    path.quadTo(x + step * 2.8f, y - step / 2, x + step * 2.8f, y - step * .9f);
+                    path.lineTo(x + step * 2.8f, y - step * 1.3f);
+                    p.setColor(inkColor);
                     canvas.drawPath(path, p);
-                    canvas.drawCircle(x + step * 3, y - step / 2, 1.5f * unit, p);
+                    p.setColor(detailColor); p.setStyle(Paint.Style.STROKE);
+                    canvas.drawCircle(x + step * 2.8f, y - step * 1.3f, 2.1f * unit, p);
+                    p.setStyle(Paint.Style.FILL);
+                    canvas.drawCircle(x + step * 2.8f, y - step * 1.3f, .85f * unit, p);
+                    p.setStyle(Paint.Style.STROKE);
                 }
             }
         } else if ("stitch".equals(pattern)) {
             p.setStrokeWidth(.9f * unit);
             p.setPathEffect(new android.graphics.DashPathEffect(new float[]{3f * unit, 3f * unit}, 0));
-            for (float y = top + step; y < bottom; y += step) canvas.drawLine(left, y, right, y, p);
+            int row = 0;
+            for (float y = top + step; y < bottom; y += step, row++) {
+                p.setColor(row % 2 == 0 ? detailColor : inkColor);
+                canvas.drawLine(left, y, right, y, p);
+            }
+            for (float x = left + step; x < right; x += step)
+                canvas.drawLine(x, top, x, bottom, p);
+            p.setPathEffect(null); p.setColor(softColor); p.setStrokeWidth(.55f * unit);
+            for (float y = top + step; y < bottom; y += step)
+                for (float x = left + step; x < right; x += step)
+                    canvas.drawLine(x - 1.4f * unit, y - 1.4f * unit, x + 1.4f * unit, y + 1.4f * unit, p);
         } else if ("waves".equals(pattern)) {
-            p.setStrokeWidth(.9f * unit);
-            for (float base = top + step; base < bottom + step; base += step) {
+            p.setStrokeWidth(.9f * unit); p.setStrokeCap(Paint.Cap.ROUND);
+            int row = 0;
+            for (float base = top + step; base < bottom + step; base += step, row++) {
+                p.setColor(row % 4 == 0 ? detailColor : inkColor);
                 Path path = new Path(); path.moveTo(left, base);
-                for (float x = left; x <= right + 4f * unit; x += 4f * unit)
+                for (float x = left + unit; x <= right + unit; x += unit)
                     path.lineTo(x, base + (float)Math.sin((x - left) / (8f * unit)) * 2.3f * unit);
                 canvas.drawPath(path, p);
             }
         } else if ("film".equals(pattern)) {
+            float rail = step * .42f;
+            p.setColor(detailColor); p.setStrokeWidth(.9f * unit);
+            canvas.drawLine(left, top + rail, right, top + rail, p);
+            canvas.drawLine(left, bottom - rail, right, bottom - rail, p);
+            p.setColor(inkColor); p.setStyle(Paint.Style.FILL);
             for (float x = left + step / 2; x < right; x += step) {
-                canvas.drawLine(x, top, x, bottom, p);
-                p.setStyle(Paint.Style.FILL);
-                for (float y = top + step / 2; y < bottom; y += step)
-                    canvas.drawCircle(x, y, 1.2f * unit, p);
-                p.setStyle(Paint.Style.STROKE);
+                canvas.drawRoundRect(new RectF(x - 1.45f * unit, top + .12f * step,
+                        x + 1.45f * unit, top + .30f * step), .45f * unit, .45f * unit, p);
+                canvas.drawRoundRect(new RectF(x - 1.45f * unit, bottom - .30f * step,
+                        x + 1.45f * unit, bottom - .12f * step), .45f * unit, .45f * unit, p);
+            }
+            p.setColor(softColor); p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(.65f * unit);
+            for (float x = left + step * 1.4f; x < right; x += step * 3.2f) {
+                RectF frame = new RectF(x, top + rail * 1.35f, x + step * 1.9f, bottom - rail * 1.35f);
+                canvas.drawRoundRect(frame, 1.2f * unit, 1.2f * unit, p);
             }
         } else if ("botanical".equals(pattern)) {
-            p.setStrokeWidth(.9f * unit);
-            for (float x = left + step; x < right; x += step * 2) {
+            p.setStrokeWidth(.85f * unit); p.setStrokeCap(Paint.Cap.ROUND);
+            int stemIndex = 0;
+            for (float x = left + step; x < right; x += step * 2, stemIndex++) {
+                p.setColor(stemIndex % 2 == 0 ? detailColor : inkColor);
                 Path stem = new Path();
-                stem.moveTo(x, bottom); stem.quadTo(x - step, bounds.centerY(), x, top);
+                float lean = stemIndex % 2 == 0 ? -.45f : .45f;
+                stem.moveTo(x, bottom); stem.cubicTo(x + lean * step, top + bounds.height() * .72f,
+                        x - lean * step, top + bounds.height() * .30f, x, top);
                 canvas.drawPath(stem, p);
                 for (float y = top + step; y < bottom; y += step) {
-                    RectF leaf = new RectF(x - step * .85f, y - step * .3f, x, y + step * .3f);
-                    canvas.drawOval(leaf, p);
-                    leaf.set(x, y - step * .3f, x + step * .85f, y + step * .3f);
-                    canvas.drawOval(leaf, p);
+                    float side = ((Math.round((y - top) / step) + stemIndex) % 2 == 0) ? -1f : 1f;
+                    drawLeaf(canvas, x, y, side, step, unit, p, inkColor, softColor);
                 }
             }
         } else if ("mosaic".equals(pattern)) {
@@ -245,12 +360,80 @@ public final class VisualDesigns {
                     int seed = (column * 13 + row * 7 + column * row * 3) % 11;
                     if (seed > 5) continue;
                     float radius = (1.2f + seed % 3) * unit;
-                    if (seed % 2 == 0) canvas.drawCircle(x, y, radius, p);
-                    else canvas.drawRect(x - radius, y - radius, x + radius, y + radius, p);
+                    p.setColor(seed % 3 == 0 ? detailColor : inkColor);
+                    if (seed % 4 == 0) {
+                        canvas.drawCircle(x, y, radius, p);
+                    } else if (seed % 4 == 1) {
+                        canvas.drawRoundRect(new RectF(x - radius, y - radius * .8f,
+                                x + radius, y + radius * .8f), .6f * unit, .6f * unit, p);
+                    } else {
+                        Path tile = new Path();
+                        if (seed % 2 == 0) {
+                            tile.moveTo(x, y - radius); tile.lineTo(x + radius, y);
+                            tile.lineTo(x, y + radius); tile.lineTo(x - radius, y);
+                        } else {
+                            tile.moveTo(x, y - radius); tile.lineTo(x + radius, y + radius);
+                            tile.lineTo(x - radius, y + radius);
+                        }
+                        tile.close(); canvas.drawPath(tile, p);
+                    }
                 }
             }
         }
         canvas.restoreToCount(save);
+        }
+        if (addSignature && designId != null) VisualDesignArt.draw(canvas, designId, bounds, source);
+    }
+
+    private static void drawContourField(Canvas canvas, RectF bounds, float step, float unit,
+                                         Paint paint, int inkColor, int detailColor) {
+        float[] centersX = {bounds.left + bounds.width() * .22f, bounds.left + bounds.width() * .78f};
+        float[] centersY = {bounds.top + bounds.height() * .38f, bounds.top + bounds.height() * .72f};
+        float maxRadius = Math.min(bounds.width(), bounds.height()) * .64f;
+        for (int center = 0; center < centersX.length; center++) {
+            for (int level = 1; level <= 8; level++) {
+                float radius = step * (.35f + level * .55f);
+                if (radius > maxRadius) continue;
+                float rx = radius * (center == 0 ? 1.08f : 1.32f);
+                float ry = radius * (center == 0 ? .66f : .54f);
+                Path contour = new Path();
+                for (int point = 0; point <= 72; point++) {
+                    double angle = Math.PI * 2d * point / 72d;
+                    float ripple = unit * (float)(Math.sin(angle * 3d + level * .65d) * .58d
+                            + Math.cos(angle * 5d - center * .8d) * .28d);
+                    float x = centersX[center] + (float)Math.cos(angle) * (rx + ripple);
+                    float y = centersY[center] + (float)Math.sin(angle) * (ry + ripple * .65f);
+                    if (point == 0) contour.moveTo(x, y); else contour.lineTo(x, y);
+                }
+                contour.close();
+                paint.setColor(level % 4 == 0 ? detailColor : inkColor);
+                paint.setStrokeWidth((level % 4 == 0 ? .92f : .68f) * unit);
+                canvas.drawPath(contour, paint);
+            }
+        }
+    }
+
+    private static void drawLeaf(Canvas canvas, float stemX, float stemY, float side,
+                                 float step, float unit, Paint paint, int inkColor, int softColor) {
+        float reach = step * .84f;
+        float half = step * .26f;
+        float tipX = stemX + side * reach;
+        float tipY = stemY - step * .18f;
+        Path leaf = new Path();
+        leaf.moveTo(stemX, stemY);
+        leaf.cubicTo(stemX + side * reach * .35f, stemY - half,
+                tipX - side * reach * .1f, tipY - half, tipX, tipY);
+        leaf.cubicTo(tipX - side * reach * .08f, tipY + half,
+                stemX + side * reach * .38f, stemY + half, stemX, stemY);
+        leaf.close();
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(softColor);
+        canvas.drawPath(leaf, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setColor(inkColor);
+        paint.setStrokeWidth(.72f * unit);
+        canvas.drawPath(leaf, paint);
+        canvas.drawLine(stemX, stemY, tipX, tipY, paint);
     }
 
     /** Maps catalog pattern IDs to the stable scene IDs used by the landscape renderer. */
@@ -277,7 +460,8 @@ public final class VisualDesigns {
 
     public static Drawable patternDrawable(Context context, Design design, int color) {
         float density = context.getResources().getDisplayMetrics().density;
-        return new PatternDrawable(design == null ? "none" : design.pattern, color, density);
+        return new PatternDrawable(context, design == null ? "none" : design.pattern,
+                design == null ? null : design.id, color, density);
     }
 
     public static final class Design {
@@ -309,18 +493,21 @@ public final class VisualDesigns {
     }
 
     private static final class PatternDrawable extends Drawable {
+        private final Context context;
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final String pattern;
+        private final String designId;
         private final float density;
         private int alpha = 255;
-        PatternDrawable(String pattern, int color, float density) {
-            this.pattern = pattern; this.density = density; paint.setColor(patternColor(color));
+        PatternDrawable(Context context, String pattern, String designId, int color, float density) {
+            this.context = context; this.pattern = pattern; this.designId = designId; this.density = density;
+            paint.setColor(patternColor(color));
         }
         @Override public void draw(Canvas canvas) {
             if (alpha == 0) return;
             Rect b = getBounds();
             int save = alpha == 255 ? canvas.save() : canvas.saveLayerAlpha(new RectF(b), alpha);
-            drawPattern(canvas, pattern, new RectF(b), paint, density);
+            drawPattern(context, canvas, pattern, designId, new RectF(b), paint, density, true);
             canvas.restoreToCount(save);
         }
         @Override public void setAlpha(int alpha) { this.alpha = Math.max(0, Math.min(255, alpha)); invalidateSelf(); }

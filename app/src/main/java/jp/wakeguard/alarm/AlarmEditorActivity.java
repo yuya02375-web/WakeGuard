@@ -15,20 +15,99 @@ import android.widget.*;
 import java.io.*;
 import java.time.*;
 import java.util.Locale;
+import java.util.Objects;
 
 public class AlarmEditorActivity extends Activity {
     private static final int REQ_AUDIO=81,REQ_VIDEO=82;
+    private static final String STATE_DRAFT="alarmEditorDraft";
     private static final String[] MISSION_KEYS={"NONE","STEPS","MATH","TAP","CODE","SHAKE","MEMORY","TYPE","HOLD","SWIPE","ORDER","REVERSE","RANDOM"};
+    private static final int[] DAY_PRESET_MASKS={0,31,96,127};
+    private static final String[] DAY_PRESET_LABELS={"一回だけ","平日","週末","毎日"};
     private long alarmId; private AlarmStore.Entry draft;
-    private EditText label,steps,missionCount; private Button time,sound,ringDuration,fullStopDuration,preNotify,snooze,preview,missionChange; private CheckBox[] days=new CheckBox[7];
+    private EditText label,steps,missionCount; private Button time,sound,ringDuration,fullStopDuration,preNotify,snooze,preview,missionChange; private CheckBox[] days=new CheckBox[7]; private TextView[] dayPresetViews=new TextView[4];
     private Switch enabled,ringAutoStop,fullAutoStop,snoozeEnabled; private LinearLayout snoozeIntervalRow; private boolean renderingSnooze; private SeekBar volume; private TextView volumeText,soundStatus,stepsLabel,countLabel,missionNote,daySummary,autoStopSummary,autoStopWarning;
     private LinearLayout missionSelectionPanel,stepsControl,countControl; private TextView selectedMissionTitle; private Button[] missionTiles=new Button[MISSION_KEYS.length];
     private RadioGroup vibration; private RadioButton[] vibrationChoices=new RadioButton[3]; private String selectedMission="NONE"; private MediaPlayer previewPlayer;
+    private ScrollView editorScroll;
 
     @Override protected void onCreate(Bundle b){super.onCreate(b);Ui.prepareActivity(this);alarmId=getIntent().getLongExtra("alarmId",-1L);
+        Bundle savedDraft=b==null?null:b.getBundle(STATE_DRAFT);
+        if(savedDraft!=null)alarmId=savedDraft.getLong("alarmId",alarmId);
         if(alarmId>=1000L){draft=AlarmStore.find(this,alarmId);if(draft==null){Toast.makeText(this,editorText("このアラームはすでに削除されています","This alarm has already been deleted","이 알람은 이미 삭제되었습니다"),Toast.LENGTH_LONG).show();finish();return;}}
         else draft=alarmId<0?AlarmProfiles.defaults(this):AlarmProfiles.get(this,alarmId);
-        selectedMission=AlarmStore.normalizeMission(draft.missionType);build();render();}
+        if(savedDraft!=null)restoreDraft(savedDraft);
+        selectedMission=AlarmStore.normalizeMission(draft.missionType);
+        build();
+        render();
+        if(savedDraft!=null){
+            steps.setText(savedDraft.getString("stepsInput", ""));
+            missionCount.setText(savedDraft.getString("countInput", ""));
+            if(savedDraft.getBoolean("missionPickerOpen"))toggleMissionPicker();
+            int scrollY=savedDraft.getInt("scrollY");
+            editorScroll.post(()->editorScroll.scrollTo(0,scrollY));
+        }
+    }
+
+    @Override protected void onSaveInstanceState(Bundle out){
+        super.onSaveInstanceState(out);
+        if(draft==null||label==null)return;
+        Bundle state=new Bundle();
+        state.putLong("alarmId",alarmId);
+        state.putInt("hour",draft.hour);
+        state.putInt("minute",draft.minute);
+        state.putLong("fixedAt",draft.fixedAt);
+        state.putInt("days",selectedDays());
+        state.putBoolean("enabled",enabled.isChecked());
+        state.putString("label",label.getText().toString());
+        state.putString("mission",selectedMission);
+        state.putString("stepsInput",steps.getText().toString());
+        state.putString("countInput",missionCount.getText().toString());
+        state.putInt("volume",volume.getProgress());
+        state.putString("vibration",selectedVibration());
+        state.putString("soundUri",draft.soundUri);
+        state.putString("soundName",draft.soundName);
+        state.putLong("soundBytes",draft.soundBytes);
+        state.putLong("soundDuration",draft.soundDurationMs);
+        state.putInt("ringDuration",draft.ringDurationSec);
+        state.putInt("fullStopDuration",draft.fullStopDurationSec);
+        state.putInt("preNotify",draft.preNotifyMin);
+        state.putInt("snooze",draft.snoozeMinutes);
+        state.putBoolean("missionPickerOpen",missionSelectionPanel.getVisibility()==View.VISIBLE);
+        state.putInt("scrollY",editorScroll.getScrollY());
+        out.putBundle(STATE_DRAFT,state);
+    }
+
+    private void restoreDraft(Bundle state){
+        draft.hour=state.getInt("hour",draft.hour);
+        draft.minute=state.getInt("minute",draft.minute);
+        draft.fixedAt=state.getLong("fixedAt",draft.fixedAt);
+        draft.dayMask=state.getInt("days",draft.dayMask);
+        draft.enabled=state.getBoolean("enabled",draft.enabled);
+        draft.label=state.getString("label",draft.label);
+        draft.missionType=state.getString("mission",draft.missionType);
+        draft.volume=state.getInt("volume",draft.volume);
+        draft.vibration=state.getString("vibration",draft.vibration);
+        draft.soundUri=state.getString("soundUri",draft.soundUri);
+        draft.soundName=state.getString("soundName",draft.soundName);
+        draft.soundBytes=state.getLong("soundBytes",draft.soundBytes);
+        draft.soundDurationMs=state.getLong("soundDuration",draft.soundDurationMs);
+        draft.ringDurationSec=state.getInt("ringDuration",draft.ringDurationSec);
+        draft.fullStopDurationSec=state.getInt("fullStopDuration",draft.fullStopDurationSec);
+        draft.preNotifyMin=state.getInt("preNotify",draft.preNotifyMin);
+        draft.snoozeMinutes=state.getInt("snooze",draft.snoozeMinutes);
+    }
+
+    private int selectedDays(){
+        int mask=0;
+        for(int index=0;index<days.length;index++)if(days[index].isChecked())mask|=1<<index;
+        return mask;
+    }
+
+    private String selectedVibration(){
+        if(vibrationChoices[0].isChecked())return "OFF";
+        if(vibrationChoices[2].isChecked())return "STRONG";
+        return "IRREGULAR";
+    }
 
     private void build(){
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setBackground(Ui.screenGradient(this));
@@ -37,7 +116,7 @@ public class AlarmEditorActivity extends Activity {
         TextView heading=Ui.title(this,I18n.tr(this,alarmId<0?"アラームを追加":"アラームを編集"),22);heading.setPadding(Ui.dp(this,8),0,0,0);top.addView(heading,new LinearLayout.LayoutParams(0,-2,1));
         root.addView(top);
 
-        ScrollView sv=new ScrollView(this);sv.setFillViewport(false);sv.setClipToPadding(false);LinearLayout body=new LinearLayout(this);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(Ui.dp(this,18),Ui.dp(this,10),Ui.dp(this,18),Ui.dp(this,18));sv.addView(body);root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
+        ScrollView sv=new ScrollView(this);editorScroll=sv;sv.setFillViewport(false);sv.setClipToPadding(false);LinearLayout body=new LinearLayout(this);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(Ui.dp(this,18),Ui.dp(this,10),Ui.dp(this,18),Ui.dp(this,18));sv.addView(body);root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
 
         LinearLayout timeHero=Ui.card(this);timeHero.setBackground(Ui.round(Ui.HERO_START,26,this));timeHero.setPadding(Ui.dp(this,20),Ui.dp(this,16),Ui.dp(this,20),Ui.dp(this,16));
         TextView timeHeader=Ui.sectionHeader(this,I18n.tr(this,"時刻と曜日"));timeHeader.setTextColor(Ui.HERO_TEXT);timeHero.addView(timeHeader);
@@ -55,13 +134,21 @@ public class AlarmEditorActivity extends Activity {
             day.setTextColor(Ui.TEXT);
             day.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));
             day.setOnCheckedChangeListener((v,checked)->{
-                day.setTextColor(checked?Ui.ON_ACCENT:Ui.TEXT);
+                day.setTextColor(checked?Ui.readableTextColor(Ui.ON_ACCENT,Ui.ACCENT_2):Ui.TEXT);
                 day.setBackground(checked?Ui.round(Ui.ACCENT_2,14,this):Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));
                 refreshDaySummary();
             });
             LinearLayout.LayoutParams cell=new LinearLayout.LayoutParams(0,Ui.dp(this,48),1f);
             cell.setMargins(Ui.dp(this,2),0,Ui.dp(this,2),0);dayRow.addView(day,cell);
-        }timeHero.addView(dayRow,Ui.gapTop(this,8));daySummary=Ui.text(this,I18n.tr(this,"曜日を選ばなければ1回だけ鳴ります"),12,Ui.HERO_TEXT);timeHero.addView(daySummary,Ui.gapTop(this,4));body.addView(timeHero,Ui.cardParams(this));
+        }timeHero.addView(dayRow,Ui.gapTop(this,8));
+        HorizontalScrollView presetScroll=new HorizontalScrollView(this);presetScroll.setHorizontalScrollBarEnabled(false);
+        LinearLayout presetRow=new LinearLayout(this);presetRow.setOrientation(LinearLayout.HORIZONTAL);
+        for(int i=0;i<DAY_PRESET_LABELS.length;i++){
+            final int mask=DAY_PRESET_MASKS[i];TextView preset=Ui.text(this,DAY_PRESET_LABELS[i],12,Ui.TEXT);preset.setGravity(Gravity.CENTER);preset.setSingleLine(true);preset.setMinHeight(Ui.dp(this,48));preset.setPadding(Ui.dp(this,12),0,Ui.dp(this,12),0);preset.setClickable(true);preset.setFocusable(true);preset.setContentDescription(I18n.tr(this,DAY_PRESET_LABELS[i]));preset.setOnClickListener(v->applyDayPreset(mask));dayPresetViews[i]=preset;
+            LinearLayout.LayoutParams presetLp=new LinearLayout.LayoutParams(-2,Ui.dp(this,48));presetLp.setMargins(0,0,Ui.dp(this,6),0);presetRow.addView(preset,presetLp);
+        }
+        presetScroll.addView(presetRow);timeHero.addView(presetScroll,Ui.gapTop(this,7));
+        daySummary=Ui.text(this,I18n.tr(this,"曜日を選ばなければ1回だけ鳴ります"),12,Ui.HERO_TEXT);timeHero.addView(daySummary,Ui.gapTop(this,4));body.addView(timeHero,Ui.cardParams(this));updateDayPresetStyles();
 
         LinearLayout nameCard=Ui.card(this);nameCard.addView(Ui.sectionHeader(this,I18n.tr(this,"名前")));label=input(I18n.tr(this,"学校、休日など"),InputType.TYPE_CLASS_TEXT);nameCard.addView(label,Ui.gapTop(this,4));body.addView(nameCard,Ui.cardParams(this));
 
@@ -111,8 +198,8 @@ public class AlarmEditorActivity extends Activity {
         stopCard.addView(Ui.text(this,I18n.tr(this,"オンにすると指定時間後に音・振動・ミッション画面を含む現在のアラームをすべて終了します。次回以降の予約は消えません。"),12,Ui.MUTED),Ui.gapTop(this,0));body.addView(stopCard,Ui.cardParams(this));
 
         LinearLayout actionCard=Ui.card(this);
-        Button test=Ui.ghostButton(this,I18n.tr(this,"このアラームをテスト"));test.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);test.setOnClickListener(v->{AlarmStore.Entry saved=saveDraft(false);if(saved==null)return;Intent s=new Intent(this,AlarmService.class).setAction(AlarmService.ACTION_FIRE_TEST).putExtra(AlarmService.EXTRA_ALARM_ID,saved.id);try{if(Build.VERSION.SDK_INT>=26)startForegroundService(s);else startService(s);}catch(Throwable t){Toast.makeText(this,I18n.tr(this,"テストを開始できません"),Toast.LENGTH_LONG).show();}});actionCard.addView(test);
-        if(alarmId>=1000){Button del=Ui.ghostButton(this,I18n.tr(this,"アラームを削除"));del.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);del.setTextColor(Ui.DANGER);del.setOnClickListener(v->new AlertDialog.Builder(this).setTitle(I18n.tr(this,"アラームを削除")).setMessage(I18n.tr(this,"このアラームだけ削除します。")).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"削除"),(d,w)->{AlarmScheduler.cancelExtraAlarm(this,alarmId);AlarmProfiles.delete(this,alarmId);AlarmScheduler.reschedule(this);finish();}).show());actionCard.addView(del,Ui.gapTop(this,4));}body.addView(actionCard,Ui.cardParams(this));
+        Button test=Ui.ghostButton(this,I18n.tr(this,"このアラームをテスト"));test.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);test.setOnClickListener(v->showAlarmTest());actionCard.addView(test);
+        if(alarmId>=1000){Button del=Ui.ghostButton(this,I18n.tr(this,"アラームを削除"));del.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);del.setTextColor(Ui.DANGER);del.setOnClickListener(v->Ui.dialogBuilder(this).setTitle(I18n.tr(this,"アラームを削除")).setMessage(I18n.tr(this,"このアラームだけ削除します。")).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"削除"),(d,w)->{AlarmScheduler.cancelExtraAlarm(this,alarmId);AlarmProfiles.delete(this,alarmId);AlarmScheduler.reschedule(this);finish();}).show());actionCard.addView(del,Ui.gapTop(this,4));}body.addView(actionCard,Ui.cardParams(this));
         LinearLayout saveBar=new LinearLayout(this);saveBar.setOrientation(LinearLayout.VERTICAL);saveBar.setBackgroundColor(Ui.BG);saveBar.setPadding(0,0,0,Ui.dp(this,10));saveBar.addView(Ui.divider(this));
         View saveGap=new View(this);saveBar.addView(saveGap,new LinearLayout.LayoutParams(-1,Ui.dp(this,8)));
         Button save=Ui.button(this,I18n.tr(this,"保存"),true);save.setMinHeight(Ui.dp(this,54));save.setOnClickListener(v->{if(saveDraft(true)!=null)finish();});LinearLayout.LayoutParams saveLp=new LinearLayout.LayoutParams(-1,Ui.dp(this,54));saveLp.setMargins(Ui.dp(this,18),0,Ui.dp(this,18),0);saveBar.addView(save,saveLp);root.addView(saveBar,new LinearLayout.LayoutParams(-1,-2));
@@ -125,6 +212,27 @@ public class AlarmEditorActivity extends Activity {
         StringBuilder selected=new StringBuilder();String[]labels={"月","火","水","木","金","土","日"};
         for(int i=0;i<days.length;i++)if(days[i]!=null&&days[i].isChecked()){if(selected.length()>0)selected.append("  ");selected.append(I18n.tr(this,labels[i]));}
         daySummary.setText(selected.length()==0?I18n.tr(this,"曜日を選ばなければ1回だけ鳴ります"):selected.toString());
+        updateDayPresetStyles();
+    }
+
+    private void applyDayPreset(int mask){
+        for(int i=0;i<days.length;i++)if(days[i]!=null)days[i].setChecked((mask&(1<<i))!=0);
+        refreshDaySummary();
+    }
+
+    private int currentDayMask(){
+        int mask=0;for(int i=0;i<days.length;i++)if(days[i]!=null&&days[i].isChecked())mask|=1<<i;return mask;
+    }
+
+    private void updateDayPresetStyles(){
+        if(dayPresetViews==null)return;int current=currentDayMask();
+        for(int i=0;i<dayPresetViews.length;i++){
+            TextView preset=dayPresetViews[i];if(preset==null)continue;boolean selected=current==DAY_PRESET_MASKS[i];
+            int fill=selected?Ui.ACCENT_2:Ui.SURFACE_2;int ink=selected?Ui.readableTextColor(Ui.ON_ACCENT,fill):Ui.TEXT;
+            preset.setTextColor(ink);android.graphics.drawable.Drawable shape=selected?Ui.round(fill,14,this):Ui.roundStroke(fill,Ui.BORDER,14,this);
+            preset.setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(Ui.withAlpha(Ui.TEXT,0x1A)),shape,Ui.round(Ui.TEXT,14,this)));
+            preset.setSelected(selected);
+        }
     }
 
     private void toggleMissionPicker(){boolean show=missionSelectionPanel.getVisibility()!=View.VISIBLE;missionSelectionPanel.setVisibility(show?View.VISIBLE:View.GONE);missionChange.setText((show?editorText("選択を閉じる","Close selection","선택 닫기"):I18n.tr(this,"ミッションを選択"))+"  "+(show?"⌃":"›"));}
@@ -168,7 +276,7 @@ public class AlarmEditorActivity extends Activity {
         String language=I18n.language(this);return "ko".equals(language)?korean:"en".equals(language)?english:japanese;
     }
 
-    private EditText input(String hint,int type){EditText e=new EditText(this);e.setHint(I18n.tr(this,hint));e.setHintTextColor(Ui.MUTED_2);e.setTextColor(Ui.TEXT);e.setTextSize(17);e.setInputType(type);e.setSingleLine(true);e.setMinHeight(Ui.dp(this,54));e.setPadding(Ui.dp(this,14),Ui.dp(this,9),Ui.dp(this,14),Ui.dp(this,9));e.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));return e;}
+    private EditText input(String hint,int type){EditText e=new EditText(this);e.setHint(I18n.tr(this,hint));e.setTextSize(17);e.setInputType(type);e.setSingleLine(true);e.setMinHeight(Ui.dp(this,54));e.setPadding(Ui.dp(this,14),Ui.dp(this,9),Ui.dp(this,14),Ui.dp(this,9));Ui.styleInput(e,this,Ui.SURFACE_2,14);return e;}
 
     private void refreshMissionFields(){if(steps==null)return;String t=selectedMission;boolean needSteps="STEPS".equals(t)||"RANDOM".equals(t);boolean needCount=!("NONE".equals(t)||"STEPS".equals(t));stepsLabel.setVisibility(needSteps?View.VISIBLE:View.GONE);stepsControl.setVisibility(needSteps?View.VISIBLE:View.GONE);countLabel.setVisibility(needCount?View.VISIBLE:View.GONE);countControl.setVisibility(needCount?View.VISIBLE:View.GONE);
         selectedMissionTitle.setText(I18n.tr(this,AlarmProfiles.missionName(t)));
@@ -196,18 +304,18 @@ public class AlarmEditorActivity extends Activity {
         final int[] values={0,5,10,15,30,60,120,-1};
         final String[] labels={I18n.tr(this,"オフ"),"5"+I18n.tr(this,"分前"),"10"+I18n.tr(this,"分前"),"15"+I18n.tr(this,"分前"),"30"+I18n.tr(this,"分前"),"60"+I18n.tr(this,"分前"),"120"+I18n.tr(this,"分前"),I18n.tr(this,"カスタム")+"…"};
         int checked=-1;for(int i=0;i<values.length-1;i++)if(values[i]==draft.preNotifyMin)checked=i;
-        final AlertDialog d=new AlertDialog.Builder(this).setTitle(I18n.tr(this,"事前通知")).setSingleChoiceItems(labels,checked,null).setNegativeButton(I18n.tr(this,"キャンセル"),null).create();
-        d.setOnShowListener(x->{ListView list=d.getListView();list.setOnItemClickListener((a,v,pos,id)->{if(values[pos]>=0){draft.preNotifyMin=values[pos];renderPreNotify();d.dismiss();}else{d.dismiss();showCustomPreNotifyDialog();}});});d.show();
+        final AlertDialog d=Ui.dialogBuilder(this).setTitle(I18n.tr(this,"事前通知")).setSingleChoiceItems(labels,checked,null).setNegativeButton(I18n.tr(this,"キャンセル"),null).create();
+        d.setOnShowListener(x->{ListView list=d.getListView();list.setOnItemClickListener((a,v,pos,id)->{if(values[pos]>=0){draft.preNotifyMin=values[pos];renderPreNotify();d.dismiss();}else{d.dismiss();showCustomPreNotifyDialog();}});});Ui.showDialog(d,this);
     }
     private void renderSnooze(){if(snooze==null)return;boolean use=draft.snoozeMinutes>0;renderingSnooze=true;snoozeEnabled.setChecked(use);renderingSnooze=false;if(snoozeIntervalRow!=null)snoozeIntervalRow.setVisibility(use?View.VISIBLE:View.GONE);snooze.setText((use?draft.snoozeMinutes:5)+I18n.tr(this,"分")+"  ›");}
-    private void showSnoozeDialog(){final int[] values={1,3,5,10,15,20,30,45,60};String[] labels=new String[values.length];int checked=0;for(int i=0;i<values.length;i++){labels[i]=values[i]+I18n.tr(this,"分");if(values[i]==draft.snoozeMinutes)checked=i;}new AlertDialog.Builder(this).setTitle(I18n.tr(this,"スヌーズ")).setSingleChoiceItems(labels,checked,(d,w)->{draft.snoozeMinutes=values[w];renderSnooze();d.dismiss();}).setNegativeButton(I18n.tr(this,"キャンセル"),null).show();}
+    private void showSnoozeDialog(){final int[] values={1,3,5,10,15,20,30,45,60};String[] labels=new String[values.length];int checked=0;for(int i=0;i<values.length;i++){labels[i]=values[i]+I18n.tr(this,"分");if(values[i]==draft.snoozeMinutes)checked=i;}Ui.dialogBuilder(this).setTitle(I18n.tr(this,"スヌーズ")).setSingleChoiceItems(labels,checked,(d,w)->{draft.snoozeMinutes=values[w];renderSnooze();d.dismiss();}).setNegativeButton(I18n.tr(this,"キャンセル"),null).show();}
     private void togglePreview(){if(previewPlayer!=null){stopPreview();return;}try{String raw=draft.soundUri==null?"":draft.soundUri.trim();Uri uri;if(raw.isEmpty())uri=android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_ALARM);else if(raw.startsWith("content:")||raw.startsWith("file:"))uri=Uri.parse(raw);else uri=Uri.fromFile(new File(raw));previewPlayer=new MediaPlayer();previewPlayer.setAudioStreamType(android.media.AudioManager.STREAM_ALARM);previewPlayer.setDataSource(this,uri);previewPlayer.setLooping(false);int currentVolume=volume==null?draft.volume:volume.getProgress();float v=Math.max(0f,Math.min(1f,currentVolume/100f));previewPlayer.setVolume(v,v);previewPlayer.setOnCompletionListener(x->stopPreview());previewPlayer.prepare();previewPlayer.start();if(preview!=null)preview.setText("■  "+I18n.tr(this,"停止"));}catch(Throwable t){stopPreview();Toast.makeText(this,I18n.tr(this,"この音源は試聴できません"),Toast.LENGTH_SHORT).show();}}
     private void stopPreview(){MediaPlayer p=previewPlayer;previewPlayer=null;if(p!=null){try{p.stop();}catch(Throwable ignored){}try{p.release();}catch(Throwable ignored){}}if(preview!=null)preview.setText("▶  "+I18n.tr(this,"試聴"));}
     @Override protected void onStop(){stopPreview();super.onStop();}
 
     private void showCustomPreNotifyDialog(){
         final EditText input=input(String.valueOf(Math.max(1,draft.preNotifyMin)),InputType.TYPE_CLASS_NUMBER);input.setSelectAllOnFocus(true);input.setHint("1–1440 "+I18n.tr(this,"分前").trim());int pad=Ui.dp(this,20);FrameLayout wrap=new FrameLayout(this);wrap.setPadding(pad,0,pad,0);wrap.addView(input,new FrameLayout.LayoutParams(-1,-2));
-        new AlertDialog.Builder(this).setTitle(I18n.tr(this,"事前通知")).setView(wrap).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"保存"),(d,w)->{try{int v=Integer.parseInt(input.getText().toString().trim());draft.preNotifyMin=Math.max(1,Math.min(1440,v));renderPreNotify();}catch(Throwable t){Toast.makeText(this,I18n.tr(this,"設定値を確認してください"),Toast.LENGTH_SHORT).show();}}).show();
+        Ui.dialogBuilder(this).setTitle(I18n.tr(this,"事前通知")).setView(wrap).setNegativeButton(I18n.tr(this,"キャンセル"),null).setPositiveButton(I18n.tr(this,"保存"),(d,w)->{try{int v=Integer.parseInt(input.getText().toString().trim());draft.preNotifyMin=Math.max(1,Math.min(1440,v));renderPreNotify();}catch(Throwable t){Toast.makeText(this,I18n.tr(this,"設定値を確認してください"),Toast.LENGTH_SHORT).show();}}).show();
     }
 
     private void renderAutoStop(){
@@ -270,9 +378,103 @@ public class AlarmEditorActivity extends Activity {
         String dur=draft.soundDurationMs>0?String.format(Locale.JAPAN,"%d:%02d",draft.soundDurationMs/60000,(draft.soundDurationMs/1000)%60):I18n.tr(this,"長さ不明");
         soundStatus.setText(I18n.tr(this,isVideoMedia(draft.soundUri,draft.soundName)?"動画":"音声")+"  ·  "+draft.soundName+"  ·  "+size+"  ·  "+dur);
     }
-    private AlarmStore.Entry saveDraft(boolean toast){try{draft.enabled=enabled.isChecked();draft.label=label.getText().toString().trim();draft.dayMask=0;for(int i=0;i<7;i++)if(days[i].isChecked())draft.dayMask|=1<<i;if(draft.dayMask!=0)draft.fixedAt=0L;if(draft.fixedAt>0L){if(draft.fixedAt<=System.currentTimeMillis()+1000L)draft.fixedAt=0L;else{java.time.ZonedDateTime z=java.time.Instant.ofEpochMilli(draft.fixedAt).atZone(java.time.ZoneId.systemDefault());draft.hour=z.getHour();draft.minute=z.getMinute();}}draft.missionType=selectedMission;draft.snoozeMinutes=snoozeEnabled.isChecked()?(draft.snoozeMinutes>0?draft.snoozeMinutes:5):0;draft.steps=Math.max(1,Math.min(9999,Integer.parseInt(steps.getText().toString().trim().isEmpty()?"10":steps.getText().toString().trim())));draft.missionCount=Math.max(1,Math.min(500,Integer.parseInt(missionCount.getText().toString().trim().isEmpty()?"3":missionCount.getText().toString().trim())));draft.volume=volume.getProgress();int vp=1;for(int i=0;i<vibrationChoices.length;i++)if(vibrationChoices[i].isChecked()){vp=i;break;}draft.vibration=vp==0?"OFF":(vp==2?"STRONG":"IRREGULAR");draft=AlarmProfiles.save(this,draft);alarmId=draft.id;if(!draft.enabled||draft.snoozeMinutes<=0)SnoozeScheduler.cancel(this,alarmId);AlarmScheduler.reschedule(this);if(toast)Toast.makeText(this,I18n.tr(this,"保存しました"),Toast.LENGTH_SHORT).show();return draft;}catch(Throwable t){Toast.makeText(this,I18n.tr(this,"設定値を確認してください"),Toast.LENGTH_LONG).show();return null;}}
+    private void showAlarmTest(){
+        if(!canStartAlarmTest())return;
+        AlarmStore.Entry saved=null;
+        if(alarmId>=1000L)saved=AlarmStore.find(this,alarmId);
+        else if(alarmId==AlarmScheduler.PRIMARY_ALARM_ID)saved=AlarmProfiles.primary(this);
+        if(saved!=null&&!hasUnsavedChanges(saved)){
+            startAlarmTest(saved.id);
+            return;
+        }
+
+        AlertDialog.Builder dialog=Ui.dialogBuilder(this)
+                .setTitle(I18n.tr(this,"このアラームをテスト"))
+                .setMessage(editorText("変更を保存してテストすると、アラームの予約にも反映されます。",
+                        "Saving before the test also updates the alarm schedule.",
+                        "테스트 전에 저장하면 알람 예약에도 반영됩니다."))
+                .setNegativeButton(I18n.tr(this,"キャンセル"),null)
+                .setPositiveButton(editorText("保存してテスト","Save and test","저장 후 테스트"),(d,w)->{
+                    if(!canStartAlarmTest())return;
+                    AlarmStore.Entry entry=saveDraft(false);
+                    if(entry!=null)startAlarmTest(entry.id);
+                });
+        if(saved!=null){
+            long savedId=saved.id;
+            dialog.setNeutralButton(editorText("保存済みをテスト","Test saved alarm","저장된 알람 테스트"),
+                    (d,w)->startAlarmTest(savedId));
+        }
+        dialog.show();
+    }
+
+    private boolean canStartAlarmTest(){
+        if(!Prefs.active(this)||Prefs.sessionIsTest(this))return true;
+        Toast.makeText(this,editorText("鳴っているアラームを止めてからテストしてください。",
+                "Stop the ringing alarm before starting a test.",
+                "울리는 알람을 끈 후 테스트해 주세요."),Toast.LENGTH_LONG).show();
+        return false;
+    }
+
+    private void startAlarmTest(long id){
+        if(!canStartAlarmTest())return;
+        stopPreview();
+        Intent intent=new Intent(this,AlarmService.class).setAction(AlarmService.ACTION_FIRE_TEST)
+                .putExtra(AlarmService.EXTRA_ALARM_ID,id);
+        try{
+            startForegroundService(intent);
+        }catch(RuntimeException failure){
+            Toast.makeText(this,I18n.tr(this,"テストを開始できません"),Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private boolean hasUnsavedChanges(AlarmStore.Entry saved){
+        return enabled.isChecked()!=saved.enabled||selectedDays()!=saved.dayMask
+                ||!label.getText().toString().trim().equals(saved.label)
+                ||draft.hour!=saved.hour||draft.minute!=saved.minute||draft.fixedAt!=saved.fixedAt
+                ||!selectedMission.equals(saved.missionType)
+                ||!steps.getText().toString().trim().equals(String.valueOf(saved.steps))
+                ||!missionCount.getText().toString().trim().equals(String.valueOf(saved.missionCount))
+                ||volume.getProgress()!=saved.volume||!selectedVibration().equals(saved.vibration)
+                ||!Objects.equals(draft.soundUri,saved.soundUri)
+                ||!Objects.equals(draft.soundName,saved.soundName)
+                ||draft.ringDurationSec!=saved.ringDurationSec||draft.fullStopDurationSec!=saved.fullStopDurationSec
+                ||draft.preNotifyMin!=saved.preNotifyMin||draft.snoozeMinutes!=saved.snoozeMinutes;
+    }
+
+    private AlarmStore.Entry saveDraft(boolean toast){
+        try{
+            String stepsValue=steps.getText().toString().trim();
+            String countValue=missionCount.getText().toString().trim();
+            int parsedSteps=Integer.parseInt(stepsValue.isEmpty()?"10":stepsValue);
+            int parsedCount=Integer.parseInt(countValue.isEmpty()?"3":countValue);
+            draft.enabled=enabled.isChecked();
+            draft.label=label.getText().toString().trim();
+            draft.dayMask=selectedDays();
+            if(draft.dayMask!=0||draft.fixedAt<=System.currentTimeMillis()+1000L)draft.fixedAt=0L;
+            if(draft.fixedAt>0L){
+                ZonedDateTime fixedTime=Instant.ofEpochMilli(draft.fixedAt).atZone(ZoneId.systemDefault());
+                draft.hour=fixedTime.getHour();
+                draft.minute=fixedTime.getMinute();
+            }
+            draft.missionType=selectedMission;
+            draft.snoozeMinutes=snoozeEnabled.isChecked()?(draft.snoozeMinutes>0?draft.snoozeMinutes:5):0;
+            draft.steps=Math.max(1,Math.min(9999,parsedSteps));
+            draft.missionCount=Math.max(1,Math.min(500,parsedCount));
+            draft.volume=volume.getProgress();
+            draft.vibration=selectedVibration();
+            draft=AlarmProfiles.save(this,draft);
+            alarmId=draft.id;
+            if(!draft.enabled||draft.snoozeMinutes<=0)SnoozeScheduler.cancel(this,alarmId);
+            AlarmScheduler.reschedule(this);
+            if(toast)Toast.makeText(this,I18n.tr(this,"保存しました"),Toast.LENGTH_SHORT).show();
+            return draft;
+        }catch(RuntimeException failure){
+            Toast.makeText(this,I18n.tr(this,"設定値を確認してください"),Toast.LENGTH_LONG).show();
+            return null;
+        }
+    }
     private void pickSound(){
-        new AlertDialog.Builder(this).setTitle(I18n.tr(this,"アラームの音・動画")).setItems(new String[]{I18n.tr(this,"音声を選択"),I18n.tr(this,"動画を選択"),I18n.tr(this,"標準に戻す")},(d,w)->{if(w==0)pickMedia(false);else if(w==1)pickMedia(true);else{draft.soundUri="";draft.soundName="";draft.soundBytes=-1;draft.soundDurationMs=-1;renderSound();}}).show();
+        Ui.dialogBuilder(this).setTitle(I18n.tr(this,"アラームの音・動画")).setItems(new String[]{I18n.tr(this,"音声を選択"),I18n.tr(this,"動画を選択"),I18n.tr(this,"標準に戻す")},(d,w)->{if(w==0)pickMedia(false);else if(w==1)pickMedia(true);else{draft.soundUri="";draft.soundName="";draft.soundBytes=-1;draft.soundDurationMs=-1;renderSound();}}).show();
     }
     private void pickMedia(boolean video){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT).setType(video?"video/*":"audio/*").addCategory(Intent.CATEGORY_OPENABLE).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);try{startActivityForResult(i,video?REQ_VIDEO:REQ_AUDIO);}catch(Throwable t){Toast.makeText(this,I18n.tr(this,video?"動画ファイルを開けません":"音声ファイルを開けません"),Toast.LENGTH_LONG).show();}}
     @Override protected void onActivityResult(int requestCode,int resultCode,Intent data){super.onActivityResult(requestCode,resultCode,data);if((requestCode!=REQ_AUDIO&&requestCode!=REQ_VIDEO)||resultCode!=RESULT_OK||data==null||data.getData()==null)return;Uri u=data.getData();try{getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(Throwable ignored){}if(requestCode==REQ_VIDEO)useVideo(u);else copySound(u);}
@@ -288,7 +490,8 @@ public class AlarmEditorActivity extends Activity {
             }
             long dur=-1;android.media.MediaMetadataRetriever m=new android.media.MediaMetadataRetriever();
             try{m.setDataSource(out.getAbsolutePath());String x=m.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION);if(x!=null)dur=Long.parseLong(x);}finally{try{m.release();}catch(Throwable ignored){}}
-            String old=draft.soundUri;draft.soundUri=out.getAbsolutePath();draft.soundName=name;draft.soundBytes=out.length();draft.soundDurationMs=dur;cleanupOwnedVideo(old);renderSound();promptFullScreenVideoPermissionIfNeeded();
+            // The previous video may still be used by the saved alarm or another profile.
+            draft.soundUri=out.getAbsolutePath();draft.soundName=name;draft.soundBytes=out.length();draft.soundDurationMs=dur;renderSound();promptFullScreenVideoPermissionIfNeeded();
         }catch(Throwable t){if(out!=null)try{out.delete();}catch(Throwable ignored){}Toast.makeText(this,I18n.tr(this,"この動画は読み込めません"),Toast.LENGTH_LONG).show();}
     }
     private String videoExtension(Uri uri,String name){
@@ -296,15 +499,11 @@ public class AlarmEditorActivity extends Activity {
         try{String t=getContentResolver().getType(uri);if(t!=null){t=t.toLowerCase(Locale.ROOT);if(t.contains("webm"))return ".webm";if(t.contains("3gpp"))return ".3gp";if(t.contains("matroska"))return ".mkv";}}catch(Throwable ignored){}
         return ".mp4";
     }
-    private void cleanupOwnedVideo(String raw){
-        try{if(raw==null||raw.isEmpty())return;File f=new File(raw);File dir=new File(getFilesDir(),"alarm_videos");if(f.getParentFile()!=null&&f.getParentFile().equals(dir)&&f.exists())f.delete();}catch(Throwable ignored){}
-    }
-
     private void promptFullScreenVideoPermissionIfNeeded(){
         if(Build.VERSION.SDK_INT<34)return;
         boolean ok=false;try{NotificationManager nm=getSystemService(NotificationManager.class);ok=nm!=null&&nm.canUseFullScreenIntent();}catch(Throwable ignored){}
         if(ok)return;
-        new AlertDialog.Builder(this)
+        Ui.dialogBuilder(this)
                 .setTitle(I18n.tr(this,"ロック画面の動画表示"))
                 .setMessage(I18n.tr(this,"ロック中に動画アラームを全画面表示するには、端末設定で「全画面アラーム」を許可してください。"))
                 .setPositiveButton(I18n.tr(this,"設定を開く"),(d,w)->{try{startActivity(new Intent(android.provider.Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,Uri.parse("package:"+getPackageName())));}catch(Throwable t){Toast.makeText(this,I18n.tr(this,"設定 → アプリ → IGNIDO Wake → 全画面アラーム を許可してください"),Toast.LENGTH_LONG).show();}})

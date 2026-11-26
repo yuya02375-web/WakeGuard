@@ -11,7 +11,7 @@
     <item android:width="3dp" android:gravity="start|center_vertical" android:top="10dp" android:bottom="10dp">
         <shape android:shape="rectangle">
             <gradient android:angle="90" android:startColor="#FFA9D8FF"
-                      android:centerColor="#FF78B5F7" android:endColor="#FF4C8DF0" />
+                      android:centerColor="#FF4F9CC4" android:endColor="#FF286F8F" />
             <corners android:radius="3dp" />
         </shape>
     </item>

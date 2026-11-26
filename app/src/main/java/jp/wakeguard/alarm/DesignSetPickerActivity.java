@@ -1,15 +1,11 @@
 package jp.wakeguard.alarm;
 
 import android.app.Activity;
-import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.RectF;
+import android.content.Intent;
 import android.os.Bundle;
+import android.text.Layout;
 import android.view.Gravity;
 import android.view.View;
-import android.graphics.drawable.GradientDrawable;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -20,6 +16,7 @@ public final class DesignSetPickerActivity extends Activity {
     private LinearLayout body;
     private ScrollView scrollView;
     private String expandedId;
+    private String displayedCombination;
     private int scrollY;
 
     @Override protected void onCreate(Bundle state) {
@@ -43,25 +40,19 @@ public final class DesignSetPickerActivity extends Activity {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackground(Ui.screenGradient(this));
+        root.addView(AppearanceChrome.header(this, AppearanceChrome.SETS,
+                localized("セット全体を使うか、UI・デザイン・色から一つだけ選べます。",
+                        "Apply a whole set, or choose just its UI, design, or color.",
+                        "세트 전체 또는 UI, 디자인, 색상 중 하나만 선택할 수 있습니다.")));
 
         scrollView = new ScrollView(this);
         scrollView.setFillViewport(true);
         scrollView.setVerticalScrollBarEnabled(false);
         body = new LinearLayout(this);
         body.setOrientation(LinearLayout.VERTICAL);
-        body.setPadding(Ui.dp(this, 20), Ui.dp(this, 18), Ui.dp(this, 20), Ui.dp(this, 28));
+        body.setPadding(Ui.dp(this, 18), Ui.dp(this, 10), Ui.dp(this, 18), Ui.dp(this, 28));
         scrollView.addView(body);
         root.addView(scrollView, new LinearLayout.LayoutParams(-1, 0, 1));
-
-        body.addView(Ui.overline(this, "IGNIDO  /  WAKE"));
-        TextView title = Ui.title(this, localized("デザインセット", "Design sets", "디자인 세트"), 29);
-        title.setPadding(0, Ui.dp(this, 5), 0, Ui.dp(this, 4));
-        body.addView(title);
-        body.addView(Ui.text(this,
-                localized("セット全体を使うか、セットに入っているUI・デザイン・色・キャラクターから一つだけ選べます。",
-                        "Apply a whole set, or use just its UI, design, color, or character.",
-                        "세트 전체를 적용하거나 UI, 디자인, 색상, 캐릭터 중 하나만 선택할 수 있습니다."),
-                13, Ui.MUTED));
 
         LinearLayout current = Ui.card(this);
         current.setOrientation(LinearLayout.VERTICAL);
@@ -76,44 +67,54 @@ public final class DesignSetPickerActivity extends Activity {
         setContentView(root);
         Ui.applySystemBarInsets(this, root);
         scrollView.post(() -> scrollView.scrollTo(0, scrollY));
+        displayedCombination = combinationKey();
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        String current = combinationKey();
+        if (displayedCombination == null || displayedCombination.equals(current)) return;
+        scrollY = scrollView == null ? scrollY : scrollView.getScrollY();
+        Ui.prepareActivity(this);
+        build();
+    }
+
+    private String combinationKey() {
+        return UiProfiles.id(this) + ":" + VisualDesigns.id(this) + ":"
+                + AppThemes.id(this) + ":" + AppThemes.mode(this);
     }
 
     private void addPreset(DesignSets.Preset preset) {
         boolean active = preset == DesignSets.current(this);
         LinearLayout card = Ui.card(this);
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(Ui.dp(this, 14), Ui.dp(this, 13), Ui.dp(this, 14), Ui.dp(this, 13));
+        card.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
         card.setBackground(Ui.roundStroke(Ui.SURFACE, active ? Ui.ACCENT_2 : Ui.BORDER, 18, this));
         AppThemes.Theme setTheme = AppThemes.get(this, preset.themeId);
 
         LinearLayout heading = Ui.row(this);
         heading.setGravity(Gravity.CENTER_VERTICAL);
-        if (!"none".equals(preset.mascotId)) {
-            MascotArtView mascot = new MascotArtView(this, preset.mascotId);
-            mascot.setMascotColors(setTheme.accent, setTheme.accent2, Ui.TEXT);
-            heading.addView(mascot, new LinearLayout.LayoutParams(Ui.dp(this, 56), Ui.dp(this, 56)));
-        } else {
-            TextView mark = Ui.title(this, "✦", 30);
-            mark.setTextColor(Ui.ACCENT_2);
-            mark.setGravity(Gravity.CENTER);
-            heading.addView(mark, new LinearLayout.LayoutParams(Ui.dp(this, 56), Ui.dp(this, 56)));
-        }
-        LinearLayout nameStack = new LinearLayout(this);
-        nameStack.setOrientation(LinearLayout.VERTICAL);
-        nameStack.setPadding(Ui.dp(this, 10), 0, 0, 0);
-        nameStack.addView(Ui.title(this, preset.label(this), 17));
-        nameStack.addView(Ui.text(this, preset.components(this), 10.5f, Ui.MUTED), Ui.gapTop(this, 3));
-        heading.addView(nameStack, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView name = Ui.title(this, preset.label(this), 17);
+        name.setAccessibilityHeading(true);
+        heading.addView(name, new LinearLayout.LayoutParams(0, -2, 1));
         if (active) heading.addView(Ui.accentPill(this, localized("適用中", "Active", "사용 중")));
         card.addView(heading);
 
-        TextView description = Ui.text(this, preset.description(this), 12, Ui.MUTED);
+        TextView components = Ui.text(this, preset.components(this), 11.5f, Ui.MUTED);
+        components.setBreakStrategy(Layout.BREAK_STRATEGY_BALANCED);
+        card.addView(components, Ui.gapTop(this, 4));
+
+        TextView description = Ui.text(this, preset.description(this), 13, Ui.MUTED);
         card.addView(description, Ui.gapTop(this, 7));
         VisualDesigns.Design visual = VisualDesigns.get(preset.visualDesignId);
-        if (visual != null && visual.pattern.startsWith("landscape-")) {
-            View preview = new LandscapePreview(this, visual.pattern, setTheme);
-            LinearLayout.LayoutParams previewParams = new LinearLayout.LayoutParams(-1, Ui.dp(this, 76));
-            previewParams.topMargin = Ui.dp(this, 10);
+        if (visual != null) {
+            TextView sampleLabel = Ui.text(this, localized("模様見本", "Pattern sample", "무늬 견본"), 11, Ui.MUTED);
+            card.addView(sampleLabel, Ui.gapTop(this, 10));
+            View preview = new View(this);
+            preview.setBackground(Ui.artworkPreview(this, visual, setTheme));
+            preview.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            LinearLayout.LayoutParams previewParams = new LinearLayout.LayoutParams(-1, Ui.dp(this, 106));
+            previewParams.topMargin = Ui.dp(this, 4);
             card.addView(preview, previewParams);
         }
         addSwatches(card, preset);
@@ -121,7 +122,8 @@ public final class DesignSetPickerActivity extends Activity {
         LinearLayout actions = Ui.row(this);
         actions.setPadding(0, Ui.dp(this, 10), 0, 0);
         Button apply = Ui.button(this, localized("セット全体を使う", "Apply full set", "세트 전체 적용"), true);
-        apply.setTextSize(12);
+        apply.setTextSize(13);
+        apply.setMinHeight(Ui.dp(this, 48));
         apply.setOnClickListener(v -> {
             if (DesignSets.apply(this, preset.id)) {
                 setResult(Activity.RESULT_OK);
@@ -132,7 +134,8 @@ public final class DesignSetPickerActivity extends Activity {
         Button parts = Ui.ghostButton(this, expandedId != null && expandedId.equals(preset.id)
                 ? localized("パーツを閉じる", "Hide parts", "구성 닫기")
                 : localized("パーツを選ぶ", "Choose parts", "구성 선택"));
-        parts.setTextSize(12);
+        parts.setTextSize(13);
+        parts.setMinHeight(Ui.dp(this, 48));
         LinearLayout.LayoutParams partsLp = new LinearLayout.LayoutParams(0, -2, 1);
         partsLp.setMargins(Ui.dp(this, 7), 0, 0, 0);
         actions.addView(parts, partsLp);
@@ -142,6 +145,15 @@ public final class DesignSetPickerActivity extends Activity {
             build();
         });
         card.addView(actions);
+
+        if (active) {
+            Button openLive = Ui.ghostButton(this, localized("実際の画面を見る", "Open live screen", "실제 화면 보기"));
+            openLive.setContentDescription(localized("実際の画面を見る。適用中のデザインでアラーム画面を開きます",
+                    "Open live screen. View the alarm screen with the applied design.",
+                    "실제 화면 보기. 적용 중인 디자인으로 알람 화면을 엽니다."));
+            openLive.setOnClickListener(v -> Ui.launchNoAnimation(this, new Intent(this, MainActivity.class)));
+            card.addView(openLive, Ui.gapTop(this, 8));
+        }
 
         if (preset.id.equals(expandedId)) {
             LinearLayout detail = new LinearLayout(this);
@@ -153,11 +165,9 @@ public final class DesignSetPickerActivity extends Activity {
                     localized("このセットのデザインだけを使う", "Use only this set's design", "이 세트의 디자인만 사용"));
             addPartButton(detail, preset, DesignSets.Part.COLOR,
                     localized("このセットの色だけを使う", "Use only this set's colors", "이 세트의 색상만 사용"));
-            addPartButton(detail, preset, DesignSets.Part.CHARACTER,
-                    localized("このセットのキャラクターだけを使う", "Use only this set's character", "이 세트의 캐릭터만 사용"));
             card.addView(detail);
         }
-        body.addView(card, Ui.gapTop(this, 12));
+        body.addView(card, Ui.gapTop(this, 14));
     }
 
     private void addSwatches(LinearLayout card, DesignSets.Preset preset) {
@@ -168,7 +178,7 @@ public final class DesignSetPickerActivity extends Activity {
         for (int color : colors) {
             View swatch = new View(this);
             swatch.setBackground(Ui.round(color, 8, this));
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(Ui.dp(this, 18), Ui.dp(this, 18));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(Ui.dp(this, 20), Ui.dp(this, 20));
             lp.setMargins(0, Ui.dp(this, 8), Ui.dp(this, 6), 0);
             swatches.addView(swatch, lp);
         }
@@ -176,44 +186,6 @@ public final class DesignSetPickerActivity extends Activity {
         palette.setPadding(Ui.dp(this, 2), Ui.dp(this, 8), 0, 0);
         swatches.addView(palette);
         card.addView(swatches);
-    }
-
-    private final class LandscapePreview extends View {
-        private final String pattern;
-        private final AppThemes.Theme theme;
-        private final Paint border = new Paint(Paint.ANTI_ALIAS_FLAG);
-
-        LandscapePreview(Context context, String pattern, AppThemes.Theme theme) {
-            super(context);
-            this.pattern = pattern;
-            this.theme = theme;
-            GradientDrawable fill = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                    new int[]{theme.bg, theme.surface});
-            fill.setCornerRadius(Ui.dp(DesignSetPickerActivity.this, 13));
-            setBackground(fill);
-            setContentDescription(pattern.replace('-', ' ') + " landscape preview");
-        }
-
-        @Override protected void onDraw(Canvas canvas) {
-            super.onDraw(canvas);
-            RectF bounds = new RectF(0, 0, getWidth(), getHeight());
-            if (bounds.isEmpty()) return;
-            float radius = Ui.dp(DesignSetPickerActivity.this, 13);
-            int save = canvas.save();
-            Path clip = new Path();
-            clip.addRoundRect(bounds, radius, radius, Path.Direction.CW);
-            canvas.clipPath(clip);
-            String scene = VisualDesigns.landscapeSceneId(pattern);
-            LandscapeArt.draw(canvas, scene, bounds,
-                    LandscapeArt.paletteFromTheme(theme.heroStart, theme.heroEnd, theme.surface,
-                            theme.accent, theme.accent2, theme.text, theme.heroText),
-                    getResources().getDisplayMetrics().density);
-            border.setStyle(Paint.Style.STROKE);
-            border.setStrokeWidth(Ui.dp(DesignSetPickerActivity.this, 1));
-            border.setColor(VisualDesigns.withAlpha(theme.accent, 0x66));
-            canvas.drawRoundRect(bounds, radius, radius, border);
-            canvas.restoreToCount(save);
-        }
     }
 
     private void addPartButton(LinearLayout parent, DesignSets.Preset preset, DesignSets.Part part, String text) {

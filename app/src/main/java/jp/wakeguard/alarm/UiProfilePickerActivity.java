@@ -7,6 +7,8 @@ import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -15,8 +17,12 @@ import java.util.List;
 
 /** Lets the user choose an app layout and component style independently of its palette. */
 public class UiProfilePickerActivity extends Activity {
-    private boolean gridMode = true;
+    // Show the screen previews at readable size first; the two-column catalog
+    // remains available when the user wants to scan more styles at once.
+    private boolean gridMode = false;
     private LinearLayout content;
+    private ScrollView profileScroll;
+    private String displayedProfileId;
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
@@ -28,32 +34,28 @@ public class UiProfilePickerActivity extends Activity {
         finish();
     }
 
+    @Override protected void onResume() {
+        super.onResume();
+        String current = UiProfiles.id(this);
+        if (displayedProfileId == null || displayedProfileId.equals(current)) return;
+        int scrollY = profileScroll == null ? 0 : profileScroll.getScrollY();
+        build();
+        if (profileScroll != null) profileScroll.post(() -> profileScroll.scrollTo(0, scrollY));
+    }
+
     private void build() {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackground(Ui.screenGradient(this));
 
-        LinearLayout header = new LinearLayout(this);
-        header.setOrientation(LinearLayout.VERTICAL);
-        header.setPadding(Ui.dp(this, 18), Ui.dp(this, 8), Ui.dp(this, 18), Ui.dp(this, 10));
-
-        LinearLayout titleRow = Ui.row(this);
-        titleRow.setPadding(0, 0, 0, Ui.dp(this, 3));
-        Button back = Ui.ghostButton(this, "‹");
-        back.setTextSize(30);
-        back.setContentDescription(localized("戻る", "Back", "뒤로"));
-        back.setOnClickListener(v -> finish());
-        titleRow.addView(back, new LinearLayout.LayoutParams(Ui.dp(this, 48), Ui.dp(this, 50)));
-        titleRow.addView(label(localized("UIスタイル", "UI style", "UI 스타일"), 25, Ui.TEXT, true),
-                new LinearLayout.LayoutParams(0, Ui.dp(this, 50), 1));
-        header.addView(titleRow);
-        header.addView(label(localized("画面の並び方、密度、ナビゲーション、カード形状を選びます。",
-                "Choose layout, spacing, navigation, and card treatment.",
-                "레이아웃, 간격, 탐색, 카드 표현을 선택하세요."), 13, Ui.MUTED, false));
+        root.addView(AppearanceChrome.header(this, AppearanceChrome.UI_STYLE,
+                localized("画面の並び方、密度、ナビゲーション、カード形状を選びます。",
+                        "Choose layout, spacing, navigation, and card treatment.",
+                        "레이아웃, 간격, 탐색, 카드 표현을 선택하세요.")));
 
         LinearLayout controls = new LinearLayout(this);
         controls.setOrientation(LinearLayout.HORIZONTAL);
-        controls.setPadding(0, Ui.dp(this, 10), 0, 0);
+        controls.setPadding(Ui.dp(this, 18), Ui.dp(this, 2), Ui.dp(this, 18), Ui.dp(this, 8));
         Button grid = Ui.button(this, localized("グリッド", "Grid", "그리드"), gridMode);
         Button list = Ui.button(this, localized("リスト", "List", "목록"), !gridMode);
         grid.setTextSize(13); list.setTextSize(13);
@@ -62,21 +64,27 @@ public class UiProfilePickerActivity extends Activity {
         controls.addView(list, controlParams());
         grid.setOnClickListener(v -> { if (!gridMode) { gridMode = true; build(); } });
         list.setOnClickListener(v -> { if (gridMode) { gridMode = false; build(); } });
-        header.addView(controls);
-        root.addView(header, new LinearLayout.LayoutParams(-1, -2));
+        root.addView(controls, new LinearLayout.LayoutParams(-1, -2));
 
         ScrollView scroll = new ScrollView(this);
+        profileScroll = scroll;
         scroll.setFillViewport(true);
         scroll.setVerticalScrollBarEnabled(false);
         content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
         content.setPadding(Ui.dp(this, 18), Ui.dp(this, 2), Ui.dp(this, 18), Ui.dp(this, 20));
+        TextView count = label(localized(UiProfiles.all().size() + "種類のスタイル",
+                UiProfiles.all().size() + " layout styles",
+                UiProfiles.all().size() + "개 레이아웃 스타일"), 11.5f, Ui.MUTED, false);
+        count.setPadding(Ui.dp(this, 2), 0, 0, Ui.dp(this, 6));
+        content.addView(count);
         scroll.addView(content);
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
 
         setContentView(root);
         Ui.applySystemBarInsets(this, root);
         renderProfiles();
+        displayedProfileId = UiProfiles.id(this);
     }
 
     private LinearLayout.LayoutParams controlParams() {
@@ -135,6 +143,7 @@ public class UiProfilePickerActivity extends Activity {
         LinearLayout card = Ui.card(this);
         card.setPadding(Ui.dp(this, gridMode ? 11 : 14), Ui.dp(this, 12), Ui.dp(this, gridMode ? 11 : 14), Ui.dp(this, 12));
         card.setBackground(cardBackground(profile, selected));
+        card.setForeground(Ui.rippleForeground(this, 18 * profile.cornerScale));
         card.setClickable(true);
         card.setFocusable(true);
         card.setContentDescription(profile.label(this) + (selected ? ", " + localized("選択中", "Selected", "선택됨") : ""));
@@ -156,7 +165,7 @@ public class UiProfilePickerActivity extends Activity {
         TextView detail = label(layoutLabel(profile.layoutMode) + "  ·  " + densityLabel(profile.densityScale)
                 + "  ·  " + navLabel(profile.navMode) + "  ·  " + cardLabel(profile.cardMode), 10.5f, Ui.MUTED, false);
         detail.setPadding(0, Ui.dp(this, 7), 0, 0);
-        detail.setSingleLine(true);
+        detail.setMaxLines(gridMode ? 2 : 3);
         card.addView(detail);
         card.setOnClickListener(v -> {
             UiProfiles.select(this, profile.id);
@@ -169,7 +178,7 @@ public class UiProfilePickerActivity extends Activity {
     private View preview(UiProfiles.Design profile) {
         LinearLayout demo = new LinearLayout(this);
         demo.setOrientation(LinearLayout.VERTICAL);
-        demo.setPadding(Ui.dp(this, 7), Ui.dp(this, 7), Ui.dp(this, 7), Ui.dp(this, 7));
+        demo.setPadding(Ui.dp(this, 9), Ui.dp(this, 8), Ui.dp(this, 9), Ui.dp(this, 8));
         demo.setBackground(Ui.round(Ui.BG_2, profile.cornerScale * 10f, this));
 
         if ("timeline".equals(profile.layoutMode)) {
@@ -179,14 +188,14 @@ public class UiProfilePickerActivity extends Activity {
         } else {
             addListSample(demo, profile);
         }
-        demo.addView(navPreview(profile), new LinearLayout.LayoutParams(-1, Ui.dp(this, 24)));
+        demo.addView(navPreview(profile), new LinearLayout.LayoutParams(-1, Ui.dp(this, 38)));
         return demo;
     }
 
     private void addListSample(LinearLayout demo, UiProfiles.Design profile) {
         for (int i = 0; i < 2; i++) {
             LinearLayout item = sampleCard(profile, i == 0);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, Ui.dp(this, Math.round(25 * profile.densityScale)));
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, Ui.dp(this, Math.round(31 * profile.densityScale)));
             if (i > 0) params.topMargin = Ui.dp(this, 4);
             demo.addView(item, params);
             addSampleLines(item, i == 0);
@@ -211,7 +220,7 @@ public class UiProfilePickerActivity extends Activity {
             items.addView(item, params);
             addSampleLines(item, i == 0);
         }
-        demo.addView(line, new LinearLayout.LayoutParams(-1, Ui.dp(this, 58)));
+        demo.addView(line, new LinearLayout.LayoutParams(-1, Ui.dp(this, 70)));
     }
 
     private void addTileSample(LinearLayout demo, UiProfiles.Design profile) {
@@ -220,20 +229,20 @@ public class UiProfilePickerActivity extends Activity {
         for (int i = 0; i < 3; i++) {
             LinearLayout tile = new LinearLayout(this);
             tile.setOrientation(LinearLayout.VERTICAL);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, Ui.dp(this, 58), 1);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, Ui.dp(this, 68), 1);
             if (i > 0) params.leftMargin = Ui.dp(this, 4);
             tiles.addView(tile, params);
             LinearLayout face = sampleCard(profile, i == 0);
-            tile.addView(face, new LinearLayout.LayoutParams(-1, Ui.dp(this, Math.round(35 * profile.densityScale))));
+            tile.addView(face, new LinearLayout.LayoutParams(-1, Ui.dp(this, Math.round(42 * profile.densityScale))));
             addSampleLines(face, i == 0);
             View dot = new View(this);
             dot.setBackground(Ui.round(i == 0 ? Ui.ACCENT_2 : Ui.BORDER, profile.cornerScale * 5f, this));
-            LinearLayout.LayoutParams dotParams = new LinearLayout.LayoutParams(Ui.dp(this, 14), Ui.dp(this, 5));
+            LinearLayout.LayoutParams dotParams = new LinearLayout.LayoutParams(Ui.dp(this, 14), Ui.dp(this, 6));
             dotParams.gravity = Gravity.CENTER_HORIZONTAL;
             dotParams.topMargin = Ui.dp(this, 8);
             tile.addView(dot, dotParams);
         }
-        demo.addView(tiles, new LinearLayout.LayoutParams(-1, Ui.dp(this, 58)));
+        demo.addView(tiles, new LinearLayout.LayoutParams(-1, Ui.dp(this, 68)));
     }
 
     private LinearLayout sampleCard(UiProfiles.Design profile, boolean active) {
@@ -251,33 +260,65 @@ public class UiProfilePickerActivity extends Activity {
         item.addView(marker, new LinearLayout.LayoutParams(Ui.dp(this, 6), Ui.dp(this, 6)));
         LinearLayout lines = new LinearLayout(this);
         lines.setOrientation(LinearLayout.VERTICAL);
+        lines.setGravity(Gravity.CENTER_VERTICAL);
         LinearLayout.LayoutParams linesParams = new LinearLayout.LayoutParams(0, -2, 1);
         linesParams.leftMargin = Ui.dp(this, 6);
         item.addView(lines, linesParams);
-        View main = new View(this);
-        main.setBackgroundColor(active ? Ui.TEXT : Ui.MUTED);
-        lines.addView(main, new LinearLayout.LayoutParams(Ui.dp(this, 34), Ui.dp(this, 3)));
-        View sub = new View(this);
-        sub.setBackgroundColor(Ui.BORDER);
-        LinearLayout.LayoutParams subParams = new LinearLayout.LayoutParams(Ui.dp(this, 22), Ui.dp(this, 2));
-        subParams.topMargin = Ui.dp(this, 3);
-        lines.addView(sub, subParams);
+        TextView time = label(active ? "06:30" : "08:00", 9.5f, active ? Ui.TEXT : Ui.MUTED, true);
+        lines.addView(time);
+        TextView caption = label(active ? localized("平日の起床", "Weekday alarm", "평일 알람")
+                : localized("週末の起床", "Weekend alarm", "주말 알람"), 7.5f, Ui.MUTED, false);
+        caption.setMaxLines(1);
+        caption.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        lines.addView(caption);
     }
 
     private View navPreview(UiProfiles.Design profile) {
         LinearLayout nav = new LinearLayout(this);
         nav.setOrientation(LinearLayout.HORIZONTAL);
-        nav.setGravity(Gravity.CENTER_VERTICAL);
+        nav.setGravity(Gravity.CENTER);
         nav.setPadding(Ui.dp(this, 3), 0, Ui.dp(this, 3), 0);
-        for (int i = 0; i < 3; i++) {
-            TextView item = label("labels".equals(profile.navMode) ? new String[]{"HOME", "TIME", "LOG"}[i]
-                    : new String[]{"•", "◷", "▤"}[i], "labels".equals(profile.navMode) ? 7.5f : 11f,
-                    i == 0 ? Ui.ACCENT_2 : Ui.MUTED, i == 0);
+        nav.setBackground(Ui.roundStroke(Ui.SURFACE, Ui.BORDER, 11, this));
+        String[] names = {"アラーム", "時計", "記録", "設定"};
+        boolean labelsOnly = "labels".equals(profile.navMode);
+        boolean compact = "compact".equals(profile.navMode);
+        for (int i = 0; i < names.length; i++) {
+            boolean active = i == 0;
+            LinearLayout item = new LinearLayout(this);
+            item.setOrientation(LinearLayout.VERTICAL);
             item.setGravity(Gravity.CENTER);
-            if ("pill".equals(profile.navMode) && i == 0) item.setBackground(Ui.round(Ui.NAV_HIGHLIGHT, profile.cornerScale * 7f, this));
-            if ("compact".equals(profile.navMode) && i != 0) item.setAlpha(.65f);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, -1, 1);
-            nav.addView(item, params);
+
+            FrameLayout iconFrame = new FrameLayout(this);
+            iconFrame.setBackground(active && !labelsOnly
+                    ? Ui.round(Ui.NAV_HIGHLIGHT, compact ? 14 : 10, this)
+                    : Ui.round(android.graphics.Color.TRANSPARENT, compact ? 14 : 10, this));
+            ImageView icon = new ImageView(this);
+            icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            icon.setImageResource(Ui.navIcon(names[i], active));
+            icon.setImageTintList(android.content.res.ColorStateList.valueOf(active ? Ui.ACCENT_2 : Ui.MUTED));
+            int iconSize = Ui.dp(this, gridMode ? 14 : 17);
+            iconFrame.addView(icon, new FrameLayout.LayoutParams(iconSize, iconSize, Gravity.CENTER));
+            iconFrame.setVisibility(labelsOnly ? View.GONE : View.VISIBLE);
+            int frameWidth = Ui.dp(this, compact ? 26 : 32);
+            int frameHeight = Ui.dp(this, compact ? 26 : 20);
+            item.addView(iconFrame, new LinearLayout.LayoutParams(frameWidth, frameHeight));
+
+            TextView caption = label(I18n.tr(this, names[i]), gridMode ? 6.2f : 7.4f,
+                    active ? Ui.ACCENT_2 : Ui.MUTED, active);
+            caption.setGravity(Gravity.CENTER);
+            caption.setSingleLine(true);
+            caption.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            caption.setVisibility(compact ? View.GONE : View.VISIBLE);
+            item.addView(caption, new LinearLayout.LayoutParams(-1, -2));
+
+            View marker = new View(this);
+            marker.setBackground(Ui.round(Ui.ACCENT_2, 1, this));
+            marker.setVisibility(labelsOnly && active ? View.VISIBLE : View.GONE);
+            LinearLayout.LayoutParams markerParams = new LinearLayout.LayoutParams(Ui.dp(this, 12), Ui.dp(this, 1));
+            markerParams.topMargin = Ui.dp(this, 1);
+            item.addView(marker, markerParams);
+
+            nav.addView(item, new LinearLayout.LayoutParams(0, -1, 1));
         }
         return nav;
     }
@@ -299,13 +340,8 @@ public class UiProfilePickerActivity extends Activity {
     }
 
     private TextView label(String text, float size, int color, boolean bold) {
-        TextView view = new TextView(this);
-        view.setText(text);
-        view.setTextSize(size);
-        view.setTextColor(color);
-        view.setIncludeFontPadding(false);
-        view.setLineSpacing(0, 1.08f);
-        if (bold) view.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        TextView view = Ui.text(this, text, size, color);
+        if (bold) view.setTypeface(Ui.designTypeface(Typeface.BOLD));
         return view;
     }
 

@@ -81,7 +81,7 @@ public class WorldClockWidgetConfigActivity extends Activity {
         if(Build.VERSION.SDK_INT<31){analogButton.setEnabled(false);analogButton.setAlpha(.45f);bothButton.setEnabled(false);bothButton.setAlpha(.45f);}refreshStyleButtons();
 
         TextView sub=Ui.text(this,"都市名またはタイムゾーンを検索",14,Ui.MUTED);root.addView(sub,Ui.gapTop(this,14));
-        search=new EditText(this);search.setSingleLine(true);search.setTextColor(Ui.TEXT);search.setHintTextColor(Ui.MUTED_2);search.setHint("例：シアトル / Seattle / Los_Angeles");search.setTextSize(16);search.setBackground(Ui.roundStroke(Ui.SURFACE_2,Ui.BORDER,14,this));search.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),0);root.addView(search,new LinearLayout.LayoutParams(-1,Ui.dp(this,50)));
+        search=new EditText(this);search.setSingleLine(true);search.setHint("例：シアトル / Seattle / Los_Angeles");search.setTextSize(16);search.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),0);Ui.styleInput(search,this,Ui.SURFACE_2,14);root.addView(search,new LinearLayout.LayoutParams(-1,Ui.dp(this,50)));
         searchStatus=Ui.text(this,"",11,Ui.MUTED);root.addView(searchStatus,Ui.gapTop(this,6));
 
         list=new ListView(this);list.setDividerHeight(0);list.setBackgroundColor(Ui.BG);list.setClipToPadding(false);list.setPadding(0,Ui.dp(this,4),0,Ui.dp(this,8));
