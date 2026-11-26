@@ -98,11 +98,11 @@ jobs:
             "$AAPT" dump badging "$output" | grep -F "package: name='$pkg' versionCode='$code' versionName='$version'"
             (cd android-release && sha256sum "$2.apk" > "$2.apk.sha256")
           }
-          sign WakeGuard/app/build/outputs/apk/release/app-release-unsigned.apk WakeGuard-2.17.39-link jp.wakeguard.alarm 247 2.17.39
-          sign rep-lift/replift/build/outputs/apk/release/replift-release-unsigned.apk REP-LIFT-1.0.0 jp.replift.training 1 1.0.0
-          "$AAPT" dump xmltree android-release/WakeGuard-2.17.39-link.apk AndroidManifest.xml > "$RUNNER_TEMP/wakeguard-manifest.txt"
+          sign WakeGuard/app/build/outputs/apk/release/app-release-unsigned.apk WakeGuard-2.17.40-link jp.wakeguard.alarm 248 2.17.40
+          sign rep-lift/replift/build/outputs/apk/release/replift-release-unsigned.apk REP-LIFT-1.0.1 jp.replift.training 2 1.0.1
+          "$AAPT" dump xmltree android-release/WakeGuard-2.17.40-link.apk AndroidManifest.xml > "$RUNNER_TEMP/wakeguard-manifest.txt"
           if grep -Fq 'WorkoutActivity' "$RUNNER_TEMP/wakeguard-manifest.txt"; then exit 1; fi
-          if unzip -Z1 android-release/WakeGuard-2.17.39-link.apk | grep '^assets/rep-lift/' > /dev/null; then exit 1; fi
+          if unzip -Z1 android-release/WakeGuard-2.17.40-link.apk | grep '^assets/rep-lift/' > /dev/null; then exit 1; fi
 
       - uses: actions/upload-artifact@v4
         with:

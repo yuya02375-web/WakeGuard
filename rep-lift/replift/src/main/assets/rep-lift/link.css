@@ -68,6 +68,11 @@
   margin-top: 9px;
 }
 
+.link-overview {
+  display: grid;
+  gap: 10px;
+}
+
 .link-companion {
   display: grid;
   grid-template-columns: 65px minmax(0, 1fr);
@@ -126,22 +131,53 @@
 }
 
 .link-streak {
-  grid-column: 1 / -1;
-  padding-top: 9px;
-  border-top: 1px solid #414632;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #414632;
+  border-radius: 15px;
+  background: #22271d;
+}
+
+.link-streak h3,
+.link-local h3 {
+  font-size: .91rem;
+}
+
+.link-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 9px 0 0;
+}
+
+.link-metric {
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #414632;
+  border-radius: 10px;
+  background: #292f23;
+}
+
+.link-metric dt {
+  color: #dee4d3;
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+.link-metric dd {
+  margin: 4px 0 0;
+}
+
+.link-count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
   color: #becba9;
   font-size: .81rem;
   white-space: nowrap;
 }
 
-.link-streak > div {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 3px;
-  margin-inline-start: 6px;
-}
-
-.link-streak strong {
+.link-count strong {
   color: var(--lime, #d5fa62);
   font-size: 1.65rem;
   font-weight: 850;
@@ -150,27 +186,46 @@
   font-variant-numeric: tabular-nums;
 }
 
-.link-streak small {
+.link-range {
   display: block;
+  margin-top: 5px;
+  overflow-wrap: anywhere;
   color: var(--muted, #a5ae9e);
-  font-size: .75rem;
+  font-size: .78rem;
+  line-height: 1.45;
 }
 
-@container (min-width: 300px) {
-  .link-companion {
-    grid-template-columns: 65px minmax(0, 1fr) auto;
-  }
+.link-range time {
+  display: inline-block;
+}
 
-  .link-streak {
-    grid-column: auto;
-    padding-top: 0;
-    padding-inline-start: 10px;
-    border-top: 0;
-    border-inline-start: 1px solid #414632;
-  }
+.link-streak .link-note {
+  margin-top: 9px;
+  font-size: .78rem;
+}
 
-  .link-streak > div {
-    display: flex;
-    margin-inline-start: 0;
+.link-local {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 11px 2px 0;
+  border-top: 1px solid #414632;
+}
+
+.link-local p {
+  margin-top: 3px;
+  color: var(--muted, #a5ae9e);
+  font-size: .78rem;
+}
+
+.link-local strong {
+  color: var(--text, #f1f2e8);
+}
+
+@container (min-width: 620px) {
+  .link-overview {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.8fr);
   }
 }

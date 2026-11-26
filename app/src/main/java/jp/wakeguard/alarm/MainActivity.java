@@ -514,20 +514,17 @@ public class MainActivity extends Activity {
         dragonCompanion.setGrowth(level,StreakTracker.displayCurrent(this));
         dragonFormText.setText(StreakGrowth.growthDescriptor(this,level));
         dragonLevelText.setText("Lv."+level);
+        boolean linked=SharedStreak.isLinked(this);
         long remaining=StreakGrowth.remainingToNext(level);
         if(remaining>0L){
             dragonProgressText.setText(String.format(I18n.locale(this),
-                    I18n.tr(this,"次の成長段階まであと %d 回"),remaining));
+                    I18n.tr(this,linked?"次の成長段階まであと %d 日分の記録":"次の成長段階まであと %d 回"),remaining));
         }else{
             dragonProgressText.setText(I18n.tr(this,"最終段階で成長中"));
         }
-        if(StreakGrowth.hasLinkedTrainingDays(this)){
-            int current=SharedStreak.summarize(this,LocalDate.now()).current;
-            dragonSharedStreakText.setText(String.format(I18n.locale(this),
-                    I18n.tr(this,"共通ストリーク %d日"),current));
-            dragonSharedStreakText.setVisibility(View.VISIBLE);
-        }else{
-            dragonSharedStreakText.setVisibility(View.GONE);
+        dragonSharedStreakText.setVisibility(linked?View.VISIBLE:View.GONE);
+        if(linked){
+            dragonSharedStreakText.setText(SharedStreak.displayText(this,SharedStreak.summarize(this,LocalDate.now())));
         }
         float progress=StreakGrowth.progressToNext(level);
         dragonProgressTrack.post(()->{

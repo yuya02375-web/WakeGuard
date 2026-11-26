@@ -4,6 +4,7 @@
 import re
 import subprocess
 import time
+from datetime import date
 from xml.etree import ElementTree
 
 TRAINING = "jp.replift.training"
@@ -96,11 +97,12 @@ def save_run(minutes):
 
 def main():
     shell("settings", "put", "secure", "show_ime_with_hard_keyboard", "1")
-    adb("install", "-r", "android-release/REP-LIFT-1.0.0.apk")
+    adb("install", "-r", "android-release/REP-LIFT-1.0.1.apk")
     launch(TRAINING)
-    save_run(10)
+    tap_label("ラン")
+    read_node("手入力で記録")
 
-    adb("install", "-r", "android-release/WakeGuard-2.17.39-link.apk")
+    adb("install", "-r", "android-release/WakeGuard-2.17.40-link.apk")
     # Installing WakeGuard after REP LIFT covers connecting a previously standalone installation.
     for permission in ("POST_NOTIFICATIONS", "ACTIVITY_RECOGNITION"):
         shell("pm", "grant", WAKE, f"android.permission.{permission}")
@@ -114,16 +116,32 @@ def main():
     print(f"Connect button at {connect.attrib['bounds']}", flush=True)
     tap(connect)
     read_node("連携中", scroll=True)
-    read_node("共有ストリーク", scroll=True)
+    read_node("起床・運動の共通ストリーク", exact=False, scroll=True)
+    read_node("現在の連続", exact=False, scroll=True)
+    read_node("過去最長", exact=False, scroll=True)
+    read_node("REP LIFTの運動日", exact=False, scroll=True)
     read_node("イグニド", exact=False, scroll=True)
 
+    # The shared summary must also be visible in WakeGuard before the first workout.
+    launch(WAKE)
+    read_node(("共通ストリーク", "Shared streak", "shared streak"), exact=False, scroll=True)
+    read_node(("現在の連続 0日", "Current 0 days"), exact=False, scroll=True)
+
+    launch(TRAINING)
+    save_run(10)
     save_run(11)
+    saved_day = date.fromisoformat(shell("date", "+%Y-%m-%d"))
+    day_ja = f"{saved_day.month}月{saved_day.day}日"
+    day_en = f"{saved_day.strftime('%b')} {saved_day.day}"
     tap_label("設定")
     scroll_to_settings_bottom()
     read_node("Lv. 2", exact=False, scroll=True)
+    read_node(day_ja, exact=False, scroll=True)
 
     launch(WAKE)
-    read_node(("共通ストリーク 1日", "Shared streak · 1 days"), exact=False, scroll=True)
+    read_node(("現在の連続 1日", "Current 1 day"), exact=False, scroll=True)
+    read_node(("過去最長 1日", "Best 1 day"), exact=False, scroll=True)
+    read_node((day_ja, day_en), exact=False, scroll=True)
 
 
 if __name__ == "__main__":

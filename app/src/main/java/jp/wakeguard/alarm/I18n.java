@@ -113,7 +113,21 @@ public final class I18n {
         put("アラームはありません。右上の＋から追加できます。","No alarms. Tap + at the top right to add one.","알람이 없습니다. 오른쪽 위 +에서 추가할 수 있습니다.");
         put("次のアラームはありません","No upcoming alarms","다음 알람이 없습니다"); put("毎日","Every day","매일"); put("1回のみ","Once","한 번만");
         put("ストリーク","Streak","스트릭"); put("カレンダー","Calendar","캘린더");
-        put("共通ストリーク %d日","Shared streak · %d days","공유 스트릭 %d일");
+        put("起床・運動の共通ストリーク","Shared streak","기상·운동 공유 스트릭");
+        put("現在の連続 %d日","Current %d days","현재 %d일");
+        put("現在の連続 1日","Current 1 day","현재 1일");
+        put("過去最長 %d日","Best %d days","최고 %d일");
+        put("過去最長 1日","Best 1 day","최고 1일");
+        put("起床成功または運動を記録した連続日数です。同じ日は1日と数えます。",
+            "Consecutive calendar days with a successful wake-up or a recorded workout. Each date counts once.",
+            "기상에 성공했거나 운동을 기록한 연속 일수입니다. 같은 날짜는 한 번만 계산합니다.");
+        put("起床ストリーク","Wake-up streak","기상 스트릭");
+        put("起床の最高記録","Best wake-up streak","최고 기상 스트릭");
+        put("設定した曜日の起床が対象です。保護日はストリークを維持します。",
+            "Scheduled wake-ups count. Protection days preserve the streak.",
+            "설정한 요일의 기상이 대상입니다. 보호일에는 스트릭이 유지됩니다.");
+        put("次の成長段階まであと %d 日分の記録","Next growth stage in %d recorded days","다음 성장 단계까지 %d일의 기록");
+        put("あと%2$d日分の記録で%1$sへ","%1$s in %2$d recorded days","%2$d일을 더 기록하면 %1$s");
         put("ドラゴンの成長","Dragon growth","드래곤 성장");
         put("竜の卵","Dragon egg","드래곤 알"); put("火種","Ember","불씨");
         put("小さな炎","Small flame","작은 불꽃"); put("幼炎竜","Young fire dragon","어린 불꽃 드래곤");

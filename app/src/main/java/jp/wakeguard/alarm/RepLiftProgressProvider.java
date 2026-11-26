@@ -49,20 +49,31 @@ public final class RepLiftProgressProvider extends ContentProvider {
             case "restore":
                 restore(context, today, extras);
                 break;
+            case "unlink":
+                break;
             default:
                 throw new IllegalArgumentException("Unknown REP LIFT method");
         }
+        SharedStreak.setLinked(context, !"unlink".equals(method));
 
         SharedStreak.Summary summary = SharedStreak.summarize(context, today);
         long level = StreakGrowth.level(context);
         Bundle result = new Bundle();
         result.putInt("current", summary.current);
         result.putInt("best", summary.best);
+        result.putString("currentStart", isoDate(summary.currentStart));
+        result.putString("currentEnd", isoDate(summary.currentEnd));
+        result.putString("bestStart", isoDate(summary.bestStart));
+        result.putString("bestEnd", isoDate(summary.bestEnd));
         result.putLong("level", level);
         result.putString("form", StreakGrowth.growthDescriptor(context, level));
         result.putLong("remaining", StreakGrowth.remainingToNext(level));
         result.putInt("stage", StreakGrowth.artStage(level));
         return result;
+    }
+
+    private static String isoDate(LocalDate date) {
+        return date == null ? null : date.toString();
     }
 
     private static void restore(Context context, LocalDate today, Bundle extras) {

@@ -35,6 +35,40 @@
     return `<span class="link-portrait" aria-hidden="true"><img src="wakeguard-art/${form.file}" alt="" style="--art-scale:${scale.toFixed(4)};--art-x:${x.toFixed(2)}%;--art-y:${y.toFixed(2)}%"></span>`;
   }
 
+  function isoDate(value) {
+    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+    const date = new Date(`${value}T00:00:00Z`);
+    return Number.isFinite(date.valueOf()) && date.toISOString().slice(0, 10) === value ? value : null;
+  }
+
+  function dateRange(days, first, last) {
+    if (!days) return "記録なし";
+    const start = isoDate(first);
+    const end = isoDate(last);
+    if (!start || !end || start > end) return "期間データなし";
+    const year = String(new Date().getFullYear());
+    const showYear = !start.startsWith(`${year}-`) || !end.startsWith(`${year}-`);
+    const time = (iso) => {
+      const [y, m, d] = iso.split("-").map(Number);
+      return `<time datetime="${iso}">${showYear ? `${y}年` : ""}${m}月${d}日</time>`;
+    };
+    return start === end ? time(start) : `${time(start)}〜${time(end)}`;
+  }
+
+  function streakMetric(label, days, first, last, marker) {
+    return `<div class="link-metric"><dt>${label}</dt>
+      <dd><span class="link-count"><strong ${marker}>${days}</strong>日</span><small class="link-range">${dateRange(days, first, last)}</small></dd>
+    </div>`;
+  }
+
+  function localActivity() {
+    const days = globalThis.repLiftActivityDays?.() ?? [];
+    const count = new Set(days).size;
+    return `<div class="link-local"><div><h3>REP LIFTの運動日</h3><p>この端末に保存した筋トレ・ランの日数</p></div>
+      <span class="link-count"><strong data-replift-local-days>${count}</strong>日</span>
+    </div>`;
+  }
+
   function linkedContent(settings) {
     const form = forms[asCount(snapshot.stage)] ?? forms[0];
     const level = Math.max(1, asCount(snapshot.level, 1));
@@ -42,13 +76,23 @@
     const best = asCount(snapshot.best);
     const remaining = asCount(snapshot.remaining);
     const formName = typeof snapshot.form === "string" && snapshot.form.trim() ? escapeText(snapshot.form) : form.name;
-    return `<div class="link-companion">
-        ${portrait(form)}
-        <div class="link-companion-copy"><h3>イグニド</h3><p>${formName} <span>Lv. ${level}</span></p>
-          ${settings && remaining ? `<p class="link-next">次の姿は Lv. ${level + remaining}</p>` : ""}</div>
-        <div class="link-streak"><span>共有ストリーク</span><div><strong data-wakeguard-current>${streak}</strong><span>日</span></div>
-          ${settings ? `<small>最高 ${best} 日</small>` : ""}</div>
-      </div>${settings ? `<div class="link-controls">${action("refresh", "更新")}${action("disconnect", "連携を解除", "ghost")}</div>` : ""}`;
+    return `<div class="link-overview">
+        <div class="link-companion">
+          ${portrait(form)}
+          <div class="link-companion-copy"><h3>イグニド</h3><p>${formName} <span>Lv. ${level}</span></p>
+            ${settings && remaining ? `<p class="link-next">次の姿は Lv. ${level + remaining}</p>` : ""}</div>
+        </div>
+        <div class="link-streak">
+          <h3>起床・運動の共通ストリーク</h3>
+          <dl class="link-metrics">
+            ${streakMetric("現在の連続", streak, snapshot.currentStart, snapshot.currentEnd, "data-wakeguard-current")}
+            ${streakMetric("過去最長", best, snapshot.bestStart, snapshot.bestEnd, "data-wakeguard-best")}
+          </dl>
+          ${settings ? '<p class="link-note">起床または運動の記録が続いた日数です。同じ日付は1日として数えます。</p>' : ""}
+        </div>
+      </div>
+      ${localActivity()}
+      ${settings ? `<div class="link-controls">${action("refresh", "更新")}${action("disconnect", "連携を解除", "ghost")}</div>` : ""}`;
   }
 
   function disconnectedContent(bridge) {

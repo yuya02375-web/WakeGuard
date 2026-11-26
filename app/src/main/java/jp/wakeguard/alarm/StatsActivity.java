@@ -33,6 +33,7 @@ public class StatsActivity extends Activity {
     private LinearLayout body;
     private LinearLayout recentWeek;
     private TextView currentValue,bestValue,totalValue,monthTitle,monthSummary,growthLevel,growthNext,protectionValue,protectionMetricValue;
+    private TextView sharedStreakValue;
     private GridLayout calendar;
     private StreakCompanionView companion;
 
@@ -150,7 +151,7 @@ public class StatsActivity extends Activity {
         LinearLayout streakCopy=new LinearLayout(this);
         streakCopy.setOrientation(LinearLayout.VERTICAL);
         streakCopy.setGravity(Gravity.CENTER_VERTICAL);
-        TextView label=Ui.text(this,"現在のストリーク",13,secondary);
+        TextView label=Ui.text(this,"起床ストリーク",13,secondary);
         label.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         streakCopy.addView(label);
         currentValue=Ui.title(this,"",42);
@@ -161,11 +162,16 @@ public class StatsActivity extends Activity {
         highlight.addView(companion,companionLp);
         highlight.addView(streakCopy,new LinearLayout.LayoutParams(0,-2,1));
         card.addView(highlight);
+        TextView wakeRule=Ui.text(this,"設定した曜日の起床が対象です。保護日はストリークを維持します。",12,secondary);
+        card.addView(wakeRule,Ui.gapTop(this,3));
         growthLevel=Ui.title(this,"",16);
         growthLevel.setTextColor(primary);
         card.addView(growthLevel,Ui.gapTop(this,5));
         growthNext=Ui.text(this,"",13,secondary);
         card.addView(growthNext,Ui.gapTop(this,3));
+        sharedStreakValue=Ui.text(this,"",13,secondary);
+        sharedStreakValue.setVisibility(View.GONE);
+        card.addView(sharedStreakValue,Ui.gapTop(this,9));
 
         View divider=new View(this);
         divider.setBackgroundColor(Ui.BORDER);
@@ -192,7 +198,7 @@ public class StatsActivity extends Activity {
         LinearLayout row=new LinearLayout(this);
         row.setOrientation(compactTextLayout()?LinearLayout.VERTICAL:LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        bestValue=addMetric(row,"最高","0日");
+        bestValue=addMetric(row,"起床の最高記録","0日");
         totalValue=addMetric(row,"成功","0回");
         protectionMetricValue=addMetric(row,"保護","0 / 3");
         body.addView(row);
@@ -367,18 +373,24 @@ public class StatsActivity extends Activity {
         SpannableString days=new SpannableString(count+unit);
         days.setSpan(new RelativeSizeSpan(.48f),count.length(),days.length(),Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         currentValue.setText(days);
-        currentValue.setContentDescription(I18n.tr(this,"現在のストリーク")+" "+days);
+        currentValue.setContentDescription(I18n.tr(this,"起床ストリーク")+" "+days);
         bestValue.setText(I18n.tr(this,Prefs.bestStreak(this)+"日"));
         totalValue.setText(I18n.tr(this,Prefs.totalWakeups(this)+"回"));
         growthLevel.setText(StreakGrowth.growthDescriptor(this,level)+"  ·  Lv."+level);
+        boolean linked=SharedStreak.isLinked(this);
         long next=StreakGrowth.nextMilestone(level);
         if(next==0L){
             growthNext.setText(I18n.tr(this,"最終段階で成長中"));
         }else{
             String nextName=StreakGrowth.growthDescriptor(this,next);
             long remaining=next-level;
-            String key=remaining==1L?"次の起床成功で%1$sへ":"あと%2$d回の起床成功で%1$sへ";
+            String key=linked?"あと%2$d日分の記録で%1$sへ":
+                    remaining==1L?"次の起床成功で%1$sへ":"あと%2$d回の起床成功で%1$sへ";
             growthNext.setText(String.format(I18n.locale(this),I18n.tr(this,key),nextName,remaining));
+        }
+        sharedStreakValue.setVisibility(linked?View.VISIBLE:View.GONE);
+        if(linked){
+            sharedStreakValue.setText(SharedStreak.displayText(this,SharedStreak.summarize(this,LocalDate.now())));
         }
         companion.setGrowth(level,streak);
         renderRecentWeek();

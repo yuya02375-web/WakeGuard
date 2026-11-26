@@ -55,11 +55,6 @@ public final class StreakGrowth {
         return days;
     }
 
-    static synchronized boolean hasLinkedTrainingDays(Context c) {
-        return !p(c).getStringSet(TRAINING_DAYS, Collections.emptySet()).isEmpty()
-                || !legacyTrainingDays(c).isEmpty();
-    }
-
     static synchronized boolean restoreTrainingDays(Context c, Set<String> incoming) {
         Set<String> days = linkedTrainingDays(c);
         return !days.addAll(incoming) || p(c).edit().putStringSet(TRAINING_DAYS, days).commit();

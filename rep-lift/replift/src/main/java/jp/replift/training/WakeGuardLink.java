@@ -48,9 +48,15 @@ final class WakeGuardLink {
 
     void change(boolean enabled, String datesJson) {
         WORKER.execute(() -> {
-            prefs.edit().putBoolean(ENABLED, enabled).apply();
-            if (enabled) queueDates(datesJson);
-            else prefs.edit().remove(PENDING_RESTORE).remove(PENDING_TODAY).apply();
+            boolean wasEnabled = isEnabled();
+            SharedPreferences.Editor edit = prefs.edit().putBoolean(ENABLED, enabled);
+            if (enabled) {
+                edit.apply();
+                queueDates(datesJson);
+            } else {
+                edit.remove(PENDING_RESTORE).remove(PENDING_TODAY).apply();
+                if (wasEnabled) unlink();
+            }
             publish();
         });
     }
@@ -112,6 +118,15 @@ final class WakeGuardLink {
             }
         }
         onState.accept(state(enabled, status, progress));
+    }
+
+    private void unlink() {
+        if (!"connected".equals(availability())) return;
+        try {
+            app.getContentResolver().call(ENDPOINT, "unlink", null, null);
+        } catch (RuntimeException ignored) {
+            // Older providers may reject unlink. Sharing stays disabled locally if the call fails.
+        }
     }
 
     private Bundle sync() {
@@ -195,6 +210,10 @@ final class WakeGuardLink {
             state.put("status", status);
             state.put("current", progress == null ? 0 : progress.getInt("current"));
             state.put("best", progress == null ? 0 : progress.getInt("best"));
+            state.put("currentStart", progress == null ? "" : progress.getString("currentStart", ""));
+            state.put("currentEnd", progress == null ? "" : progress.getString("currentEnd", ""));
+            state.put("bestStart", progress == null ? "" : progress.getString("bestStart", ""));
+            state.put("bestEnd", progress == null ? "" : progress.getString("bestEnd", ""));
             state.put("level", progress == null ? 0 : progress.getLong("level"));
             state.put("form", progress == null ? "" : progress.getString("form", ""));
             state.put("remaining", progress == null ? 0 : progress.getLong("remaining"));
