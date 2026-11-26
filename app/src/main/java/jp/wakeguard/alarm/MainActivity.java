@@ -24,7 +24,7 @@ public class MainActivity extends Activity {
     private LinearLayout heroContent;
     private TextView emptyHeading;
     private StreakCompanionView dragonCompanion;
-    private TextView dragonFormText,dragonLevelText,dragonProgressText;
+    private TextView dragonFormText,dragonLevelText,dragonProgressText,dragonCurrentStreakText;
     private FrameLayout dragonProgressTrack;
     private View dragonProgressFill;
 
@@ -488,6 +488,9 @@ public class MainActivity extends Activity {
         titleRow.addView(dragonLevelText,levelLp);
         summary.addView(titleRow);
 
+        dragonCurrentStreakText=Ui.text(this,"共通ストリーク 0日",13,summaryDetail);
+        summary.addView(dragonCurrentStreakText,Ui.gapTop(this,3));
+
         dragonProgressText=Ui.text(this,"",13,summaryDetail);
         dragonProgressText.setPadding(0,Ui.dp(this,4),0,Ui.dp(this,7));
         summary.addView(dragonProgressText);
@@ -507,13 +510,15 @@ public class MainActivity extends Activity {
         if(dragonCompanion==null)return;
         StreakGrowth.ensure(this);
         long level=StreakGrowth.level(this);
-        dragonCompanion.setGrowth(level,StreakTracker.displayCurrent(this));
+        int sharedStreak=SharedStreak.current(this);
+        dragonCompanion.setGrowth(level,sharedStreak);
+        dragonCurrentStreakText.setText("共通ストリーク  "+sharedStreak+"日");
         dragonFormText.setText(StreakGrowth.growthDescriptor(this,level));
         dragonLevelText.setText("Lv."+level);
         long remaining=StreakGrowth.remainingToNext(level);
         if(remaining>0L){
-            dragonProgressText.setText(String.format(I18n.locale(this),
-                    I18n.tr(this,"次の成長段階まであと %d 回"),remaining));
+            String nextGrowth=localized("次の成長段階まであと %d 日","%d active days to next growth","다음 성장 단계까지 %d일");
+            dragonProgressText.setText(String.format(I18n.locale(this),nextGrowth,remaining));
         }else{
             dragonProgressText.setText(I18n.tr(this,"最終段階で成長中"));
         }
