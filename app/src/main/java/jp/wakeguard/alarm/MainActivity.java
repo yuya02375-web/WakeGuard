@@ -140,6 +140,7 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams dragonLp = new LinearLayout.LayoutParams(Ui.dp(this,artworkSize), Ui.dp(this,artworkSize));
         dragonLp.setMarginStart(Ui.dp(this,8));
         overview.addView(dragonCompanion, dragonLp);
+        overview.setBackground(Ui.starChartAccent(this, false, dragonLp.width + dragonLp.getMarginStart()));
         addDragonGrowthSummary(nextCard);
         LinearLayout.LayoutParams nextLp=new LinearLayout.LayoutParams(-1,-2);
         nextLp.setMargins(Ui.dp(this,16),Ui.dp(this,6),Ui.dp(this,16),Ui.dp(this,5));
