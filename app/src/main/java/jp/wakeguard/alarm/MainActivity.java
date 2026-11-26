@@ -167,9 +167,9 @@ public class MainActivity extends Activity {
 
     private LinearLayout bottomNav(){
         LinearLayout nav=new LinearLayout(this);nav.setGravity(Gravity.CENTER);nav.setPadding(Ui.dp(this,9),Ui.dp(this,2),Ui.dp(this,9),Ui.dp(this,2));nav.setBackground(Ui.navigationSurface(this));
-        LinearLayout alarms=Ui.bottomTab(this,"アラーム",true);LinearLayout clock=Ui.bottomTab(this,"時計",false);LinearLayout records=Ui.bottomTab(this,"記録",false);LinearLayout settings=Ui.bottomTab(this,"設定",false);
-        nav.addView(alarms,new LinearLayout.LayoutParams(0,-2,1));nav.addView(clock,new LinearLayout.LayoutParams(0,-2,1));nav.addView(records,new LinearLayout.LayoutParams(0,-2,1));nav.addView(settings,new LinearLayout.LayoutParams(0,-2,1));
-        clock.setOnClickListener(v->openClock("world"));records.setOnClickListener(v->Ui.launchNoAnimation(this,new Intent(this,StatsActivity.class)));settings.setOnClickListener(v->Ui.launchNoAnimation(this,new Intent(this,SystemSettingsActivity.class)));return nav;
+        LinearLayout alarms=Ui.bottomTab(this,"アラーム",true);LinearLayout clock=Ui.bottomTab(this,"時計",false);LinearLayout records=Ui.bottomTab(this,"記録",false);LinearLayout training=Ui.bottomTab(this,"筋トレ",false);LinearLayout settings=Ui.bottomTab(this,"設定",false);
+        nav.addView(alarms,new LinearLayout.LayoutParams(0,-2,1));nav.addView(clock,new LinearLayout.LayoutParams(0,-2,1));nav.addView(records,new LinearLayout.LayoutParams(0,-2,1));nav.addView(training,new LinearLayout.LayoutParams(0,-2,1));nav.addView(settings,new LinearLayout.LayoutParams(0,-2,1));
+        clock.setOnClickListener(v->openClock("world"));records.setOnClickListener(v->Ui.launchNoAnimation(this,new Intent(this,StatsActivity.class)));training.setOnClickListener(v->Ui.launchNoAnimation(this,new Intent(this,WorkoutActivity.class)));settings.setOnClickListener(v->Ui.launchNoAnimation(this,new Intent(this,SystemSettingsActivity.class)));return nav;
     }
 
     private void openClock(String mode){

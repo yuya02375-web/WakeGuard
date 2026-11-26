@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d1814">
+  <meta name="description" content="器具と体調に合わせた筋トレ、ランの計測、自己ベストをひとつに。">
+  <title>REP LIFT｜筋トレとランの記録</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="app.webmanifest">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="native-geolocation.js"></script>
+  <script defer src="training.js"></script>
+  <script defer src="run.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">本文へ移動</a>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="#today" aria-label="REP LIFT 今日">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M9 28h6l6-16h-6L9 28Zm10 0h6l6-16h-6l-6 16Z" fill="currentColor"/></svg></span>
+        <span class="brand-copy"><strong>REP LIFT<span>.</span></strong><small>トレーニングログ</small></span>
+      </a>
+      <nav class="side-nav" aria-label="メイン"></nav>
+      <div class="sidebar-foot"></div>
+    </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <div class="topbar-date"></div>
+        <div class="topbar-actions"></div>
+      </header>
+      <main id="content" tabindex="-1"></main>
+    </div>
+    <nav class="bottom-nav" aria-label="メイン"></nav>
+  </div>
+  <dialog id="modal" class="modal" aria-labelledby="modal-title"><div class="modal-body"></div></dialog>
+  <div class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

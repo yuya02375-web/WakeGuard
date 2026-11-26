@@ -12,6 +12,8 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -67,6 +69,7 @@
         <activity android:name=".UiProfilePickerActivity" android:exported="false" />
         <activity android:name=".VisualDesignPickerActivity" android:exported="false" />
         <activity android:name=".StatsActivity" android:exported="false" />
+        <activity android:name=".WorkoutActivity" android:exported="false" />
         <activity android:name=".ClockFaceActivity" android:exported="false" android:showWhenLocked="true" />
         <activity android:name=".ClockSettingsActivity" android:exported="false" />
         <activity android:name=".TimeLogActivity" android:exported="false" />

@@ -29,11 +29,17 @@ public final class StreakGrowth {
     }
 
     public static void onWakeSuccess(Context c,long epochDay){
+        if(epochDay<=0L||Prefs.wasSuccessful(c,java.time.LocalDate.ofEpochDay(epochDay)))return;
+        onActivitySuccess(c,epochDay);
+    }
+
+    /** Shared activity grows Ignido at most once per calendar day. */
+    public static void onActivitySuccess(Context c,long epochDay){
         ensure(c);
-        if (epochDay <= 0L || Prefs.wasSuccessful(c, java.time.LocalDate.ofEpochDay(epochDay))) return;
+        if(epochDay<=0L)return;
         SharedPreferences sp=p(c);
         long lastGrowthDay=sp.getLong("last_growth_epoch_day",Prefs.lastSuccessEpochDay(c));
-        if(lastGrowthDay==epochDay)return;
+        if(epochDay<=lastGrowthDay)return;
         long now=level(c);
         SharedPreferences.Editor edit=sp.edit().putLong("last_growth_epoch_day",epochDay);
         if(now<Long.MAX_VALUE)edit.putLong("level",now+1L);

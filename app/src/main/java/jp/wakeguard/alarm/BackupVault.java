@@ -30,6 +30,7 @@ public final class BackupVault {
             "wake_guard_multi_alarms",
             "time_log_v1",
             "wakeguard_streak_growth_v1",
+            "wakeguard_training_days_v1",
             "wakeguard_streak_protection_v1",
             "wakeguard_streak_game_v1",
             "clock_tools",
