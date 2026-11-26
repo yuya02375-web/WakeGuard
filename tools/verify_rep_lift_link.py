@@ -68,6 +68,15 @@ def tap_label(label, *, scroll=False):
     tap(read_node(label, scroll=scroll))
 
 
+def scroll_to_settings_bottom():
+    size = re.findall(r"\d+x\d+", shell("wm", "size"))[-1].split("x")
+    width, height = map(int, size)
+    for _ in range(3):
+        shell("input", "swipe", str(width // 2), str(height * 7 // 8),
+              str(width // 2), str(height // 4), "400")
+    time.sleep(0.5)
+
+
 def save_run(minutes):
     tap_label("ラン")
     read_node("手入力で記録")
@@ -100,13 +109,17 @@ def main():
 
     launch(TRAINING)
     tap_label("設定")
-    tap_label("WakeGuard と連携", scroll=True)
+    scroll_to_settings_bottom()
+    connect = read_node("WakeGuard と連携", scroll=True)
+    print(f"Connect button at {connect.attrib['bounds']}", flush=True)
+    tap(connect)
     read_node("連携中", scroll=True)
     read_node("共有ストリーク", scroll=True)
     read_node("イグニド", exact=False, scroll=True)
 
     save_run(11)
     tap_label("設定")
+    scroll_to_settings_bottom()
     read_node("Lv. 2", exact=False, scroll=True)
 
     launch(WAKE)
