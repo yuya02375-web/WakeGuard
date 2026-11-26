@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <permission
+        android:name="jp.wakeguard.alarm.permission.REP_LIFT_LINK"
+        android:protectionLevel="signature" />
+
     <!-- Exact alarms are the core purpose of this app. Android 13+ uses USE_EXACT_ALARM;
          Android 12/12L use the user-granted SCHEDULE_EXACT_ALARM capability. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
@@ -12,8 +16,6 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -24,6 +26,10 @@
 
     <!-- INTERNET intentionally omitted: core world-clock search stays local. Optional online place
          resolution is delegated to Android's Geocoder service and never replaces local search. -->
+
+    <queries>
+        <package android:name="jp.replift.training" />
+    </queries>
 
     <application
         android:name=".WakeGuardApp"
@@ -36,6 +42,13 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:localeConfig="@xml/locales_config"
         android:theme="@style/WakeGuardThemeNoFlash">
+
+        <provider
+            android:name=".RepLiftProgressProvider"
+            android:authorities="jp.wakeguard.alarm.replift"
+            android:exported="true"
+            android:permission="jp.wakeguard.alarm.permission.REP_LIFT_LINK"
+            android:grantUriPermissions="false" />
 
         <activity
             android:name=".AlarmActivity"
@@ -69,7 +82,6 @@
         <activity android:name=".UiProfilePickerActivity" android:exported="false" />
         <activity android:name=".VisualDesignPickerActivity" android:exported="false" />
         <activity android:name=".StatsActivity" android:exported="false" />
-        <activity android:name=".WorkoutActivity" android:exported="false" />
         <activity android:name=".ClockFaceActivity" android:exported="false" android:showWhenLocked="true" />
         <activity android:name=".ClockSettingsActivity" android:exported="false" />
         <activity android:name=".TimeLogActivity" android:exported="false" />

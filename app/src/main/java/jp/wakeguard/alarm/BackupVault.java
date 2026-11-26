@@ -30,7 +30,6 @@ public final class BackupVault {
             "wake_guard_multi_alarms",
             "time_log_v1",
             "wakeguard_streak_growth_v1",
-            "wakeguard_training_days_v1",
             "wakeguard_streak_protection_v1",
             "wakeguard_streak_game_v1",
             "clock_tools",
@@ -83,6 +82,7 @@ public final class BackupVault {
         if ("wake_guard".equals(file) && WAKE_GUARD_RUNTIME_KEYS.contains(key)) return false;
         if ("time_log_v1".equals(file) && TIME_LOG_RUNTIME_KEYS.contains(key)) return false;
         if ("clock_tools".equals(file) && CLOCK_RUNTIME_KEYS.contains(key)) return false;
+        if (StreakGrowth.isLocalTrainingState(file, key)) return false;
         return true;
     }
 
@@ -135,7 +135,11 @@ public final class BackupVault {
             for (String file : PREF_FILES) {
                 JSONObject fileObject = allPrefs.optJSONObject(file);
                 if (fileObject == null) continue;
-                SharedPreferences.Editor editor = context.getSharedPreferences(file, Context.MODE_PRIVATE).edit().clear();
+                SharedPreferences prefs = context.getSharedPreferences(file, Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = prefs.edit();
+                for (String key : prefs.getAll().keySet()) {
+                    if (!StreakGrowth.isLocalTrainingState(file, key)) editor.remove(key);
+                }
                 JSONArray names = fileObject.names();
                 if (names != null) {
                     for (int i = 0; i < names.length(); i++) {

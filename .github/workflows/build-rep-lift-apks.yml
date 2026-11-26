@@ -1,0 +1,138 @@
+name: Build separate REP LIFT and WakeGuard Android APKs
+
+on:
+  push:
+    branches: [codex/rep-lift-wakeguard-2.17.38]
+    paths:
+      - 'app/**'
+      - 'rep-lift/**'
+      - '.github/workflows/build-rep-lift-apks.yml'
+      - 'tools/verify_rep_lift_link.py'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK 36
+        shell: bash
+        run: |
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$SDKMANAGER" ]]; then
+            SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -maxdepth 3 -type f -name sdkmanager -print -quit)"
+          fi
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --licenses >/dev/null || true
+          "$SDKMANAGER" --sdk_root="$SDK_ROOT" "platforms;android-36" "build-tools;36.0.0"
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
+          echo "$SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.5.0'
+
+      - name: Restore Gradle project skeleton
+        shell: bash
+        run: |
+          cat .wakeguard-parts/*.b64 | base64 --decode > "$RUNNER_TEMP/WakeGuard-root.zip"
+          unzip -q "$RUNNER_TEMP/WakeGuard-root.zip" -d .
+          test -f WakeGuard/settings.gradle.kts
+          test -f WakeGuard/gradle.properties
+
+      - name: Build the independent Android projects
+        shell: bash
+        run: |
+          rm -rf WakeGuard/app
+          cp -R app WakeGuard/app
+          gradle -p WakeGuard :app:assembleRelease --stacktrace
+          gradle -p rep-lift :replift:assembleRelease --stacktrace
+
+      - name: Restore stable signing key
+        env:
+          WAKEGUARD_KEYSTORE_B64: ${{ secrets.WAKEGUARD_KEYSTORE_B64 }}
+        shell: bash
+        run: |
+          CLEANED="$(printf '%s' "$WAKEGUARD_KEYSTORE_B64" | tr -d '\r\n\t ')"
+          CLEANED="${CLEANED#WAKEGUARD_KEYSTORE_B64=}"
+          CLEANED="${CLEANED#\"}"
+          CLEANED="${CLEANED%\"}"
+          printf '%s' "$CLEANED" | base64 --decode > "$RUNNER_TEMP/wakeguard-release.p12"
+          test -s "$RUNNER_TEMP/wakeguard-release.p12"
+          chmod 600 "$RUNNER_TEMP/wakeguard-release.p12"
+
+      - name: Sign and validate each APK
+        env:
+          WAKEGUARD_KEYSTORE_PASSWORD: ${{ secrets.WAKEGUARD_KEYSTORE_PASSWORD }}
+          WAKEGUARD_KEY_ALIAS: ${{ secrets.WAKEGUARD_KEY_ALIAS }}
+          WAKEGUARD_KEY_PASSWORD: ${{ secrets.WAKEGUARD_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          SIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
+          KEY="$RUNNER_TEMP/wakeguard-release.p12"
+          trap 'rm -f "$KEY"' EXIT
+          EXPECTED="DB95A00E32A6B4C3F54D43B91CF67155DCA7057C2C0EE145F5FB98178F311C2E"
+          mkdir -p android-release
+          sign() {
+            local input="$1" output="android-release/$2.apk" pkg="$3" code="$4" version="$5"
+            "$SIGNER" sign --ks "$KEY" --ks-type PKCS12 \
+              --ks-key-alias "$WAKEGUARD_KEY_ALIAS" --ks-pass env:WAKEGUARD_KEYSTORE_PASSWORD \
+              --key-pass env:WAKEGUARD_KEY_PASSWORD --v2-signing-enabled true \
+              --v3-signing-enabled true --out "$output" "$input"
+            "$SIGNER" verify --verbose --print-certs "$output" > "$RUNNER_TEMP/apk-signature.txt"
+            test "$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/apk-signature.txt" | tr '[:lower:]' '[:upper:]')" = "$EXPECTED"
+            "$AAPT" dump badging "$output" | grep -F "package: name='$pkg' versionCode='$code' versionName='$version'"
+            (cd android-release && sha256sum "$2.apk" > "$2.apk.sha256")
+          }
+          sign WakeGuard/app/build/outputs/apk/release/app-release-unsigned.apk WakeGuard-2.17.39-link jp.wakeguard.alarm 247 2.17.39
+          sign rep-lift/replift/build/outputs/apk/release/replift-release-unsigned.apk REP-LIFT-1.0.0 jp.replift.training 1 1.0.0
+          "$AAPT" dump xmltree android-release/WakeGuard-2.17.39-link.apk AndroidManifest.xml > "$RUNNER_TEMP/wakeguard-manifest.txt"
+          if grep -Fq 'WorkoutActivity' "$RUNNER_TEMP/wakeguard-manifest.txt"; then exit 1; fi
+          if unzip -Z1 android-release/WakeGuard-2.17.39-link.apk | grep '^assets/rep-lift/' > /dev/null; then exit 1; fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: REP-LIFT-Android-APKs
+          path: |
+            android-release/*.apk
+            android-release/*.apk.sha256
+          if-no-files-found: error
+
+  verify-link:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: REP-LIFT-Android-APKs
+          path: android-release
+      - name: Enable KVM access
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Open both independent apps and check optional linking
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: default
+          arch: x86_64
+          profile: pixel_5
+          disable-animations: true
+          script: python3 tools/verify_rep_lift_link.py

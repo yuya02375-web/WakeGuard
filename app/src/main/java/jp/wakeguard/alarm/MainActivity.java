@@ -24,7 +24,7 @@ public class MainActivity extends Activity {
     private LinearLayout heroContent;
     private TextView emptyHeading;
     private StreakCompanionView dragonCompanion;
-    private TextView dragonFormText,dragonLevelText,dragonProgressText,dragonCurrentStreakText;
+    private TextView dragonFormText,dragonLevelText,dragonProgressText,dragonSharedStreakText;
     private FrameLayout dragonProgressTrack;
     private View dragonProgressFill;
 
@@ -167,9 +167,9 @@ public class MainActivity extends Activity {
 
     private LinearLayout bottomNav(){
         LinearLayout nav=new LinearLayout(this);nav.setGravity(Gravity.CENTER);nav.setPadding(Ui.dp(this,9),Ui.dp(this,2),Ui.dp(this,9),Ui.dp(this,2));nav.setBackground(Ui.navigationSurface(this));
-        LinearLayout alarms=Ui.bottomTab(this,"アラーム",true);LinearLayout clock=Ui.bottomTab(this,"時計",false);LinearLayout records=Ui.bottomTab(this,"記録",false);LinearLayout training=Ui.bottomTab(this,"筋トレ",false);LinearLayout settings=Ui.bottomTab(this,"設定",false);
-        nav.addView(alarms,new LinearLayout.LayoutParams(0,-2,1));nav.addView(clock,new LinearLayout.LayoutParams(0,-2,1));nav.addView(records,new LinearLayout.LayoutParams(0,-2,1));nav.addView(training,new LinearLayout.LayoutParams(0,-2,1));nav.addView(settings,new LinearLayout.LayoutParams(0,-2,1));
-        clock.setOnClickListener(v->openClock("world"));records.setOnClickListener(v->Ui.launchNoAnimation(this,new Intent(this,StatsActivity.class)));training.setOnClickListener(v->Ui.launchNoAnimation(this,new Intent(this,WorkoutActivity.class)));settings.setOnClickListener(v->Ui.launchNoAnimation(this,new Intent(this,SystemSettingsActivity.class)));return nav;
+        LinearLayout alarms=Ui.bottomTab(this,"アラーム",true);LinearLayout clock=Ui.bottomTab(this,"時計",false);LinearLayout records=Ui.bottomTab(this,"記録",false);LinearLayout settings=Ui.bottomTab(this,"設定",false);
+        nav.addView(alarms,new LinearLayout.LayoutParams(0,-2,1));nav.addView(clock,new LinearLayout.LayoutParams(0,-2,1));nav.addView(records,new LinearLayout.LayoutParams(0,-2,1));nav.addView(settings,new LinearLayout.LayoutParams(0,-2,1));
+        clock.setOnClickListener(v->openClock("world"));records.setOnClickListener(v->Ui.launchNoAnimation(this,new Intent(this,StatsActivity.class)));settings.setOnClickListener(v->Ui.launchNoAnimation(this,new Intent(this,SystemSettingsActivity.class)));return nav;
     }
 
     private void openClock(String mode){
@@ -488,9 +488,6 @@ public class MainActivity extends Activity {
         titleRow.addView(dragonLevelText,levelLp);
         summary.addView(titleRow);
 
-        dragonCurrentStreakText=Ui.text(this,"共通ストリーク 0日",13,summaryDetail);
-        summary.addView(dragonCurrentStreakText,Ui.gapTop(this,3));
-
         dragonProgressText=Ui.text(this,"",13,summaryDetail);
         dragonProgressText.setPadding(0,Ui.dp(this,4),0,Ui.dp(this,7));
         summary.addView(dragonProgressText);
@@ -503,6 +500,10 @@ public class MainActivity extends Activity {
         dragonProgressTrack.addView(dragonProgressFill,new FrameLayout.LayoutParams(0,-1,Gravity.START));
         summary.addView(dragonProgressTrack,new LinearLayout.LayoutParams(-1,Ui.dp(this,5)));
 
+        dragonSharedStreakText=Ui.text(this,"",13,summaryDetail);
+        dragonSharedStreakText.setVisibility(View.GONE);
+        summary.addView(dragonSharedStreakText,Ui.gapTop(this,6));
+
         nextCard.addView(summary,Ui.gapTop(this,9));
     }
 
@@ -510,17 +511,23 @@ public class MainActivity extends Activity {
         if(dragonCompanion==null)return;
         StreakGrowth.ensure(this);
         long level=StreakGrowth.level(this);
-        int sharedStreak=SharedStreak.current(this);
-        dragonCompanion.setGrowth(level,sharedStreak);
-        dragonCurrentStreakText.setText("共通ストリーク  "+sharedStreak+"日");
+        dragonCompanion.setGrowth(level,StreakTracker.displayCurrent(this));
         dragonFormText.setText(StreakGrowth.growthDescriptor(this,level));
         dragonLevelText.setText("Lv."+level);
         long remaining=StreakGrowth.remainingToNext(level);
         if(remaining>0L){
-            String nextGrowth=localized("次の成長段階まであと %d 日","%d active days to next growth","다음 성장 단계까지 %d일");
-            dragonProgressText.setText(String.format(I18n.locale(this),nextGrowth,remaining));
+            dragonProgressText.setText(String.format(I18n.locale(this),
+                    I18n.tr(this,"次の成長段階まであと %d 回"),remaining));
         }else{
             dragonProgressText.setText(I18n.tr(this,"最終段階で成長中"));
+        }
+        if(StreakGrowth.hasLinkedTrainingDays(this)){
+            int current=SharedStreak.summarize(this,LocalDate.now()).current;
+            dragonSharedStreakText.setText(String.format(I18n.locale(this),
+                    I18n.tr(this,"共通ストリーク %d日"),current));
+            dragonSharedStreakText.setVisibility(View.VISIBLE);
+        }else{
+            dragonSharedStreakText.setVisibility(View.GONE);
         }
         float progress=StreakGrowth.progressToNext(level);
         dragonProgressTrack.post(()->{

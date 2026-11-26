@@ -2,6 +2,7 @@
 
 const T = globalThis.Training;
 const R = globalThis.RunTracker;
+const nativeApp = globalThis.RepLiftNative;
 const $ = (selector) => document.querySelector(selector);
 const root = $("#content");
 const dialog = $("#modal");
@@ -73,14 +74,24 @@ let historyTab = "activity";
 let libraryQuery = "";
 let view = "today";
 let toastTimer;
-let installPrompt;
 let result = null;
 let runState;
 let gpsMode = true;
 let sessionTick = 0;
 let activeMilliseconds = 0;
-const tracker = new R({ onChange: (value) => { runState = value; if (view === "run") updateRun(); } });
+let keepRunScreen = false;
+const tracker = new R({ onChange: (value) => {
+  runState = value;
+  if (view === "run") updateRun();
+  const active = value.phase === "running" && value.source === "gps";
+  if (active !== keepRunScreen) {
+    keepRunScreen = active;
+    nativeApp?.keepRunScreenOn(active);
+  }
+} });
 runState = tracker.snapshot();
+globalThis.repLiftActivityDays = () => [...new Set([...data.workouts, ...data.runs]
+  .filter(({ date }) => Number.isFinite(new Date(date).getTime())).map(({ date }) => localDay(date)))].sort();
 
 function saveData(next = data) {
   try {
@@ -88,7 +99,7 @@ function saveData(next = data) {
     data = next;
     return true;
   } catch {
-    notify("このブラウザに保存できません。保存領域の設定を確認してください。");
+    notify("この端末に保存できません。空き容量を確認してください。");
     return false;
   }
 }
@@ -170,6 +181,7 @@ function todayView() {
         <div class="hero-actions">${start}</div></div>
       </article>
       ${weeklyCard()}
+      ${globalThis.RepLiftLink?.card("today") ?? ""}
       <section class="workout-card card">${section("今日のメニュー", `セット間の休憩 ${compactSeconds(plan.rest)}`, button("メニュー調整", "profile", { kind: "ghost", glyph: "edit" }))}<div class="exercise-list">${workoutList(plan.items)}</div></section>
       <section class="quick-card card">${section("すぐ記録する", "好きな運動を1種目から。")}
         <div class="quick-grid">
@@ -360,7 +372,7 @@ function saveWorkout(form) {
   };
   const comparison = T.compareWorkout(entry, data.workouts);
   if (!saveData({ ...data, workouts: [...data.workouts, entry], draft: null })) return;
-  globalThis.WakeGuard?.recordActivity(localDay(entry.date));
+  nativeApp?.recordActivity(localDay(entry.date));
   activeMilliseconds = 0;
   result = { title: entry.title, subtitle: `${entry.items.length}種目 · ${entry.items.reduce((total, item) => total + item.sets.length, 0)}セット`, comparison };
   go("result");
@@ -439,7 +451,7 @@ function saveRun(form) {
   const entry = { id: newId(), date: validated.date, duration, distance, source: gps ? "gps" : "manual" };
   const comparison = T.compareRun(entry, data.runs);
   if (!saveData({ ...data, runs: [...data.runs, entry] })) return;
-  globalThis.WakeGuard?.recordActivity(localDay(entry.date));
+  nativeApp?.recordActivity(localDay(entry.date));
   if (measured) tracker.reset();
   result = { title: "ランニング", subtitle: `${R.formatTime(duration)}${distance ? ` · ${number(distance, 3)} km` : ""}`, comparison };
   closeDialog();
@@ -546,11 +558,11 @@ function settingsView() {
   return `${titleBlock("SETTINGS", "マイトレーニング設定", "あなたのペースで続けられるメニューに。")}
   <div class="subgrid">
     <section class="card">${section("トレーニングの条件")}${profileForm()}</section>
-    <section class="card">${section("記録の保存先", typeof globalThis.WakeGuard?.saveBackup === "function" ? "この端末内に保存。アプリの機能はすべて無料です。" : "端末のブラウザに保存。アプリの機能はすべて無料です.")}
+    <section class="card">${section("記録の保存先", "この端末内に保存。アプリの機能はすべて無料です。")}
       <div class="action-row">${button("バックアップを保存", "export", { glyph: "download" })}${button("読み込む", "import", { glyph: "refresh" })}<input type="file" id="import-file" accept=".json,application/json" hidden></div>
-      <p class="form-note">別の端末に移るときは、バックアップファイルを読み込めます。</p>
-      ${typeof globalThis.WakeGuard?.saveBackup === "function" ? '<p class="form-note">バックアップを保存して、機種変更後に読み込めます。</p>' : installPrompt ? button("ホーム画面に追加", "install", { glyph: "add" }) : '<p class="form-note">スマホのブラウザメニューから「ホーム画面に追加」できます。</p>'}
+      <p class="form-note">機種変更時は、保存したバックアップを新しい端末で読み込めます。</p>
     </section>
+    ${globalThis.RepLiftLink?.card("settings") ?? ""}
   </div>`;
 }
 
@@ -566,6 +578,12 @@ function closeDialog() {
   if (dialog.open) dialog.close();
   confirmAction = null;
 }
+
+globalThis.__repliftCloseDialog = () => {
+  if (!dialog.open) return false;
+  closeDialog();
+  return true;
+};
 
 function detail(id) {
   const ex = T.catalog[id];
@@ -592,8 +610,8 @@ function startPlan() {
 
 function fileExport() {
   const backup = JSON.stringify({ app: "REP LIFT", version: 1, profile: data.profile, configured: data.configured, runs: data.runs, workouts: data.workouts }, null, 2);
-  if (typeof globalThis.WakeGuard?.saveBackup === "function") {
-    globalThis.WakeGuard.saveBackup(backup);
+  if (nativeApp) {
+    nativeApp.saveBackup(backup);
     return;
   }
   const blob = new Blob([backup], { type: "application/json" });
@@ -630,16 +648,24 @@ async function importFile(file) {
       profile: data.configured ? data.profile : { ...T.profile(parsed.profile), manualDays: Boolean(parsed.profile?.manualDays) },
       configured: data.configured || Boolean(parsed.configured),
     })) return;
-    if (typeof globalThis.WakeGuard?.recordActivity === "function") {
-      const days = new Set([...parsed.workouts, ...parsed.runs].map((entry) => localDay(entry.date)));
-      for (const day of days) globalThis.WakeGuard.recordActivity(day);
-    }
+    const restoredDays = [...new Set([...parsed.workouts, ...parsed.runs].map((entry) => localDay(entry.date)))];
+    nativeApp?.restoreActivityDays(JSON.stringify(restoredDays));
     paint();
     notify("バックアップを読み込みました。");
   } catch {
     notify("REP LIFT のバックアップファイルを読み込めませんでした。");
   }
 }
+
+globalThis.__repliftImportBackup = async (path) => {
+  try {
+    const response = await fetch(path);
+    if (!response.ok) throw new Error("backup file unavailable");
+    await importFile(await response.blob());
+  } catch {
+    notify("バックアップファイルを読み込めませんでした。");
+  }
+};
 
 function go(page) {
   if (location.hash !== `#${page}`) location.hash = page;
@@ -740,13 +766,7 @@ const actions = {
   close: closeDialog,
   confirm: () => confirmAction?.(),
   export: fileExport,
-  import: () => $("#import-file")?.click(),
-  install: async () => {
-    if (!installPrompt) return;
-    await installPrompt.prompt();
-    installPrompt = null;
-    if (view === "settings") paint();
-  },
+  import: () => { if (nativeApp) nativeApp.openBackup(); else $("#import-file")?.click(); },
 };
 
 document.addEventListener("click", (event) => {
@@ -800,13 +820,5 @@ document.addEventListener("visibilitychange", () => {
 window.addEventListener("pagehide", () => {
   if (activeMilliseconds && activeDraft()) updateDraft({}, false);
 });
-window.addEventListener("beforeinstallprompt", (event) => {
-  event.preventDefault();
-  installPrompt = event;
-  if (view === "settings") paint();
-});
-if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
-}
 setInterval(updateSessionDOM, 250);
 route();

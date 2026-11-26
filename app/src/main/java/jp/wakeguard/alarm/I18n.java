@@ -113,6 +113,7 @@ public final class I18n {
         put("アラームはありません。右上の＋から追加できます。","No alarms. Tap + at the top right to add one.","알람이 없습니다. 오른쪽 위 +에서 추가할 수 있습니다.");
         put("次のアラームはありません","No upcoming alarms","다음 알람이 없습니다"); put("毎日","Every day","매일"); put("1回のみ","Once","한 번만");
         put("ストリーク","Streak","스트릭"); put("カレンダー","Calendar","캘린더");
+        put("共通ストリーク %d日","Shared streak · %d days","공유 스트릭 %d일");
         put("ドラゴンの成長","Dragon growth","드래곤 성장");
         put("竜の卵","Dragon egg","드래곤 알"); put("火種","Ember","불씨");
         put("小さな炎","Small flame","작은 불꽃"); put("幼炎竜","Young fire dragon","어린 불꽃 드래곤");
@@ -338,5 +339,3 @@ public final class I18n {
         if(v instanceof ViewGroup){ViewGroup g=(ViewGroup)v;for(int i=0;i<g.getChildCount();i++)localizeTree(g.getChildAt(i));}
     }
 }
-
-

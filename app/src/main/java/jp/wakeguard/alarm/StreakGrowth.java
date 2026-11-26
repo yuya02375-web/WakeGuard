@@ -3,14 +3,22 @@ package jp.wakeguard.alarm;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-/** One permanent companion that grows one step per successful real wake-up. No gacha, rarity, currency or inventory. */
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
+/** One permanent companion that grows once per successful wake or recorded training day. */
 public final class StreakGrowth {
     private static final String FILE="wakeguard_streak_growth_v1";
+    private static final String TRAINING_DAYS = "linked_training_days";
+    private static final String COMPLETION_DAYS = "linked_training_completion_days";
+    private static final String LEGACY_TRAINING_FILE = "wakeguard_training_days_v1";
     private StreakGrowth() {}
 
     private static SharedPreferences p(Context c){return c.getSharedPreferences(FILE,Context.MODE_PRIVATE);}
 
-    public static void ensure(Context c){
+    public static synchronized void ensure(Context c){
         SharedPreferences sp=p(c);
         if(sp.getBoolean("init",false))return;
         long migrated=1L;
@@ -28,22 +36,72 @@ public final class StreakGrowth {
         onWakeSuccess(c,java.time.LocalDate.now().toEpochDay());
     }
 
-    public static void onWakeSuccess(Context c,long epochDay){
-        if(epochDay<=0L||Prefs.wasSuccessful(c,java.time.LocalDate.ofEpochDay(epochDay)))return;
-        onActivitySuccess(c,epochDay);
+    public static synchronized void onWakeSuccess(Context c,long epochDay){
+        ensure(c);
+        if (epochDay <= 0L) return;
+        LocalDate day = LocalDate.ofEpochDay(epochDay);
+        SharedPreferences sp=p(c);
+        if (Prefs.wasSuccessful(c, day) || lastGrowthDay(c, sp) == epochDay ||
+                sp.getStringSet(COMPLETION_DAYS, Collections.emptySet()).contains(day.toString()) ||
+                legacyTrainingDays(c).contains(day.toString())) return;
+        SharedPreferences.Editor edit=sp.edit();
+        grow(sp, edit, epochDay);
+        edit.apply();
     }
 
-    /** Shared activity grows Ignido at most once per calendar day. */
-    public static void onActivitySuccess(Context c,long epochDay){
+    static synchronized Set<String> linkedTrainingDays(Context c) {
+        Set<String> days = new HashSet<>(p(c).getStringSet(TRAINING_DAYS, Collections.emptySet()));
+        days.addAll(legacyTrainingDays(c));
+        return days;
+    }
+
+    static synchronized boolean hasLinkedTrainingDays(Context c) {
+        return !p(c).getStringSet(TRAINING_DAYS, Collections.emptySet()).isEmpty()
+                || !legacyTrainingDays(c).isEmpty();
+    }
+
+    static synchronized boolean restoreTrainingDays(Context c, Set<String> incoming) {
+        Set<String> days = linkedTrainingDays(c);
+        return !days.addAll(incoming) || p(c).edit().putStringSet(TRAINING_DAYS, days).commit();
+    }
+
+    static synchronized boolean recordTrainingDay(Context c, LocalDate day) {
         ensure(c);
-        if(epochDay<=0L)return;
-        SharedPreferences sp=p(c);
-        long lastGrowthDay=sp.getLong("last_growth_epoch_day",Prefs.lastSuccessEpochDay(c));
-        if(epochDay<=lastGrowthDay)return;
-        long now=level(c);
-        SharedPreferences.Editor edit=sp.edit().putLong("last_growth_epoch_day",epochDay);
+        SharedPreferences prefs = p(c);
+        String value = day.toString();
+        Set<String> completions = new HashSet<>(prefs.getStringSet(COMPLETION_DAYS, Collections.emptySet()));
+        if (!completions.add(value) || legacyTrainingDays(c).contains(value)) return true;
+        Set<String> days = linkedTrainingDays(c);
+        days.add(value);
+        SharedPreferences.Editor edit = prefs.edit()
+                .putStringSet(TRAINING_DAYS, days)
+                .putStringSet(COMPLETION_DAYS, completions);
+        long epochDay = day.toEpochDay();
+        if (!Prefs.wasSuccessful(c, day) && lastGrowthDay(c, prefs) != epochDay) increaseLevel(prefs, edit);
+        return edit.commit();
+    }
+
+    static boolean isLocalTrainingState(String file, String key) {
+        return FILE.equals(file) && (TRAINING_DAYS.equals(key) || COMPLETION_DAYS.equals(key));
+    }
+
+    private static Set<String> legacyTrainingDays(Context c) {
+        return c.getSharedPreferences(LEGACY_TRAINING_FILE, Context.MODE_PRIVATE)
+                .getStringSet("days", Collections.emptySet());
+    }
+
+    private static long lastGrowthDay(Context c, SharedPreferences prefs) {
+        return prefs.getLong("last_growth_epoch_day", Prefs.lastSuccessEpochDay(c));
+    }
+
+    private static void grow(SharedPreferences prefs, SharedPreferences.Editor edit, long epochDay) {
+        edit.putLong("last_growth_epoch_day", epochDay);
+        increaseLevel(prefs, edit);
+    }
+
+    private static void increaseLevel(SharedPreferences prefs, SharedPreferences.Editor edit) {
+        long now = Math.max(1L, prefs.getLong("level", 1L));
         if(now<Long.MAX_VALUE)edit.putLong("level",now+1L);
-        edit.apply();
     }
 
     // Keep form labels, progress, and sprite transitions on one timeline.

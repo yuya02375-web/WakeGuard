@@ -39,7 +39,7 @@
     constructor({
       onChange = () => {},
       geolocation = global.navigator?.geolocation,
-      secureContext = global.isSecureContext !== false || typeof global.WakeGuard?.requestLocation === "function",
+      secureContext = global.isSecureContext !== false || typeof global.RepLiftNative?.requestLocation === "function",
       document = global.document,
       now = Date.now,
     } = {}) {
@@ -228,6 +228,7 @@
 
     acceptPosition(position) {
       if (this.phase !== 'running' || this.document?.hidden) return;
+      if (position.restarted) this.lastFix = null;
       const fix = readFix(position, this.now());
       if (!fix) {
         this.gps = 'weak';
