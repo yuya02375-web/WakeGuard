@@ -236,7 +236,7 @@ public final class WorkoutActivity extends Activity {
     private void sendLocationError(int watchId, int code) {
         if (webView == null) return;
         String js = "window.__wakeguardLocationError&&window.__wakeguardLocationError(" + watchId + "," + code
-                + ","Location error");";
+                + ",\"Location error\");";
         webView.post(() -> webView.evaluateJavascript(js, null));
     }
 
