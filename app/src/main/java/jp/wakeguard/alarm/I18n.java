@@ -55,7 +55,7 @@ public final class I18n {
         put("記録を削除","Delete entry","기록 삭제"); put("この時間記録を削除しますか？","Delete this time entry?","이 시간 기록을 삭제할까요?");
         put("計測開始","Start tracking","측정 시작"); put("停止して登録","Stop and save","중지 후 저장");
         put("フォルダー","Folder","폴더"); put("フォルダーを作成","Create folder","폴더 만들기");
-        put("時間単位","時間","시간"); put("分単位","分","분"); put("時間記録を削除","Delete time entry","시간 기록 삭제");
+        put("時間記録を削除","Delete time entry","시간 기록 삭제");
         put("世界","World","세계"); put("計測","Stopwatch","스톱워치"); put("選択中","Selected","선택됨");
         put("次の起床","Next wake-up","다음 기상"); put("アラームはまだありません","No alarms yet","아직 알람이 없습니다");
         put("アラームを追加","Add alarm","알람 추가"); put("次のアラーム","Next alarm","다음 알람");

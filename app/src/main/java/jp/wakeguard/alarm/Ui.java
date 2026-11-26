@@ -10,12 +10,9 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Insets;
 import android.graphics.LinearGradient;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PixelFormat;
-import android.graphics.RadialGradient;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.Typeface;
@@ -480,73 +477,6 @@ public final class Ui {
         }
         @Override public void setAlpha(int alpha) {}
         @Override public void setColorFilter(android.graphics.ColorFilter filter) {}
-        @Override public int getOpacity() { return PixelFormat.TRANSLUCENT; }
-    }
-
-    public static Drawable companionArtwork(Activity activity, boolean atStart, int portraitWidth) {
-        if (!"moonlit-stars".equals(DESIGN_ID) && VisualDesigns.landscapeSceneId(DESIGN_PATTERN) == null) return null;
-        return new CompanionArtworkDrawable(activity.getApplicationContext(), atStart, portraitWidth);
-    }
-
-    /** Places the theme illustration behind the companion, away from the numbers. */
-    private static final class CompanionArtworkDrawable extends Drawable {
-        private final Context context;
-        private final boolean atStart;
-        private final int portraitWidth;
-        private final RectF chart = new RectF();
-        private final Paint fade = new Paint(Paint.ANTI_ALIAS_FLAG);
-
-        CompanionArtworkDrawable(Context context, boolean atStart, int portraitWidth) {
-            this.context = context;
-            this.atStart = atStart;
-            this.portraitWidth = portraitWidth;
-            fade.setBlendMode(BlendMode.DST_IN);
-        }
-
-        @Override protected void onBoundsChange(Rect bounds) {
-            updateChart(bounds);
-        }
-
-        @Override public boolean onLayoutDirectionChanged(int layoutDirection) {
-            updateChart(getBounds());
-            return true;
-        }
-
-        private void updateChart(Rect bounds) {
-            if (bounds.isEmpty()) {
-                chart.setEmpty();
-                return;
-            }
-            boolean left = atStart != (getLayoutDirection() == View.LAYOUT_DIRECTION_RTL);
-            float width = Math.min(bounds.width(), portraitWidth);
-            float x = left ? bounds.left : bounds.right - width;
-            chart.set(x, bounds.top, x + width, bounds.bottom);
-            RadialGradient mask = new RadialGradient(
-                    0f, 0f, 1f, new int[]{Color.WHITE, Color.WHITE, Color.TRANSPARENT},
-                    new float[]{0f, .46f, 1f}, Shader.TileMode.CLAMP);
-            Matrix transform = new Matrix();
-            transform.setScale(chart.width() * .5f, chart.height() * .5f);
-            transform.postTranslate(chart.centerX(), chart.centerY());
-            mask.setLocalMatrix(transform);
-            fade.setShader(mask);
-        }
-
-        @Override public void draw(Canvas canvas) {
-            if (chart.isEmpty()) return;
-            int layer = canvas.saveLayer(chart, null);
-            drawArtwork(context, canvas, DESIGN_PATTERN, DESIGN_ID, chart, ACCENT, 220,
-                    context.getResources().getDisplayMetrics().density);
-            canvas.drawRect(chart, fade);
-            canvas.restoreToCount(layer);
-        }
-
-        @Override public void setAlpha(int alpha) {
-            fade.setAlpha(alpha);
-            invalidateSelf();
-        }
-
-        @Override public void setColorFilter(android.graphics.ColorFilter filter) {}
-
         @Override public int getOpacity() { return PixelFormat.TRANSLUCENT; }
     }
 

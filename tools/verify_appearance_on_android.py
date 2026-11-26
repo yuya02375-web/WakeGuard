@@ -135,6 +135,10 @@ def capture(preset, label, activity, extras):
     start(activity, extras)
     # Let native atlas decoding and the first draw finish on this cold start.
     time.sleep(2)
+    if label == "time-log":
+        labels = {node.get("text") for node in hierarchy().iter("node")}
+        if not ({"0分", "0m"} & labels):
+            raise RuntimeError("The empty time log does not show a localized zero duration")
     image = adb("exec-out", "screencap", "-p")
     if not image.startswith(b"\x89PNG\r\n\x1a\n") or len(image) < 20000:
         raise RuntimeError(f"Invalid PNG for {preset}/{label}")

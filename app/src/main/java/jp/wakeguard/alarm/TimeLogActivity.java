@@ -610,7 +610,12 @@ public class TimeLogActivity extends Activity {
         if(ms>0L&&ms<60000L){
             return (ms<1000L?"<1":String.valueOf(ms/1000L))+I18n.tr(this,"秒");
         }
-        long mins=Math.max(0,Math.round(ms/60000.0));long h=mins/60,m=mins%60;String hour=I18n.tr(this,"時間単位"),minute=I18n.tr(this,"分単位");if(h==0)return m+minute;if(m==0)return h+hour;return h+hour+m+minute;
+        long minutes = Math.max(0, Math.round(ms / 60000.0));
+        long hours = minutes / 60;
+        long remainder = minutes % 60;
+        if (hours == 0) return I18n.tr(this, remainder + "分");
+        if (remainder == 0) return I18n.tr(this, hours + "時間");
+        return I18n.tr(this, hours + "時間" + remainder + "分");
     }
 
     private void load(){folders.clear();entries.clear();try{JSONArray a=new JSONArray(p().getString(KEY_FOLDERS,"[]"));for(int i=0;i<a.length();i++){JSONObject o=a.getJSONObject(i);folders.add(new Folder(o.getString("id"),o.optString("name","フォルダー"),o.optLong("createdAt",0)));}}catch(Throwable ignored){}try{JSONArray a=new JSONArray(p().getString(KEY_ENTRIES,"[]"));for(int i=0;i<a.length();i++){JSONObject o=a.getJSONObject(i);long s=o.optLong("start",0),e=o.optLong("end",0),created=o.optLong("createdAt",e);if(e>s)entries.add(new Entry(o.getString("id"),o.getString("folderId"),s,e,created>0L?created:e));}}catch(Throwable ignored){}}

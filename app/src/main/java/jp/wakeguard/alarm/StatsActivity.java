@@ -135,7 +135,10 @@ public class StatsActivity extends Activity {
 
     private void addStreakCard(){
         LinearLayout card=Ui.card(this);
-        card.setBackground(Ui.roundStroke(Ui.SURFACE,Ui.BORDER,20,this));
+        android.graphics.drawable.GradientDrawable cardBackground =
+                Ui.gradientRound(this, 20, Ui.SURFACE, Ui.SURFACE_2);
+        cardBackground.setStroke(Ui.dp(this, 1), Ui.BORDER);
+        card.setBackground(cardBackground);
         card.setPadding(Ui.dp(this,14),Ui.dp(this,16),Ui.dp(this,14),Ui.dp(this,16));
         int primary=Ui.readableTextColor(Ui.TEXT,Ui.SURFACE);
         int secondary=Ui.readableTextColor(Ui.MUTED,Ui.SURFACE);
@@ -156,7 +159,6 @@ public class StatsActivity extends Activity {
         LinearLayout.LayoutParams companionLp=new LinearLayout.LayoutParams(Ui.dp(this,88),Ui.dp(this,88));
         companionLp.setMarginEnd(Ui.dp(this,12));
         highlight.addView(companion,companionLp);
-        highlight.setBackground(Ui.companionArtwork(this, true, companionLp.width + companionLp.getMarginEnd()));
         highlight.addView(streakCopy,new LinearLayout.LayoutParams(0,-2,1));
         card.addView(highlight);
         growthLevel=Ui.title(this,"",16);
