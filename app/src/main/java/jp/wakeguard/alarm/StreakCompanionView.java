@@ -2,7 +2,6 @@ package jp.wakeguard.alarm;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
-import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.view.animation.DecelerateInterpolator;
@@ -27,14 +26,13 @@ public final class StreakCompanionView extends FrameLayout {
         super(context);
         GradientDrawable frame = new GradientDrawable();
         frame.setColor(0xff1c0a11);
-        frame.setCornerRadius(Ui.dp(context, 12));
-        frame.setStroke(Ui.dp(context, 1), 0xff773c42);
+        frame.setCornerRadius(dp(12));
+        frame.setStroke(dp(1), 0xff773c42);
         setBackground(frame);
         setClipToOutline(true);
 
         portrait = new ImageView(context);
         portrait.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        portrait.setBackgroundColor(Color.TRANSPARENT);
         addView(portrait, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT, Gravity.CENTER));
         setGrowth(1L, 0);
     }
@@ -79,7 +77,7 @@ public final class StreakCompanionView extends FrameLayout {
         portrait.setAlpha(0.7f);
         portrait.setScaleX(0.95f);
         portrait.setScaleY(0.95f);
-        portrait.setTranslationY(Ui.dp(getContext(), 6));
+        portrait.setTranslationY(dp(6));
         portrait.animate().alpha(1f).scaleX(1f).scaleY(1f).translationY(0f)
                 .setDuration(320).setInterpolator(new DecelerateInterpolator()).start();
     }
@@ -90,5 +88,9 @@ public final class StreakCompanionView extends FrameLayout {
         portrait.setScaleX(1f);
         portrait.setScaleY(1f);
         portrait.setTranslationY(0f);
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 }
