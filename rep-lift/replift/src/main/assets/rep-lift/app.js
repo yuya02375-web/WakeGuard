@@ -112,8 +112,8 @@ function notify(message) {
   toastTimer = setTimeout(() => { toast.hidden = true; }, 4200);
 }
 
-const titleBlock = (eyebrow, heading, summary, action = "") =>
-  `<div class="page-intro"><div><p class="eyebrow">${eyebrow}</p><h1>${heading}</h1><p>${summary}</p></div>${action}</div>`;
+const titleBlock = (heading, summary, action = "") =>
+  `<div class="page-intro"><div><h1>${heading}</h1><p>${summary}</p></div>${action}</div>`;
 const button = (label, action, { kind = "secondary", glyph = "", extra = "" } = {}) =>
   `<button type="button" class="button ${kind}" data-action="${action}" ${extra}>${glyph ? icon(glyph) : ""}<span>${label}</span></button>`;
 const linkButton = (label, page, glyph = "") => `<a class="button secondary" href="#${page}">${glyph ? icon(glyph) : ""}<span>${label}</span></a>`;
@@ -123,7 +123,7 @@ const section = (title, detail = "", action = "") =>
 const empty = (glyph, title, description) =>
   `<div class="empty">${icon(glyph)}<strong>${title}</strong><p>${description}</p></div>`;
 const quick = (label, detail, glyph, action, extra = "") =>
-  `<button class="quick-action" data-action="${action}" ${extra}><span class="tile-icon">${icon(glyph)}</span><span><strong>${label}</strong><small>${detail}</small></span></button>`;
+  `<button class="quick-action" type="button" data-action="${action}" ${extra}><span class="tile-icon quick-action-icon">${icon(glyph)}</span><span><strong>${label}</strong><small>${detail}</small></span></button>`;
 const select = (name, label, options, current) =>
   `<label class="field"><span>${label}</span><select name="${name}">${Object.entries(options).map(([value, text]) =>
     `<option value="${value}" ${String(current) === value ? "selected" : ""}>${text}</option>`).join("")}</select></label>`;
@@ -137,7 +137,7 @@ function shell() {
   $(".side-nav").innerHTML = links;
   $(".bottom-nav").innerHTML = links;
   $(".sidebar-foot").innerHTML = `<span class="sidebar-foot-icon">${icon("shield")}</span><span><strong>ずっと無料</strong><small>記録はこの端末に保存</small></span>`;
-  $(".topbar-date").innerHTML = `<a class="mobile-brand" href="#today"><strong>REP LIFT<span>.</span></strong></a><span class="date-label">${icon("calendar")}${formatDate(Date.now())}</span>`;
+  $(".topbar-date").innerHTML = `<a class="mobile-brand brand-lockup" href="#today" aria-label="IGNIDO REP LIFT ホーム"><span class="brand-mark" aria-hidden="true"><img src="icon-192.png" alt="" width="34" height="34"></span><span class="brand-copy"><strong class="brand-name">IGNIDO</strong><small class="brand-product">REP LIFT</small></span></a><span class="date-label">${icon("calendar")}${formatDate(Date.now())}</span>`;
   $(".topbar-actions").innerHTML = `<button class="icon-button profile-button" type="button" data-action="profile" aria-label="トレーニング設定">${icon("settings")}</button>`;
 }
 
@@ -170,27 +170,26 @@ function todayView() {
   const draft = activeDraft();
   const start = draft
     ? button("トレーニングを再開", "resume-session", { kind: "primary", glyph: "play" })
-    : button("トレーニングを始める", "start-plan", { kind: "primary", glyph: "play" });
-  return `${titleBlock("TODAY", "今日のトレーニング", "使える器具と今日の体力に合わせて、ひとつずつ。",
+    : button("筋トレを始める", "start-plan", { kind: "primary", glyph: "play" });
+  return `${titleBlock("今日のトレーニング", "器具と今日の調子に合わせたメニュー。",
     button(`調子：${readinessNames[readiness]}`, "readiness", { glyph: "bolt" }))}
     <div class="dashboard-grid">
       <article class="hero">
         <div class="hero-content"><p class="eyebrow"><span class="indicator"></span> 今日のおすすめ</p>
         <h2>${plan.title}</h2><p>${plan.description}</p>
         <div class="chips">${chip(`約${plan.minutes}分`, "clock")}${chip(`${plan.items.length}種目`, "layers")}${chip(equipmentNames[data.profile.equipment], "train")}</div>
-        <div class="hero-actions">${start}</div></div>
+        <div class="hero-actions">${start}${linkButton("ランを計測", "run", "run")}</div></div>
       </article>
-      ${weeklyCard()}
-      ${globalThis.RepLiftLink?.card("today") ?? ""}
-      <section class="workout-card card">${section("今日のメニュー", `セット間の休憩 ${compactSeconds(plan.rest)}`, button("メニュー調整", "profile", { kind: "ghost", glyph: "edit" }))}<div class="exercise-list">${workoutList(plan.items)}</div></section>
-      <section class="quick-card card">${section("すぐ記録する", "好きな運動を1種目から。")}
-        <div class="quick-grid">
-          ${quick("ランを計測", "GPS・タイマー・手入力", "run", "go-run")}
-          ${quick("腕立て伏せ", "回数と自己ベスト", "train", "single", 'data-id="pushup"')}
-          ${quick("スクワット", "回数と自己ベスト", "bolt", "single", 'data-id="squat"')}
-          ${quick("腹筋", "回数と自己ベスト", "layers", "single", 'data-id="crunch"')}
+      <section class="quick-card card">${section("1種目から記録")}
+        <div class="quick-grid quick-actions">
+          ${quick("腕立て伏せ", "上半身", "train", "single", 'data-id="pushup"')}
+          ${quick("スクワット", "下半身", "bolt", "single", 'data-id="squat"')}
+          ${quick("腹筋", "体幹", "layers", "single", 'data-id="crunch"')}
         </div>
       </section>
+      ${weeklyCard()}
+      <section class="workout-card card">${section("今日のメニュー", `セット間の休憩 ${compactSeconds(plan.rest)}`, button("メニュー調整", "profile", { kind: "ghost", glyph: "edit" }))}<div class="exercise-list">${workoutList(plan.items)}</div></section>
+      ${globalThis.RepLiftLink?.card("today") ?? ""}
     </div>`;
 }
 
@@ -204,10 +203,11 @@ function libraryItems() {
 
 function trainView() {
   const plan = T.plan(data.profile, readiness, data.workouts);
-  return `${titleBlock("TRAIN", "筋トレ", "提案メニューで始めるか、好きな種目だけを記録。", button("器具を変更", "profile", { glyph: "train" }))}
+  return `${titleBlock("筋トレ", "提案メニューで始めるか、好きな種目だけを記録。", button("器具を変更", "profile", { glyph: "train" }))}
   <div class="subgrid">
     <section class="card">${section(plan.title, `約${plan.minutes}分 · ${readinessNames[plan.readiness]}`, button("調子を変更", "readiness", { kind: "ghost" }))}
-    <div class="exercise-list">${workoutList(plan.items)}</div><div class="action-row">${activeDraft() ? button("セッションを再開", "resume-session", { kind: "primary", glyph: "play" }) : button("このメニューで始める", "start-plan", { kind: "primary", glyph: "play" })}</div></section>
+    <div class="action-row train-start">${activeDraft() ? button("セッションを再開", "resume-session", { kind: "primary", glyph: "play" }) : button("このメニューで始める", "start-plan", { kind: "primary", glyph: "play" })}</div>
+    <div class="exercise-list">${workoutList(plan.items)}</div></section>
     <section class="card">${section("種目を選ぶ", equipmentNames[data.profile.equipment])}<label class="field"><span>種目・部位を検索</span><input id="library-search" type="search" value="${escape(libraryQuery)}" placeholder="例：脚、ランジ" autocomplete="off"></label><div class="library-grid" id="library-items">${libraryItems()}</div></section>
   </div>`;
 }
@@ -264,7 +264,7 @@ function sessionView() {
   const previous = T.bests(data.workouts, []).exercises[ex.id];
   const previousValue = bestValue(ex, previous, draft.weight);
   const resting = Boolean(draft.restUntil && draft.restUntil > Date.now());
-  return `${titleBlock("SESSION", draft.title, `種目 ${draft.index + 1} / ${draft.items.length} · ${logged} セット記録済み`, button("終了・保存", "review", { glyph: "check" }))}
+  return `${titleBlock(draft.title, `種目 ${draft.index + 1} / ${draft.items.length} · ${logged} セット記録済み`, button("終了・保存", "review", { glyph: "check" }))}
     <div class="subgrid session-grid">
       <section class="card session-stage">
         ${section(ex.name, `セット ${activeSets.length + 1} · 目安 ${item.target}${unit(ex)}`, button("やり方", "detail", { kind: "ghost", glyph: "info", extra: `data-id="${ex.id}"` }))}
@@ -350,7 +350,7 @@ function undoSet() {
 
 function reviewView(draft) {
   const count = loggedSets(draft);
-  return `${titleBlock("SESSION", "筋トレを保存", `${draft.title} · ${count}セット`)}
+  return `${titleBlock("筋トレを保存", `${draft.title} · ${count}セット`)}
     <section class="card review-card">${section("今日のきつさは？", "次のメニューの目安回数に反映します。")}
       ${count ? `<form data-form="save-workout"><fieldset class="effort"><legend>運動のきつさ</legend><div class="segmented">
         <label><input type="radio" name="effort" value="easy"><span>余裕があった</span></label>
@@ -386,7 +386,7 @@ const gpsLabels = {
 function runView() {
   const phase = runState.phase;
   const moving = phase === "running" || phase === "paused";
-  return `${titleBlock("RUN", "ランニング", "距離・時間・ペースを記録。屋内ランも残せます。", button("手入力で記録", "manual-run", { glyph: "edit" }))}
+  return `${titleBlock("ランニング", "距離・時間・ペースを記録。屋内ランも残せます。", button("手入力で記録", "manual-run", { glyph: "edit" }))}
   <div class="subgrid">
     <section class="card run-stage">
       ${section("ランを計測", "屋外でGPSを使うときは、画面を開いたまま走ってください。")}
@@ -400,6 +400,7 @@ function runView() {
         <div class="metric"><span>距離</span><strong id="run-distance">0.00</strong><small>km</small></div>
         <div class="metric"><span>平均ペース</span><strong id="run-pace">—</strong><small>/km</small></div>
       </div>
+      <p class="run-split" id="run-split" hidden>最新1kmラップ <strong></strong></p>
       <div class="action-row">
         ${phase === "running" ? button("一時停止", "pause-run", { kind: "primary", glyph: "clock" }) : phase === "paused" ? button("計測を再開", "resume-run", { kind: "primary", glyph: "play" }) : button(phase === "finished" ? "記録を確認する" : "計測を始める", phase === "finished" ? "review-run" : "start-run", { kind: "primary", glyph: "play" })}
         ${moving ? button("終了・保存", "finish-run", { glyph: "check" }) : ""}
@@ -417,6 +418,9 @@ function updateRun() {
   $("#run-time").textContent = R.formatTime(runState.seconds);
   $("#run-distance").textContent = runState.distanceKm.toFixed(2);
   $("#run-pace").textContent = runState.paceSeconds ? R.formatPace(runState.paceSeconds) : "—";
+  const split = $("#run-split");
+  split.hidden = !runState.splitPaceSeconds;
+  if (!split.hidden) split.querySelector("strong").textContent = R.formatPace(runState.splitPaceSeconds);
   let status = gpsLabels[runState.gps];
   if (runState.phase === "idle") status = gpsMode ? (runState.canGps ? "開始すると位置情報の許可を求めます。" : "GPSが使えない場合は時間を計測し、距離を入力できます。") : "計測した時間に、あとから距離を入力できます。";
   if (runState.phase === "paused") status = "一時停止中";
@@ -491,7 +495,7 @@ function exercisesBests(records) {
 
 function historyView() {
   const records = T.bests(data.workouts, data.runs);
-  return `${titleBlock("PROGRESS", "トレーニング記録", "積み重ねた運動と、その時点の自己ベスト。")}
+  return `${titleBlock("トレーニング記録", "履歴と自己ベストを確認。")}
   <div class="subgrid history-grid">
     <section class="card">
       ${section(historyTab === "activity" ? "運動の履歴" : "筋トレの自己ベスト")}
@@ -516,7 +520,7 @@ function comparisonMarkup(comparison) {
 function resultView() {
   if (!result) return historyView();
   const renewed = result.comparison.some((item) => item.delta > 0);
-  return `${titleBlock("COMPLETE", renewed ? "自己ベスト更新！" : "トレーニング完了", `${escape(result.title)} · ${result.subtitle}`)}
+  return `${titleBlock(renewed ? "自己ベスト更新！" : "トレーニング完了", `${escape(result.title)} · ${result.subtitle}`)}
     <section class="card result-card">
       ${section("今回の結果", "前回までの最高記録との比較", `<span class="section-icon">${icon(renewed ? "trophy" : "check")}</span>`)}
       ${comparisonMarkup(result.comparison)}
@@ -555,7 +559,7 @@ function profileForm(inDialog = false, startAfter = false) {
 }
 
 function settingsView() {
-  return `${titleBlock("SETTINGS", "マイトレーニング設定", "あなたのペースで続けられるメニューに。")}
+  return `${titleBlock("設定", "使う器具や週の目標を変更。")}
   <div class="subgrid">
     <section class="card">${section("トレーニングの条件")}${profileForm()}</section>
     <section class="card">${section("記録の保存先", "この端末内に保存。アプリの機能はすべて無料です。")}
@@ -728,7 +732,6 @@ const actions = {
   "replace-session": () => confirmAction?.(),
   single: ({ id }) => { closeDialog(); singleSession(id); },
   detail: ({ id }) => detail(id),
-  "go-run": () => go("run"),
   "adjust-count": ({ delta }) => {
     const draft = activeDraft();
     const value = Number($("#count-input")?.value);
@@ -763,7 +766,7 @@ const actions = {
   "history-tab": ({ value }) => { historyTab = value; paint(); },
   "history-filter": ({ value }) => { historyFilter = value; paint(); },
   record: ({ type, id }) => openRecord(type, id),
-  "view-ignido": () => openDialog("イグニド", '<img class="link-artwork" src="wakeguard-art/ignido_ignition_art.jpg" alt="炎をまとったドラゴン、イグニドのアクションイラスト">'),
+  "view-ignido": () => openDialog("IGNIDO ブランドアート", '<img class="link-artwork" src="wakeguard-art/ignido_ignition_art.jpg" alt="赤橙の炎をまとって飛び出すドラゴン">'),
   close: closeDialog,
   confirm: () => confirmAction?.(),
   export: fileExport,

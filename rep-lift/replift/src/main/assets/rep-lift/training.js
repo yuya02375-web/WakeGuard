@@ -214,10 +214,12 @@
     });
 
     const title = needsRecovery ? "回復メニュー" : isRecovery ? "軽めの全身トレーニング" : "全身トレーニング";
-    const description = needsRecovery ? "2日続けて筋トレを記録しました。今日は体を軽く動かしましょう。" :
-      isRecovery ? "回数とセットを減らしたメニューです。余裕のあるペースで動きましょう。" :
-      history.length ? "前回の記録を参考に、今日の目標回数を調整しました。" :
-      "脚・上半身・体幹を動かす、最初のメニューです。";
+    const first = catalog[items[0].id];
+    const firstTarget = `${items[0].target}${first.unit === "sec" ? "秒" : "回"}`;
+    const reason = needsRecovery ? "筋トレが2日続いたので、今日は回復を優先します。" :
+      isRecovery ? "各種目を軽めに1セットずつ。" :
+      history.length ? "前回の記録をもとに目標を調整しました。" : "脚・上半身・体幹を順に動かします。";
+    const description = `${reason}まずは${first.name}を${firstTarget}。`;
 
     return {
       title,

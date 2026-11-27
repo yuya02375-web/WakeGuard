@@ -97,7 +97,7 @@ def save_run(minutes):
 
 def main():
     shell("settings", "put", "secure", "show_ime_with_hard_keyboard", "1")
-    adb("install", "-r", "android-release/REP-LIFT-1.0.2.apk")
+    adb("install", "-r", "android-release/REP-LIFT-1.0.3.apk")
     launch(TRAINING)
     tap_label("ラン")
     read_node("手入力で記録")
@@ -120,7 +120,7 @@ def main():
     read_node("現在の連続", exact=False, scroll=True)
     read_node("過去最長", exact=False, scroll=True)
     read_node("REP LIFTの運動日", exact=False, scroll=True)
-    read_node("イグニド", exact=False, scroll=True)
+    read_node("ドラゴンの成長", exact=False, scroll=True)
 
     # The shared summary must also be visible in WakeGuard before the first workout.
     launch(WAKE)
@@ -137,8 +137,8 @@ def main():
     scroll_to_settings_bottom()
     read_node("Lv. 2", exact=False, scroll=True)
     read_node(day_ja, exact=False, scroll=True)
-    tap_label("イグニドを見る", scroll=True)
-    read_node("炎をまとったドラゴン、イグニドのアクションイラスト", exact=False)
+    tap_label("ブランドアートを見る", scroll=True)
+    read_node("赤橙の炎をまとって飛び出すドラゴン", exact=False)
     tap_label("閉じる")
 
     launch(WAKE)

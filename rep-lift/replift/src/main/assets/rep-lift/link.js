@@ -79,9 +79,9 @@
     return `<div class="link-overview">
         <div class="link-companion">
           ${portrait(form)}
-          <div class="link-companion-copy"><h3>イグニド</h3><p>${formName} <span>Lv. ${level}</span></p>
+          <div class="link-companion-copy"><h3>ドラゴンの成長</h3><p>${formName} <span>Lv. ${level}</span></p>
             ${settings && remaining ? `<p class="link-next">次の姿は Lv. ${level + remaining}</p>` : ""}
-            <button type="button" class="button ghost link-art-trigger" data-action="view-ignido" aria-haspopup="dialog">イグニドを見る</button></div>
+            <button type="button" class="button ghost link-art-trigger" data-action="view-ignido" aria-haspopup="dialog">ブランドアートを見る</button></div>
         </div>
         <div class="link-streak">
           <h3>起床・運動の共通ストリーク</h3>

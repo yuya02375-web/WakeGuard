@@ -6,6 +6,7 @@
   const MAX_FIX_AGE_MS = 20_000;
   const MAX_FIX_GAP_MS = 30_000;
   const MAX_SPEED_METERS_PER_SECOND = 12;
+  const SPLIT_METERS = 1_000;
 
   function distanceBetween(from, to) {
     const radians = Math.PI / 180;
@@ -52,6 +53,9 @@
       this.source = 'manual';
       this.date = null;
       this.distanceMeters = 0;
+      this.splitDistanceMeters = 0;
+      this.splitSeconds = 0;
+      this.splitPaceSeconds = null;
       this.accumulatedMs = 0;
       this.startedAt = null;
       this.timer = null;
@@ -77,6 +81,7 @@
         seconds,
         distanceKm,
         paceSeconds: pace(seconds, distanceKm),
+        splitPaceSeconds: this.splitPaceSeconds,
         gps: this.gps,
         canGps: this.canGps,
         source: this.source,
@@ -145,6 +150,9 @@
       this.source = 'manual';
       this.date = null;
       this.distanceMeters = 0;
+      this.splitDistanceMeters = 0;
+      this.splitSeconds = 0;
+      this.splitPaceSeconds = null;
       this.accumulatedMs = 0;
       this.startedAt = null;
     }
@@ -252,10 +260,25 @@
           this.gps = 'weak';
         } else if (distance >= noiseFloor) {
           this.distanceMeters += distance;
+          this.addSplitSegment(distance, elapsed / 1000);
           this.lastFix = fix;
         }
       }
       this.emit();
+    }
+
+    addSplitSegment(distance, seconds) {
+      const remaining = SPLIT_METERS - this.splitDistanceMeters;
+      if (distance < remaining) {
+        this.splitDistanceMeters += distance;
+        this.splitSeconds += seconds;
+        return;
+      }
+      // Each accepted GPS fix spans less than one kilometer under the time and speed limits.
+      const secondsToBoundary = seconds * (remaining / distance);
+      this.splitPaceSeconds = Math.round(this.splitSeconds + secondsToBoundary);
+      this.splitDistanceMeters = distance - remaining;
+      this.splitSeconds = seconds - secondsToBoundary;
     }
 
     static manual({ seconds, distanceKm } = {}) {
