@@ -155,7 +155,7 @@ def main():
     tap_label("ラン")
     read_node("手入力で記録")
 
-    adb("install", "-r", "android-release/WakeGuard-2.17.46-link.apk")
+    adb("install", "-r", "android-release/WakeGuard-2.17.47-link.apk")
     # Installing WakeGuard after REP LIFT covers connecting a previously standalone installation.
     for permission in ("POST_NOTIFICATIONS", "ACTIVITY_RECOGNITION"):
         shell("pm", "grant", WAKE, f"android.permission.{permission}")
