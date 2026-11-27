@@ -130,6 +130,19 @@
   font-size: .78rem;
 }
 
+.link-art-trigger {
+  margin-top: 8px;
+}
+
+.link-artwork {
+  display: block;
+  width: 100%;
+  max-height: min(68dvh, 560px);
+  border-radius: 13px;
+  background: #191b13;
+  object-fit: contain;
+}
+
 .link-streak {
   min-width: 0;
   padding: 12px;

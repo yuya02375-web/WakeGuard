@@ -85,6 +85,12 @@ public class MainActivity extends Activity {
         LinearLayout top=new LinearLayout(this);top.setOrientation(LinearLayout.VERTICAL);
         top.setPadding(Ui.dp(this,22),Ui.dp(this,10),Ui.dp(this,22),Ui.dp(this,5));
         LinearLayout brandLine=new LinearLayout(this);brandLine.setGravity(Gravity.CENTER_VERTICAL);
+        ImageView brandIcon=new ImageView(this);
+        brandIcon.setImageResource(R.mipmap.ic_launcher);
+        brandIcon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        LinearLayout.LayoutParams brandIconLp=new LinearLayout.LayoutParams(Ui.dp(this,24),Ui.dp(this,24));
+        brandIconLp.setMarginEnd(Ui.dp(this,8));
+        brandLine.addView(brandIcon,brandIconLp);
         TextView brand=Ui.overline(this,"IGNIDO  /  WAKE");
         brandLine.addView(brand,new LinearLayout.LayoutParams(0,-2,1));
         dateText=Ui.text(this,"",12,Ui.readableTextColor(Ui.MUTED_2, Ui.SURFACE_2));
@@ -504,7 +510,32 @@ public class MainActivity extends Activity {
         dragonSharedStreakText.setVisibility(View.GONE);
         summary.addView(dragonSharedStreakText,Ui.gapTop(this,6));
 
+        Button artworkButton=Ui.ghostButton(this,"イグニドを見る");
+        artworkButton.setOnClickListener(v->showIgnidoArt());
+        LinearLayout.LayoutParams artworkButtonLp=new LinearLayout.LayoutParams(-2,-2);
+        artworkButtonLp.gravity=Gravity.END;
+        artworkButtonLp.topMargin=Ui.dp(this,7);
+        summary.addView(artworkButton,artworkButtonLp);
+
         nextCard.addView(summary,Ui.gapTop(this,9));
+    }
+
+    private void showIgnidoArt(){
+        ImageView artwork=new ImageView(this);
+        artwork.setImageResource(R.drawable.ignido_ignition_art);
+        artwork.setContentDescription(I18n.tr(this,"イグニドのブランドアート"));
+        artwork.setAdjustViewBounds(true);
+        artwork.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        artwork.setMaxHeight(Math.min(Ui.dp(this,460),getResources().getDisplayMetrics().heightPixels*3/5));
+
+        ScrollView panel=new ScrollView(this);
+        panel.setPadding(Ui.dp(this,16),0,Ui.dp(this,16),Ui.dp(this,8));
+        panel.addView(artwork,new ScrollView.LayoutParams(-1,-2));
+        Ui.dialogBuilder(this)
+                .setTitle("IGNIDO")
+                .setView(panel)
+                .setPositiveButton(I18n.tr(this,"閉じる"),null)
+                .show();
     }
 
     private void refreshDragonGrowth(){

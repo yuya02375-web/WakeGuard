@@ -10,8 +10,8 @@ android {
         applicationId = "jp.wakeguard.alarm"
         minSdk = 29
         targetSdk = 36
-        versionCode = 248
-        versionName = "2.17.40"
+        versionCode = 249
+        versionName = "2.17.41"
     }
 
     buildFeatures {

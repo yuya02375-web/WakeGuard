@@ -56,6 +56,7 @@ jobs:
       - name: Build the independent Android projects
         shell: bash
         run: |
+          cmp app/src/main/res/drawable-nodpi/ignido_ignition_art.jpg rep-lift/replift/src/main/assets/rep-lift/wakeguard-art/ignido_ignition_art.jpg
           rm -rf WakeGuard/app
           cp -R app WakeGuard/app
           (cd WakeGuard && gradle -Pandroid.useAndroidX=true :app:assembleRelease --stacktrace)
@@ -98,11 +99,16 @@ jobs:
             "$AAPT" dump badging "$output" | grep -F "package: name='$pkg' versionCode='$code' versionName='$version'"
             (cd android-release && sha256sum "$2.apk" > "$2.apk.sha256")
           }
-          sign WakeGuard/app/build/outputs/apk/release/app-release-unsigned.apk WakeGuard-2.17.40-link jp.wakeguard.alarm 248 2.17.40
-          sign rep-lift/replift/build/outputs/apk/release/replift-release-unsigned.apk REP-LIFT-1.0.1 jp.replift.training 2 1.0.1
-          "$AAPT" dump xmltree android-release/WakeGuard-2.17.40-link.apk AndroidManifest.xml > "$RUNNER_TEMP/wakeguard-manifest.txt"
+          sign WakeGuard/app/build/outputs/apk/release/app-release-unsigned.apk WakeGuard-2.17.41-link jp.wakeguard.alarm 249 2.17.41
+          sign rep-lift/replift/build/outputs/apk/release/replift-release-unsigned.apk REP-LIFT-1.0.2 jp.replift.training 3 1.0.2
+          "$AAPT" dump xmltree android-release/WakeGuard-2.17.41-link.apk AndroidManifest.xml > "$RUNNER_TEMP/wakeguard-manifest.txt"
           if grep -Fq 'WorkoutActivity' "$RUNNER_TEMP/wakeguard-manifest.txt"; then exit 1; fi
-          if unzip -Z1 android-release/WakeGuard-2.17.40-link.apk | grep '^assets/rep-lift/' > /dev/null; then exit 1; fi
+          if unzip -Z1 android-release/WakeGuard-2.17.41-link.apk | grep '^assets/rep-lift/' > /dev/null; then exit 1; fi
+          "$AAPT" dump resources android-release/WakeGuard-2.17.41-link.apk > "$RUNNER_TEMP/wakeguard-resources.txt"
+          grep -F 'drawable/ignido_ignition_art' "$RUNNER_TEMP/wakeguard-resources.txt"
+          grep -F 'drawable/ic_ignido_ignition_foreground' "$RUNNER_TEMP/wakeguard-resources.txt"
+          grep -F 'drawable/ic_ignido_ignition_monochrome' "$RUNNER_TEMP/wakeguard-resources.txt"
+          unzip -Z1 android-release/REP-LIFT-1.0.2.apk | grep -Fx 'assets/rep-lift/wakeguard-art/ignido_ignition_art.jpg'
 
       - uses: actions/upload-artifact@v4
         with:

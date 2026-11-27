@@ -763,6 +763,7 @@ const actions = {
   "history-tab": ({ value }) => { historyTab = value; paint(); },
   "history-filter": ({ value }) => { historyFilter = value; paint(); },
   record: ({ type, id }) => openRecord(type, id),
+  "view-ignido": () => openDialog("イグニド", '<img class="link-artwork" src="wakeguard-art/ignido_ignition_art.jpg" alt="炎をまとったドラゴン、イグニドのアクションイラスト">'),
   close: closeDialog,
   confirm: () => confirmAction?.(),
   export: fileExport,

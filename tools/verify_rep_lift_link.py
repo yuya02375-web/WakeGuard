@@ -97,12 +97,12 @@ def save_run(minutes):
 
 def main():
     shell("settings", "put", "secure", "show_ime_with_hard_keyboard", "1")
-    adb("install", "-r", "android-release/REP-LIFT-1.0.1.apk")
+    adb("install", "-r", "android-release/REP-LIFT-1.0.2.apk")
     launch(TRAINING)
     tap_label("ラン")
     read_node("手入力で記録")
 
-    adb("install", "-r", "android-release/WakeGuard-2.17.40-link.apk")
+    adb("install", "-r", "android-release/WakeGuard-2.17.41-link.apk")
     # Installing WakeGuard after REP LIFT covers connecting a previously standalone installation.
     for permission in ("POST_NOTIFICATIONS", "ACTIVITY_RECOGNITION"):
         shell("pm", "grant", WAKE, f"android.permission.{permission}")
@@ -137,11 +137,16 @@ def main():
     scroll_to_settings_bottom()
     read_node("Lv. 2", exact=False, scroll=True)
     read_node(day_ja, exact=False, scroll=True)
+    tap_label("イグニドを見る", scroll=True)
+    read_node("炎をまとったドラゴン、イグニドのアクションイラスト", exact=False)
+    tap_label("閉じる")
 
     launch(WAKE)
     read_node(("現在の連続 1日", "Current 1 day"), exact=False, scroll=True)
     read_node(("過去最長 1日", "Best 1 day"), exact=False, scroll=True)
     read_node((day_ja, day_en), exact=False, scroll=True)
+    tap(read_node(("イグニドを見る", "See Ignido"), scroll=True))
+    read_node(("イグニドのブランドアート", "Ignido brand artwork"), exact=False)
 
 
 if __name__ == "__main__":
