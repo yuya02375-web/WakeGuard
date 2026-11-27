@@ -101,12 +101,12 @@ jobs:
             "$AAPT" dump badging "$output" | grep -F "package: name='$pkg' versionCode='$code' versionName='$version'"
             (cd android-release && sha256sum "$2.apk" > "$2.apk.sha256")
           }
-          sign WakeGuard/app/build/outputs/apk/release/app-release-unsigned.apk WakeGuard-2.17.45-link jp.wakeguard.alarm 253 2.17.45
+          sign WakeGuard/app/build/outputs/apk/release/app-release-unsigned.apk WakeGuard-2.17.46-link jp.wakeguard.alarm 254 2.17.46
           sign rep-lift/replift/build/outputs/apk/release/replift-release-unsigned.apk REP-LIFT-1.0.6 jp.replift.training 7 1.0.6
-          "$AAPT" dump xmltree android-release/WakeGuard-2.17.45-link.apk AndroidManifest.xml > "$RUNNER_TEMP/wakeguard-manifest.txt"
+          "$AAPT" dump xmltree android-release/WakeGuard-2.17.46-link.apk AndroidManifest.xml > "$RUNNER_TEMP/wakeguard-manifest.txt"
           if grep -Fq 'WorkoutActivity' "$RUNNER_TEMP/wakeguard-manifest.txt"; then exit 1; fi
-          if unzip -Z1 android-release/WakeGuard-2.17.45-link.apk | grep '^assets/rep-lift/' > /dev/null; then exit 1; fi
-          "$AAPT" dump resources android-release/WakeGuard-2.17.45-link.apk > "$RUNNER_TEMP/wakeguard-resources.txt"
+          if unzip -Z1 android-release/WakeGuard-2.17.46-link.apk | grep '^assets/rep-lift/' > /dev/null; then exit 1; fi
+          "$AAPT" dump resources android-release/WakeGuard-2.17.46-link.apk > "$RUNNER_TEMP/wakeguard-resources.txt"
           grep -F 'drawable/ic_ignido_ignition_foreground' "$RUNNER_TEMP/wakeguard-resources.txt"
           grep -F 'drawable/ic_ignido_ignition_monochrome' "$RUNNER_TEMP/wakeguard-resources.txt"
           unzip -Z1 android-release/REP-LIFT-1.0.6.apk > "$RUNNER_TEMP/rep-lift-entries.txt"
