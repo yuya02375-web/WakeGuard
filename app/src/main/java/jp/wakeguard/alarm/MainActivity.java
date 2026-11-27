@@ -141,7 +141,6 @@ public class MainActivity extends Activity {
         schedule.addView(emptyHeading, Ui.gapTop(this, 6));
 
         dragonCompanion=new StreakCompanionView(this);
-        dragonCompanion.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
         int artworkSize = getResources().getConfiguration().screenWidthDp < 360 ? 84 : 110;
         LinearLayout.LayoutParams dragonLp = new LinearLayout.LayoutParams(Ui.dp(this,artworkSize), Ui.dp(this,artworkSize));
         dragonLp.setMarginStart(Ui.dp(this,8));
@@ -522,7 +521,7 @@ public class MainActivity extends Activity {
 
     private void showIgnidoArt(){
         ImageView artwork=new ImageView(this);
-        artwork.setImageResource(R.drawable.ignido_burst_infinite);
+        artwork.setImageResource(R.drawable.ignido_ignition_art);
         artwork.setContentDescription(I18n.tr(this,"イグニドのブランドアート"));
         artwork.setAdjustViewBounds(true);
         artwork.setScaleType(ImageView.ScaleType.FIT_CENTER);

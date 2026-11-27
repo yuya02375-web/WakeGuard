@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Smoke-check two separately signed APKs on the Android emulator."""
 
+from io import BytesIO
 import re
 import subprocess
 import time
 from datetime import date, timedelta
 from pathlib import Path
 from xml.etree import ElementTree
+from PIL import Image, ImageChops
 
 TRAINING = "jp.replift.training"
 WAKE = "jp.wakeguard.alarm"
@@ -59,6 +61,22 @@ def read_node(label, *, exact=True, scroll=False):
         time.sleep(0.6)
     labels = sorted({node.get("text") or node.get("content-desc") or "" for node in last})
     raise AssertionError(f"Missing UI label {label!r}. Visible labels: {labels}")
+
+
+def verify_portrait_motion(node, name):
+    bounds = tuple(map(int, re.findall(r"\d+", node.attrib["bounds"])))
+    assert bounds[2] > bounds[0] and bounds[3] > bounds[1]
+    frames = []
+    for _ in range(10):
+        raw = subprocess.check_output(["adb", "exec-out", "screencap", "-p"], timeout=15)
+        with Image.open(BytesIO(raw)) as screen:
+            frames.append(screen.crop(bounds).convert("RGB"))
+        time.sleep(0.11)
+    first, *rest = frames
+    differences = [ImageChops.difference(first, frame).getbbox() for frame in rest]
+    assert any(diff and (diff[2] - diff[0]) * (diff[3] - diff[1]) >= 24 for diff in differences), name
+    first.save(f"{name}.gif", save_all=True, append_images=rest, duration=180, loop=0)
+    print(f"Verified changing sprite pixels in {name}", flush=True)
 
 
 def tap(node):
@@ -130,12 +148,14 @@ def seed_wake_history():
 
 def main():
     shell("settings", "put", "secure", "show_ime_with_hard_keyboard", "1")
-    adb("install", "-r", "android-release/REP-LIFT-1.0.4.apk")
+    for key in ("window_animation_scale", "transition_animation_scale", "animator_duration_scale"):
+        shell("settings", "put", "global", key, "1")
+    adb("install", "-r", "android-release/REP-LIFT-1.0.5.apk")
     launch(TRAINING)
     tap_label("ラン")
     read_node("手入力で記録")
 
-    adb("install", "-r", "android-release/WakeGuard-2.17.42-link.apk")
+    adb("install", "-r", "android-release/WakeGuard-2.17.43-link.apk")
     # Installing WakeGuard after REP LIFT covers connecting a previously standalone installation.
     for permission in ("POST_NOTIFICATIONS", "ACTIVITY_RECOGNITION"):
         shell("pm", "grant", WAKE, f"android.permission.{permission}")
@@ -156,6 +176,7 @@ def main():
     read_node(("0", "0日", "0 日"))
     read_node("ドラゴンの成長", exact=False, scroll=True)
     read_node("Lv. 51", exact=False)
+    verify_portrait_motion(read_node("成長段階のドラゴン", scroll=True), "rep-lift-original-dragon")
     nodes = visible_nodes()
     assert not any(label_matches(node, "共有の現在", False) for node in nodes)
     with Path("rep-lift-linked-zero-workouts.png").open("wb") as screenshot:
@@ -169,6 +190,7 @@ def main():
 
     # The shared summary must also be visible in WakeGuard before the first workout.
     launch(WAKE)
+    verify_portrait_motion(read_node(", Lv.51", exact=False), "wakeguard-original-dragon")
     read_node(("共通ストリーク", "Shared streak", "shared streak"), exact=False, scroll=True)
     read_node(("現在の連続 8日", "Current 8 days"), exact=False, scroll=True)
 
@@ -184,7 +206,7 @@ def main():
     read_node(("1", "1日", "1 日"))
     read_node("Lv. 52", exact=False, scroll=True)
     tap_label("ブランドアートを見る", scroll=True)
-    read_node("燃え上がる太陽を囲む炎のドラゴン", exact=False)
+    read_node("赤橙の炎をまとって飛び出すドラゴン", exact=False)
     tap_label("閉じる")
 
     launch(WAKE)

@@ -29,7 +29,11 @@
     `<button class="button ${kind}" data-wakeguard-action="${name}" type="button" ${pending ? "disabled" : ""}>${label}</button>`;
 
   function portrait(form) {
-    return `<span class="link-portrait" aria-hidden="true"><img src="wakeguard-art/ignido_burst_${form.art}.jpg" alt="" width="380" height="508"></span>`;
+    const base = `wakeguard-art/ignido_stage_${form.art}`;
+    return `<picture class="link-portrait">
+      <source media="(prefers-reduced-motion: reduce)" srcset="${base}_still.webp" type="image/webp">
+      <img src="${base}_motion.webp" alt="成長段階のドラゴン" width="64" height="64">
+    </picture>`;
   }
 
   function isoDate(value) {

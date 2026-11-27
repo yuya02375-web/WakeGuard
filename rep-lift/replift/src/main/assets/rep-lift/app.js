@@ -766,7 +766,7 @@ const actions = {
   "history-tab": ({ value }) => { historyTab = value; paint(); },
   "history-filter": ({ value }) => { historyFilter = value; paint(); },
   record: ({ type, id }) => openRecord(type, id),
-  "view-ignido": () => openDialog("IGNIDO ブランドアート", '<img class="link-artwork" src="wakeguard-art/ignido_burst_infinite.jpg" alt="燃え上がる太陽を囲む炎のドラゴン">'),
+  "view-ignido": () => openDialog("IGNIDO ブランドアート", '<img class="link-artwork" src="wakeguard-art/ignido_ignition_art.jpg" alt="赤橙の炎をまとって飛び出すドラゴン">'),
   close: closeDialog,
   confirm: () => confirmAction?.(),
   export: fileExport,
