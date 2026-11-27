@@ -150,12 +150,12 @@ def main():
     shell("settings", "put", "secure", "show_ime_with_hard_keyboard", "1")
     for key in ("window_animation_scale", "transition_animation_scale", "animator_duration_scale"):
         shell("settings", "put", "global", key, "1")
-    adb("install", "-r", "android-release/REP-LIFT-1.0.5.apk")
+    adb("install", "-r", "android-release/REP-LIFT-1.0.6.apk")
     launch(TRAINING)
     tap_label("ラン")
     read_node("手入力で記録")
 
-    adb("install", "-r", "android-release/WakeGuard-2.17.43-link.apk")
+    adb("install", "-r", "android-release/WakeGuard-2.17.44-link.apk")
     # Installing WakeGuard after REP LIFT covers connecting a previously standalone installation.
     for permission in ("POST_NOTIFICATIONS", "ACTIVITY_RECOGNITION"):
         shell("pm", "grant", WAKE, f"android.permission.{permission}")
@@ -179,6 +179,7 @@ def main():
     verify_portrait_motion(read_node("成長段階のドラゴン", scroll=True), "rep-lift-original-dragon")
     nodes = visible_nodes()
     assert not any(label_matches(node, "共有の現在", False) for node in nodes)
+    assert not any(label_matches(node, "ブランドアートを見る", False) for node in nodes)
     with Path("rep-lift-linked-zero-workouts.png").open("wb") as screenshot:
         subprocess.run(["adb", "exec-out", "screencap", "-p"], stdout=screenshot, check=True, timeout=15)
     print("Verified exercise 0 with a closed shared summary and a Lv. 51 dragon", flush=True)
@@ -205,16 +206,14 @@ def main():
     read_node("この端末で運動した日", exact=False, scroll=True)
     read_node(("1", "1日", "1 日"))
     read_node("Lv. 52", exact=False, scroll=True)
-    tap_label("ブランドアートを見る", scroll=True)
-    read_node("赤橙の炎をまとって飛び出すドラゴン", exact=False)
-    tap_label("閉じる")
 
     launch(WAKE)
     read_node(("現在の連続 9日", "Current 9 days"), exact=False, scroll=True)
     read_node(("過去最長 21日", "Best 21 days"), exact=False, scroll=True)
     read_node((day_ja, day_en), exact=False, scroll=True)
-    tap(read_node(("ブランドアートを見る", "View brand artwork"), scroll=True))
-    read_node(("イグニドのブランドアート", "Ignido brand artwork"), exact=False)
+    assert not any(label_matches(node, label, False)
+                   for node in visible_nodes()
+                   for label in ("ブランドアートを見る", "View brand artwork"))
 
 
 if __name__ == "__main__":

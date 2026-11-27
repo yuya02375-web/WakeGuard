@@ -108,8 +108,7 @@
         <section class="link-companion">
           ${portrait(form)}
           <div class="link-companion-copy"><h3>ドラゴンの成長</h3><p>${formName} <span>Lv. ${level}</span></p>
-            ${settings && remaining ? `<p class="link-next">次の姿は Lv. ${level + remaining}</p>` : ""}
-            <button type="button" class="button ghost link-art-trigger" data-action="view-ignido" aria-haspopup="dialog">ブランドアートを見る</button></div>
+            ${settings && remaining ? `<p class="link-next">次の姿は Lv. ${level + remaining}</p>` : ""}</div>
         </section>
         <details class="link-shared" data-link-accordion ${expanded[settings ? "settings" : "today"] ? "open" : ""}>
           <summary>WakeGuardとの共有ストリーク</summary>

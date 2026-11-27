@@ -101,22 +101,22 @@ jobs:
             "$AAPT" dump badging "$output" | grep -F "package: name='$pkg' versionCode='$code' versionName='$version'"
             (cd android-release && sha256sum "$2.apk" > "$2.apk.sha256")
           }
-          sign WakeGuard/app/build/outputs/apk/release/app-release-unsigned.apk WakeGuard-2.17.43-link jp.wakeguard.alarm 251 2.17.43
-          sign rep-lift/replift/build/outputs/apk/release/replift-release-unsigned.apk REP-LIFT-1.0.5 jp.replift.training 6 1.0.5
-          "$AAPT" dump xmltree android-release/WakeGuard-2.17.43-link.apk AndroidManifest.xml > "$RUNNER_TEMP/wakeguard-manifest.txt"
+          sign WakeGuard/app/build/outputs/apk/release/app-release-unsigned.apk WakeGuard-2.17.44-link jp.wakeguard.alarm 252 2.17.44
+          sign rep-lift/replift/build/outputs/apk/release/replift-release-unsigned.apk REP-LIFT-1.0.6 jp.replift.training 7 1.0.6
+          "$AAPT" dump xmltree android-release/WakeGuard-2.17.44-link.apk AndroidManifest.xml > "$RUNNER_TEMP/wakeguard-manifest.txt"
           if grep -Fq 'WorkoutActivity' "$RUNNER_TEMP/wakeguard-manifest.txt"; then exit 1; fi
-          if unzip -Z1 android-release/WakeGuard-2.17.43-link.apk | grep '^assets/rep-lift/' > /dev/null; then exit 1; fi
-          "$AAPT" dump resources android-release/WakeGuard-2.17.43-link.apk > "$RUNNER_TEMP/wakeguard-resources.txt"
+          if unzip -Z1 android-release/WakeGuard-2.17.44-link.apk | grep '^assets/rep-lift/' > /dev/null; then exit 1; fi
+          "$AAPT" dump resources android-release/WakeGuard-2.17.44-link.apk > "$RUNNER_TEMP/wakeguard-resources.txt"
           grep -F 'drawable/ic_ignido_ignition_foreground' "$RUNNER_TEMP/wakeguard-resources.txt"
           grep -F 'drawable/ic_ignido_ignition_monochrome' "$RUNNER_TEMP/wakeguard-resources.txt"
-          unzip -Z1 android-release/REP-LIFT-1.0.5.apk > "$RUNNER_TEMP/rep-lift-entries.txt"
+          unzip -Z1 android-release/REP-LIFT-1.0.6.apk > "$RUNNER_TEMP/rep-lift-entries.txt"
           for stage in egg ember flame hatchling adult stellar infinite; do
             grep -Fx "assets/rep-lift/wakeguard-art/ignido_stage_${stage}_motion.webp" "$RUNNER_TEMP/rep-lift-entries.txt"
             grep -Fx "assets/rep-lift/wakeguard-art/ignido_stage_${stage}_still.webp" "$RUNNER_TEMP/rep-lift-entries.txt"
             grep -F "drawable/ignido_stage_${stage}" "$RUNNER_TEMP/wakeguard-resources.txt"
           done
-          if grep -Fq 'ignido_burst_' "$RUNNER_TEMP/rep-lift-entries.txt" "$RUNNER_TEMP/wakeguard-resources.txt"; then exit 1; fi
-          "$AAPT" dump resources android-release/REP-LIFT-1.0.5.apk > "$RUNNER_TEMP/rep-lift-resources.txt"
+          if grep -Eq 'ignido_burst_|ignido_ignition_art' "$RUNNER_TEMP/rep-lift-entries.txt" "$RUNNER_TEMP/wakeguard-resources.txt"; then exit 1; fi
+          "$AAPT" dump resources android-release/REP-LIFT-1.0.6.apk > "$RUNNER_TEMP/rep-lift-resources.txt"
           grep -F 'drawable/ignido_replift_foreground' "$RUNNER_TEMP/rep-lift-resources.txt"
           grep -F 'drawable/ignido_replift_monochrome' "$RUNNER_TEMP/rep-lift-resources.txt"
           if grep -Fq 'drawable/ic_replift_launcher_foreground' "$RUNNER_TEMP/rep-lift-resources.txt"; then exit 1; fi

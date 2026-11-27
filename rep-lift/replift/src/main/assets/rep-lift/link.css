@@ -91,8 +91,6 @@
 .link-companion-copy p { color: var(--muted); font-size: .86rem; line-height: 1.45; }
 .link-companion-copy p span { display: inline-block; color: #ffd096; font-weight: 800; white-space: nowrap; }
 .link-companion-copy .link-next { margin-top: 3px; font-size: .8rem; }
-.link-art-trigger { min-height: 44px; margin-top: 8px; padding-inline: 7px; font-size: .78rem; }
-.link-artwork { display: block; width: 100%; max-height: min(68dvh, 560px); border-radius: 13px; object-fit: contain; }
 
 .link-shared { margin-top: 11px; border: 1px solid var(--border); border-radius: 12px; background: var(--link-panel); }
 .link-shared summary {

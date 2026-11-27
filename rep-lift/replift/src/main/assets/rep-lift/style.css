@@ -292,7 +292,6 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
 .dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 16px; }
 .toast { position: fixed; z-index: 15; inset: auto 14px calc(75px + env(safe-area-inset-bottom)); width: fit-content; max-width: min(100% - 28px, 480px); margin-left: auto; padding: 11px 14px; border: 1px solid #935244; border-radius: 13px; background: #4d292d; color: #fff0e6; box-shadow: 0 8px 28px #11080bae; font-size: .9rem; }
 
-.modal .link-artwork { background: var(--bg); }
 
 @media (max-width: 359px) {
   .hero .hero-actions .primary { flex: 1 1 100%; }
