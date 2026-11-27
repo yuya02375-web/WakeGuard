@@ -510,7 +510,7 @@ public class MainActivity extends Activity {
         dragonSharedStreakText.setVisibility(View.GONE);
         summary.addView(dragonSharedStreakText,Ui.gapTop(this,6));
 
-        Button artworkButton=Ui.ghostButton(this,"イグニドを見る");
+        Button artworkButton=Ui.ghostButton(this,"ブランドアートを見る");
         artworkButton.setOnClickListener(v->showIgnidoArt());
         LinearLayout.LayoutParams artworkButtonLp=new LinearLayout.LayoutParams(-2,-2);
         artworkButtonLp.gravity=Gravity.END;
@@ -522,7 +522,7 @@ public class MainActivity extends Activity {
 
     private void showIgnidoArt(){
         ImageView artwork=new ImageView(this);
-        artwork.setImageResource(R.drawable.ignido_ignition_art);
+        artwork.setImageResource(R.drawable.ignido_burst_infinite);
         artwork.setContentDescription(I18n.tr(this,"イグニドのブランドアート"));
         artwork.setAdjustViewBounds(true);
         artwork.setScaleType(ImageView.ScaleType.FIT_CENTER);

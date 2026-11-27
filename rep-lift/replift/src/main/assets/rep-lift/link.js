@@ -2,13 +2,13 @@
   "use strict";
 
   const forms = [
-    { file: "ignido_stage_egg.webp", name: "竜の卵", bounds: [12, 18, 49, 64] },
-    { file: "ignido_stage_ember.webp", name: "火種", bounds: [16, 28, 44, 63] },
-    { file: "ignido_stage_flame.webp", name: "小さな炎", bounds: [15, 19, 49, 64] },
-    { file: "ignido_stage_hatchling.webp", name: "幼炎竜", bounds: [18, 26, 46, 55] },
-    { file: "ignido_stage_adult.webp", name: "天炎竜", bounds: [0, 4, 49, 64] },
-    { file: "ignido_stage_stellar.png", name: "恒星炎竜", bounds: [3, 1, 59, 59] },
-    { file: "ignido_stage_infinite.png", name: "無限炎竜", bounds: [1, 1, 63, 63] },
+    { art: "egg", name: "竜の卵" },
+    { art: "ember", name: "火種" },
+    { art: "flame", name: "小さな炎" },
+    { art: "hatchling", name: "幼炎竜" },
+    { art: "adult", name: "天炎竜" },
+    { art: "stellar", name: "恒星炎竜" },
+    { art: "infinite", name: "無限炎竜" },
   ];
   const unavailable = {
     missing: "対応版の WakeGuard が見つかりません。",
@@ -20,6 +20,7 @@
   let pending = "";
   let pendingTimer;
   let message = "";
+  const expanded = { today: false, settings: false };
 
   const asCount = (value, fallback = 0) => Number.isSafeInteger(value) && value >= 0 ? value : fallback;
   const escapeText = (value) => String(value).replace(/[&<>"']/g, (char) =>
@@ -28,11 +29,7 @@
     `<button class="button ${kind}" data-wakeguard-action="${name}" type="button" ${pending ? "disabled" : ""}>${label}</button>`;
 
   function portrait(form) {
-    const [left, top, right, bottom] = form.bounds;
-    const scale = 51 / Math.max(right - left, bottom - top);
-    const x = (32 - (left + right) / 2) * scale * 100 / 64;
-    const y = (32 - (top + bottom) / 2) * scale * 100 / 64;
-    return `<span class="link-portrait" aria-hidden="true"><img src="wakeguard-art/${form.file}" alt="" style="--art-scale:${scale.toFixed(4)};--art-x:${x.toFixed(2)}%;--art-y:${y.toFixed(2)}%"></span>`;
+    return `<span class="link-portrait" aria-hidden="true"><img src="wakeguard-art/ignido_burst_${form.art}.jpg" alt="" width="380" height="508"></span>`;
   }
 
   function isoDate(value) {
@@ -61,12 +58,38 @@
     </div>`;
   }
 
-  function localActivity() {
-    const days = globalThis.repLiftActivityDays?.() ?? [];
-    const count = new Set(days).size;
-    return `<div class="link-local"><div><h3>REP LIFTの運動日</h3><p>この端末に保存した筋トレ・ランの日数</p></div>
-      <span class="link-count"><strong data-replift-local-days>${count}</strong>日</span>
-    </div>`;
+  function exerciseStreak() {
+    const now = new Date();
+    const dayMs = 86_400_000;
+    const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / dayMs;
+    const uniqueDays = new Set();
+    for (const raw of globalThis.repLiftActivityDays?.() ?? []) {
+      const date = isoDate(raw);
+      if (!date) continue;
+      const day = Date.parse(date) / dayMs;
+      if (day <= today) uniqueDays.add(day);
+    }
+    const days = [...uniqueDays].sort((a, b) => a - b);
+    let previous = -Infinity;
+    let current = 0;
+    let best = 0;
+    for (const day of days) {
+      current = previous + 1 === day ? current + 1 : 1;
+      best = Math.max(best, current);
+      previous = day;
+    }
+    return { count: days.length, current: previous >= today - 1 ? current : 0, best };
+  }
+
+  function localActivity({ count, current, best }) {
+    return `<section class="link-personal">
+      <h3>REP LIFTの運動ストリーク</h3>
+      <dl class="link-metrics">
+        <div class="link-metric"><dt>連続運動</dt><dd><span class="link-count"><strong data-replift-current>${current}</strong>日</span></dd></div>
+        <div class="link-metric"><dt>最長連続</dt><dd><span class="link-count"><strong data-replift-best>${best}</strong>日</span></dd></div>
+      </dl>
+      <p class="link-note">${count ? `この端末で運動した日 <strong data-replift-local-days>${count}</strong>日` : "保存した筋トレ・ランはまだありません。"}</p>
+    </section>`;
   }
 
   function linkedContent(settings) {
@@ -76,23 +99,24 @@
     const best = asCount(snapshot.best);
     const remaining = asCount(snapshot.remaining);
     const formName = typeof snapshot.form === "string" && snapshot.form.trim() ? escapeText(snapshot.form) : form.name;
-    return `<div class="link-overview">
-        <div class="link-companion">
+    const personal = exerciseStreak();
+    return `${localActivity(personal)}
+        <section class="link-companion">
           ${portrait(form)}
           <div class="link-companion-copy"><h3>ドラゴンの成長</h3><p>${formName} <span>Lv. ${level}</span></p>
             ${settings && remaining ? `<p class="link-next">次の姿は Lv. ${level + remaining}</p>` : ""}
             <button type="button" class="button ghost link-art-trigger" data-action="view-ignido" aria-haspopup="dialog">ブランドアートを見る</button></div>
-        </div>
-        <div class="link-streak">
-          <h3>起床・運動の共通ストリーク</h3>
+        </section>
+        <details class="link-shared" data-link-accordion ${expanded[settings ? "settings" : "today"] ? "open" : ""}>
+          <summary>WakeGuardとの共有ストリーク</summary>
+          <div class="link-shared-content">
           <dl class="link-metrics">
-            ${streakMetric("現在の連続", streak, snapshot.currentStart, snapshot.currentEnd, "data-wakeguard-current")}
-            ${streakMetric("過去最長", best, snapshot.bestStart, snapshot.bestEnd, "data-wakeguard-best")}
+            ${streakMetric("共有の現在", streak, snapshot.currentStart, snapshot.currentEnd, "data-wakeguard-current")}
+            ${streakMetric("共有の最長", best, snapshot.bestStart, snapshot.bestEnd, "data-wakeguard-best")}
           </dl>
-          ${settings ? '<p class="link-note">起床または運動の記録が続いた日数です。同じ日付は1日として数えます。</p>' : ""}
-        </div>
-      </div>
-      ${localActivity()}
+          <p class="link-note">WakeGuardの起床成功日と、連携で共有された運動日を集計します。同じ日は1日と数えます。</p>
+          </div>
+        </details>
       ${settings ? `<div class="link-controls">${action("refresh", "更新")}${action("disconnect", "連携を解除", "ghost")}</div>` : ""}`;
   }
 
@@ -120,11 +144,13 @@
   function paint() {
     for (const item of document.querySelectorAll("[data-replift-wakeguard]")) {
       const focusedAction = item.contains(document.activeElement) ? document.activeElement.dataset.wakeguardAction : "";
+      const focusedSummary = document.activeElement === item.querySelector("summary");
       const template = document.createElement("template");
       template.innerHTML = card(item.dataset.repliftWakeguard);
       const next = template.content.firstElementChild;
       item.replaceWith(next);
       if (focusedAction && !pending) next.querySelector(`[data-wakeguard-action="${focusedAction}"]`)?.focus({ preventScroll: true });
+      if (focusedSummary) next.querySelector("summary")?.focus({ preventScroll: true });
     }
   }
 
@@ -144,6 +170,13 @@
     paint();
   }
 
+  document.addEventListener("toggle", (event) => {
+    const details = event.target;
+    if (!details.matches?.("[data-link-accordion]") || !details.isConnected) return;
+    const card = details.closest("[data-replift-wakeguard]");
+    if (card) expanded[card.dataset.repliftWakeguard] = details.open;
+  }, true);
+
   document.addEventListener("click", (event) => {
     const target = event.target.closest?.("[data-wakeguard-action]");
     const bridge = globalThis.RepLiftNative;
@@ -157,6 +190,7 @@
       pendingTimer = setTimeout(reportUnreachable, 6000);
       if (name === "refresh") bridge.refreshWakeGuard();
       else {
+        if (name === "disconnect") expanded.today = expanded.settings = false;
         const days = name === "connect" ? globalThis.repLiftActivityDays?.() ?? [] : [];
         bridge.setWakeGuardLinked(name === "connect", JSON.stringify(days));
       }

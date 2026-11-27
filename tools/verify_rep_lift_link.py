@@ -4,7 +4,8 @@
 import re
 import subprocess
 import time
-from datetime import date
+from datetime import date, timedelta
+from pathlib import Path
 from xml.etree import ElementTree
 
 TRAINING = "jp.replift.training"
@@ -95,19 +96,52 @@ def save_run(minutes):
     read_node(f"{minutes}:00", exact=False)
 
 
+def seed_wake_history():
+    # Synthetic wakeups on the private CI emulator. No REP LIFT workouts exist yet.
+    adb("root")
+    adb("wait-for-device")
+    assert "uid=0" in shell("id")
+    today = date.fromisoformat(shell("date", "+%Y-%m-%d"))
+    offsets = [*range(1, 9), *range(44, 65), *range(70, 112, 2)]
+    prefs = ElementTree.Element("map")
+    dates = ElementTree.SubElement(prefs, "set", name="success_days")
+    for offset in offsets:
+        ElementTree.SubElement(dates, "string").text = (today - timedelta(days=offset)).isoformat()
+    ElementTree.SubElement(prefs, "int", name="total_wakeups", value=str(len(offsets)))
+    file = Path("wake-verify-fixture.xml")
+    ElementTree.ElementTree(prefs).write(file, encoding="utf-8", xml_declaration=True)
+    try:
+        app_dir = f"/data/user/0/{WAKE}"
+        prefs_dir = f"{app_dir}/shared_prefs"
+        prefs_file = f"{prefs_dir}/wake_guard.xml"
+        owner = shell("stat", "-c", "%u:%g", app_dir)
+        shell("am", "force-stop", WAKE)
+        shell("mkdir", "-p", prefs_dir)
+        shell("chown", owner, prefs_dir)
+        shell("chmod", "770", prefs_dir)
+        adb("push", str(file), prefs_file)
+        shell("chown", owner, prefs_file)
+        shell("chmod", "660", prefs_file)
+        shell("restorecon", "-RF", prefs_dir)
+    finally:
+        file.unlink(missing_ok=True)
+    return today
+
+
 def main():
     shell("settings", "put", "secure", "show_ime_with_hard_keyboard", "1")
-    adb("install", "-r", "android-release/REP-LIFT-1.0.3.apk")
+    adb("install", "-r", "android-release/REP-LIFT-1.0.4.apk")
     launch(TRAINING)
     tap_label("ラン")
     read_node("手入力で記録")
 
-    adb("install", "-r", "android-release/WakeGuard-2.17.41-link.apk")
+    adb("install", "-r", "android-release/WakeGuard-2.17.42-link.apk")
     # Installing WakeGuard after REP LIFT covers connecting a previously standalone installation.
     for permission in ("POST_NOTIFICATIONS", "ACTIVITY_RECOGNITION"):
         shell("pm", "grant", WAKE, f"android.permission.{permission}")
     assert f"package:{WAKE}" in shell("pm", "list", "packages", WAKE)
     assert f"package:{TRAINING}" in shell("pm", "list", "packages", TRAINING)
+    seed_wake_history()
 
     launch(TRAINING)
     tap_label("設定")
@@ -116,16 +150,27 @@ def main():
     print(f"Connect button at {connect.attrib['bounds']}", flush=True)
     tap(connect)
     read_node("連携中", scroll=True)
-    read_node("起床・運動の共通ストリーク", exact=False, scroll=True)
-    read_node("現在の連続", exact=False, scroll=True)
-    read_node("過去最長", exact=False, scroll=True)
-    read_node("REP LIFTの運動日", exact=False, scroll=True)
+    scroll_to_settings_bottom()
+    read_node("REP LIFTの運動ストリーク", exact=False)
+    read_node("保存した筋トレ・ランはまだありません。", exact=False)
+    read_node(("0", "0日", "0 日"))
     read_node("ドラゴンの成長", exact=False, scroll=True)
+    read_node("Lv. 51", exact=False)
+    nodes = visible_nodes()
+    assert not any(label_matches(node, "共有の現在", False) for node in nodes)
+    with Path("rep-lift-linked-zero-workouts.png").open("wb") as screenshot:
+        subprocess.run(["adb", "exec-out", "screencap", "-p"], stdout=screenshot, check=True, timeout=15)
+    print("Verified exercise 0 with a closed shared summary and a Lv. 51 dragon", flush=True)
+    tap_label("WakeGuardとの共有ストリーク", scroll=True)
+    read_node("共有の現在", exact=False, scroll=True)
+    read_node(("8", "8日", "8 日"))
+    read_node("共有の最長", exact=False)
+    read_node(("21", "21日", "21 日"))
 
     # The shared summary must also be visible in WakeGuard before the first workout.
     launch(WAKE)
     read_node(("共通ストリーク", "Shared streak", "shared streak"), exact=False, scroll=True)
-    read_node(("現在の連続 0日", "Current 0 days"), exact=False, scroll=True)
+    read_node(("現在の連続 8日", "Current 8 days"), exact=False, scroll=True)
 
     launch(TRAINING)
     save_run(10)
@@ -135,17 +180,18 @@ def main():
     day_en = f"{saved_day.strftime('%b')} {saved_day.day}"
     tap_label("設定")
     scroll_to_settings_bottom()
-    read_node("Lv. 2", exact=False, scroll=True)
-    read_node(day_ja, exact=False, scroll=True)
+    read_node("この端末で運動した日", exact=False, scroll=True)
+    read_node(("1", "1日", "1 日"))
+    read_node("Lv. 52", exact=False, scroll=True)
     tap_label("ブランドアートを見る", scroll=True)
-    read_node("赤橙の炎をまとって飛び出すドラゴン", exact=False)
+    read_node("燃え上がる太陽を囲む炎のドラゴン", exact=False)
     tap_label("閉じる")
 
     launch(WAKE)
-    read_node(("現在の連続 1日", "Current 1 day"), exact=False, scroll=True)
-    read_node(("過去最長 1日", "Best 1 day"), exact=False, scroll=True)
+    read_node(("現在の連続 9日", "Current 9 days"), exact=False, scroll=True)
+    read_node(("過去最長 21日", "Best 21 days"), exact=False, scroll=True)
     read_node((day_ja, day_en), exact=False, scroll=True)
-    tap(read_node(("イグニドを見る", "See Ignido"), scroll=True))
+    tap(read_node(("ブランドアートを見る", "View brand artwork"), scroll=True))
     read_node(("イグニドのブランドアート", "Ignido brand artwork"), exact=False)
 
 

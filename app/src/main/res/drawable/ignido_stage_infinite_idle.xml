@@ -1,8 +1,0 @@
-<animation-list xmlns:android="http://schemas.android.com/apk/res/android" android:oneshot="false">
-    <item android:drawable="@drawable/ignido_stage_infinite_flap_01" android:duration="180" />
-    <item android:drawable="@drawable/ignido_stage_infinite_flap_02" android:duration="180" />
-    <item android:drawable="@drawable/ignido_stage_infinite_flap_03" android:duration="180" />
-    <item android:drawable="@drawable/ignido_stage_infinite_flap_04" android:duration="180" />
-    <item android:drawable="@drawable/ignido_stage_infinite_flap_05" android:duration="180" />
-    <item android:drawable="@drawable/ignido_stage_infinite_flap_06" android:duration="180" />
-</animation-list>

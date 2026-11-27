@@ -113,7 +113,7 @@ public final class I18n {
         put("アラームはありません。右上の＋から追加できます。","No alarms. Tap + at the top right to add one.","알람이 없습니다. 오른쪽 위 +에서 추가할 수 있습니다.");
         put("次のアラームはありません","No upcoming alarms","다음 알람이 없습니다"); put("毎日","Every day","매일"); put("1回のみ","Once","한 번만");
         put("ストリーク","Streak","스트릭"); put("カレンダー","Calendar","캘린더");
-        put("イグニドを見る","See Ignido","이그니도 보기");
+        put("ブランドアートを見る","View brand artwork","브랜드 아트 보기");
         put("イグニドのブランドアート","Ignido brand artwork","이그니도 브랜드 아트");
         put("起床・運動の共通ストリーク","Shared streak","기상·운동 공유 스트릭");
         put("現在の連続 %d日","Current %d days","현재 %d일");
